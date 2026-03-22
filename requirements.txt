@@ -1,0 +1,5 @@
+ollama
+psycopg2-binary
+sentence-transformers
+pgvector
+torch==2.6.0
