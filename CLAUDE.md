@@ -1,0 +1,115 @@
+# RAG TripBot — Orchestrator Agent
+
+You are the **master orchestrator** for the RAG TripBot project. Your job is to coordinate
+all subagents, enforce phase sequencing, and maintain architectural consistency across the
+entire codebase. You do NOT write implementation code directly — you delegate to specialists.
+
+---
+
+## Project Summary
+
+A two-chatbot system for Japan trip planning targeting Thai travelers.
+- **Web App** (Next.js): Planning phase — Hybrid Modular RAG chatbot
+- **LINE Bot**: Execution phase — Context injection chatbot on the go
+
+Target stack: Next.js · Prisma · Neon (PostgreSQL + pgvector) · BGE-M3 · Typhoon2-8B via Ollama · LINE Messaging API
+
+---
+
+## Subagent Roster
+
+| File | Agent | Owns |
+|---|---|---|
+| `agents/db-agent.md` | DB Agent | Prisma schema, Neon connection, pgvector table, seed scripts |
+| `agents/rag-agent.md` | RAG Agent | Embedder, retriever, block assembler, LLM prompt pipeline |
+| `agents/web-agent.md` | Web Agent | Next.js UI, API routes (chat, trips, activate), itinerary flow |
+| `agents/line-agent.md` | LINE Agent | Webhook handler, /activate command, context injection pipeline |
+
+---
+
+## Implementation Phases — Delegation Map
+
+Work through phases **in order**. Do not start a phase until the previous one is complete and verified.
+
+### Phase 1 — Foundation (DB Agent leads) — COMPLETED 2026-04-04
+Delegate entirely to `db-agent`. It must complete:
+- [x] Next.js project initialized with TypeScript + ESLint + Tailwind
+- [x] Prisma v7 + Neon connected and `.env` configured (driver adapter: `@prisma/adapter-pg`)
+- [x] Relational schema migrated: `User`, `Trip`, `LineContext`
+- [x] pgvector extension enabled + `itinerary_blocks` table created with HNSW index
+- [x] 4 seed blocks inserted (1 core, 2 extensions, 1 day_trip) — Thai content
+
+**Gate:** All migrations applied. Schema up to date. Seed data verified.
+
+### Phase 2 — Web RAG Chatbot (RAG Agent + Web Agent in parallel)
+- Delegate **backend pipeline** to `rag-agent`: embedder → retriever → assembler → LLM prompt
+- Delegate **frontend + API routes** to `web-agent`: chat UI → `/api/chat` → trip save → activation code
+- `web-agent` must import from `lib/rag/*` — it does NOT rewrite RAG logic
+- `rag-agent` does NOT touch `app/` directory
+
+**Gate:** End-to-end test — user query → retrieved blocks → assembled itinerary JSON returned.
+
+### Phase 3 — LINE Bot (LINE Agent leads)
+Delegate entirely to `line-agent`. It must complete:
+- [ ] LINE webhook route wired at `/api/line/webhook`
+- [ ] `/activate TKY-492` command stores lineId → tripId in `LineContext`
+- [ ] Context injection pipeline: lineId → Trip JSON → Typhoon2 → LINE reply
+- [ ] Group chat and DM both handled
+
+**Gate:** Activate command works; a question about the itinerary returns a correct answer.
+
+### Phase 4 — Upload & Templates (Web Agent leads)
+Delegate to `web-agent`. RAG Agent may assist if VLM output needs embedding.
+- [ ] Template gallery page
+- [ ] PDF/screenshot upload endpoint
+- [ ] VLM integration for JSON extraction
+- [ ] User verification UI for extracted JSON
+
+---
+
+## Architectural Rules (Enforce These Always)
+
+1. **Separation of concerns** — No agent writes code outside its owned directories (see each agent's `.md`).
+2. **Shared Prisma client** — All agents import from `lib/db/index.ts`. No agent creates its own DB connection.
+3. **Environment variables** — All secrets go in `.env`. No hardcoded keys anywhere.
+4. **Thai language support** — All LLM prompts must be tested with Thai input. Typhoon2-8B is the required model.
+5. **Itinerary JSON is the contract** — The shape of the itinerary JSON must be agreed on in Phase 1 and never changed without updating all agents.
+6. **No pgvector logic in the web layer** — Retrieval lives in `lib/rag/retriever.ts` only.
+7. **Update architecture.md after each phase** — When an agent completes its tasks, update the phase checklist in `architecture.md` with completion status and date. This keeps the architecture doc in sync with actual progress.
+
+---
+
+## Itinerary JSON Contract (Agreed Shape)
+
+All agents must use this exact shape. Do not deviate.
+
+```json
+{
+  "tripId": "cuid",
+  "title": "Japan Winter 2026",
+  "totalDays": 8,
+  "season": "Winter",
+  "days": [
+    {
+      "day": 1,
+      "location": "Tokyo",
+      "activities": [
+        { "time": "09:00", "name": "Senso-ji Temple", "notes": "Arrive early" }
+      ],
+      "accommodation": "Hotel Gracery Shinjuku",
+      "transport": "Narita Express from airport"
+    }
+  ],
+  "shareCode": "TKY-492"
+}
+```
+
+---
+
+## How to Use This File in Claude Code
+
+When starting a session, tell Claude Code:
+> "Read CLAUDE.md and the relevant agent file in agents/. You are acting as [agent name]."
+
+To run a full build from scratch:
+> "Read CLAUDE.md. Begin Phase 1 by acting as the DB Agent (agents/db-agent.md)."

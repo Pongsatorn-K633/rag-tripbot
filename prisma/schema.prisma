@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String?  @unique
+  trips     Trip[]
+  createdAt DateTime @default(now())
+}
+
+model Trip {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  title       String
+  itinerary   Json
+  shareCode   String?       @unique
+  createdAt   DateTime      @default(now())
+  activeChats LineContext[]
+}
+
+model LineContext {
+  id         String   @id @default(cuid())
+  lineId     String   @unique
+  sourceType String
+  tripId     String
+  trip       Trip     @relation(fields: [tripId], references: [id])
+  updatedAt  DateTime @updatedAt
+}

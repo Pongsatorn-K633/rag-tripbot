@@ -31,3 +31,16 @@ Thumbs.db
 
 # Distribution
 *.whl
+
+/app/generated/prisma
+
+# Next.js
+.next/
+out/
+
+# Node.js
+node_modules/
+npm-debug.log*
+
+# Prisma generated
+node_modules/.prisma/
