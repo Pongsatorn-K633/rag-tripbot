@@ -1,5 +1,10 @@
+# === General ===
 ollama
 psycopg2-binary
-sentence-transformers
 pgvector
+
+# === Embedding service (services/embedding/) ===
+fastapi
+uvicorn
+sentence-transformers
 torch==2.6.0

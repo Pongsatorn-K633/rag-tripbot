@@ -14,6 +14,10 @@ import 'dotenv/config'
 import { prisma } from '../../lib/db/index.js'
 
 async function main() {
+  // Clear existing blocks to ensure idempotent seeding
+  await prisma.$executeRaw`DELETE FROM itinerary_blocks`
+  console.log('Cleared existing blocks.')
+
   // ── CORE BLOCK: 7-day Tokyo–Kyoto–Osaka backbone ──────────────────────────
   await prisma.$executeRaw`
     INSERT INTO itinerary_blocks (content, type, duration, start_loc, end_loc, season, tags)

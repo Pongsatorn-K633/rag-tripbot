@@ -54,7 +54,8 @@ User asks questions → Bot injects itinerary JSON into prompt → Instant answe
 | Vector DB | pgvector (on Neon) | Itinerary block embeddings |
 | Embedding | BAAI/bge-m3 (1024-dim) | Text → vector via sentence-transformers |
 | LLM | Typhoon2-8B via Ollama | Thai-capable generation |
-| VLM | TBD | PDF/screenshot → JSON extraction |
+| VLM | Qwen2.5-VL 7B via Ollama | Image OCR → itinerary JSON extraction |
+| Web Search | Tavily API | Real-time web search to enhance RAG with latest info |
 | LINE Integration | LINE Messaging API + Webhook | Tailored chatbot delivery |
 
 ---
@@ -126,21 +127,27 @@ User Query
     ▼
 Extract Parameters (month, duration, vibe)
     │
-    ▼
-Query pgvector with metadata filters
-    │
-    ▼
-Retrieve matching blocks (core + extensions)
-    │
-    ▼
-Prompt: System Wrapper + Retrieved Blocks + User Message
-    │
-    ▼
-Typhoon2-8B generates assembled itinerary
-    │
-    ▼
+    ├──────────────────────────┐
+    ▼                          ▼
+Query pgvector             Tavily Web Search
+(metadata filters)         (real-time info)
+    │                          │
+    ▼                          ▼
+Retrieve blocks            Web results
+(core + extensions)        (sakura dates, events, closures)
+    │                          │
+    └──────────┬───────────────┘
+               ▼
+Prompt: Blocks + Web Results + User Message
+               │
+               ▼
+Typhoon2-8B assembles itinerary
+               │
+               ▼
 Return structured JSON to frontend
 ```
+
+Both sources run **in parallel**. pgvector provides the base itinerary structure; Tavily enriches it with real-time info (seasonal forecasts, trending spots, closures, prices). If `TAVILY_API_KEY` is not set, web search is silently skipped.
 
 ### System Prompt Strategy (Web)
 
@@ -215,8 +222,7 @@ rag-tripbot/
 │   └── seed/                   # Seed itinerary blocks into pgvector
 ├── services/
 │   └── embedding/
-│       ├── main.py             # FastAPI embedding microservice
-│       └── requirements.txt    # Python deps (torch, sentence-transformers)
+│       └── main.py             # FastAPI embedding microservice
 ├── architecture.md             # ← This file
 ├── .env
 ├── package.json
@@ -237,26 +243,37 @@ rag-tripbot/
 
 ### Phase 2 — Web RAG Chatbot
 
-- [ ] Build embedding service (Python microservice or API route calling BGE-M3)
-- [ ] Implement retrieval logic with metadata filtering
-- [ ] Implement block assembly + LLM prompt pipeline
-- [ ] Build chat UI (Next.js)
-- [ ] Add itinerary confirmation + JSON finalization flow
-- [ ] Generate activation codes on trip save
+**Backend (RAG Agent — Completed 2026-04-04)**
+- [x] Build embedding microservice (`services/embedding/main.py` — FastAPI + BGE-M3 on port 8001)
+- [x] Implement TypeScript embedder client (`lib/rag/embedder.ts`)
+- [x] Implement retrieval logic with pgvector + metadata filtering (`lib/rag/retriever.ts`)
+- [x] Implement block assembly + LLM prompt pipeline (`lib/rag/assembler.ts`)
+- [x] Implement parameter extraction from user messages (`lib/rag/extractor.ts`)
+- [x] Implement Ollama/Typhoon2-8B LLM client (`lib/llm/client.ts`)
 
-### Phase 3 — LINE Bot
+**Frontend (Web Agent — Completed 2026-04-04)**
+- [x] Build chat UI — `ChatWindow`, `MessageBubble`, `ItineraryCard`, `ActivationBanner` components
+- [x] Wire `/api/chat` route to RAG pipeline (`extractTripParams` → `assembleItinerary`)
+- [x] Wire `/api/trips` route for trip CRUD (save + fetch)
+- [x] Add itinerary confirmation + JSON finalization flow
+- [x] Generate activation codes on trip save (`/api/activate`)
 
-- [ ] Set up LINE Messaging API channel + webhook
-- [ ] Implement `/activate` command handler
-- [ ] Implement context injection pipeline
-- [ ] Handle both DM and group chat contexts
+### Phase 3 — LINE Bot (Completed 2026-04-04)
 
-### Phase 4 — Upload & Templates
+- [x] Set up LINE Messaging API webhook at `/api/line/webhook` with HMAC-SHA256 signature validation
+- [x] Implement `/activate` command handler — upserts `LineContext` to link lineId → tripId
+- [x] Implement context injection pipeline (`lib/line/injector.ts`) — injects itinerary JSON into Typhoon2 prompt
+- [x] Handle both DM (user source) and group chat (group source) via `lib/line/parser.ts`
+- [x] LINE SDK client wrapper (`lib/line/client.ts`) — `replyToLine` and `pushToLine`
 
-- [ ] Build template gallery UI
-- [ ] Implement PDF/screenshot upload endpoint
-- [ ] Integrate VLM for itinerary extraction
-- [ ] Build verification UI for extracted JSON
+### Phase 4 — Upload & Templates (Completed 2026-04-04)
+
+- [x] Build template gallery page (`app/templates/page.tsx`) — 4 curated templates with modal preview + save flow
+- [x] Build reusable `TemplateCard` component (`app/components/TemplateCard.tsx`)
+- [x] Implement PDF/screenshot upload endpoint (`app/api/upload/route.ts`) — LLM-based text extraction
+- [x] Build upload page with drag-and-drop UI (`app/upload/page.tsx`)
+- [x] Build verification UI — reuses `ItineraryCard` for user review before saving
+- [x] VLM integration — Qwen2.5-VL 7B via Ollama for image OCR; Typhoon2 for PDF text extraction
 
 ---
 
@@ -264,8 +281,8 @@ rag-tripbot/
 
 | Question | Options | Notes |
 |---|---|---|
-| Embedding service architecture | Python microservice vs. Next.js API calling Python | BGE-M3 requires PyTorch — may be too heavy for serverless |
-| VLM choice | GPT-4V / Gemini / local model | Depends on budget and accuracy needs |
+| ~~Embedding service architecture~~ | ~~Python microservice vs. Next.js API calling Python~~ | **Decided:** Python FastAPI microservice at `services/embedding/` |
+| ~~VLM choice~~ | ~~GPT-4V / Gemini / local model~~ | **Decided:** Qwen2.5-VL 7B via Ollama — multilingual (Thai/English/Japanese) OCR |
 | Hosting | Vercel + Neon vs. self-hosted | Ollama needs GPU — likely a separate server |
 | Auth (Web) | NextAuth / Clerk / none | Depends on whether user accounts are needed |
 | LINE rich messages | Flex Messages vs. plain text | Better UX but more implementation effort |
