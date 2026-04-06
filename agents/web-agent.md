@@ -19,6 +19,7 @@ app/
     trips/route.ts                ← Trip CRUD (save, fetch)
     activate/route.ts             ← Generate share code
     line/webhook/route.ts         ← (LINE Agent owns this file — do not touch)
+    trips/by-code/route.ts        ← (LINE Agent owns — GET shareCode -> trip JSON for LIFF)
   components/
     ChatWindow.tsx
     MessageBubble.tsx
@@ -26,7 +27,7 @@ app/
     ActivationBanner.tsx
 ```
 
-**Do NOT touch:** `lib/rag/`, `lib/llm/`, `lib/line/`, `prisma/`, `services/`
+**Do NOT touch:** `lib/rag/`, `lib/llm/`, `lib/line/`, `prisma/`, `services/`, `app/liff/`
 
 ---
 
@@ -230,4 +231,4 @@ Simple landing with two CTAs:
 - Do not write vector queries — call `lib/rag/retriever.ts`
 - Keep all API responses typed with proper TypeScript interfaces
 - Thai copy is the primary language for UI strings — add English as secondary
-- `app/api/line/webhook/route.ts` is owned by LINE Agent — never touch it
+- `app/api/line/webhook/route.ts`, `app/api/trips/by-code/route.ts`, and `app/liff/itinerary/page.tsx` are owned by LINE Agent — never touch them

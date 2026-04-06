@@ -14,16 +14,15 @@ A two-chatbot system for Japan trip planning, targeting Thai travelers.
 | ORM | Prisma v7 (`@prisma/adapter-pg`) |
 | Database | Neon (PostgreSQL + pgvector) |
 | Embedding | BAAI/bge-m3 (1024-dim) via FastAPI microservice |
-| LLM | Typhoon2-8B via Ollama (Thai-capable) |
-| VLM | Qwen2.5-VL 7B via Ollama (image OCR) |
-| Web Search | Tavily API (real-time RAG) |
+| LLM | Gemini 2.5 Flash (text + vision) |
+| Web Search | Gemini with Google Search grounding |
 | LINE | LINE Messaging API + Webhook |
 
 ## Prerequisites
 
 - **Node.js** 18+
 - **Python** 3.10+
-- **Ollama** installed and running
+- **Gemini API key** (from [Google AI Studio](https://aistudio.google.com/))
 - **Neon** database (or any PostgreSQL with pgvector)
 
 ## Setup
@@ -44,12 +43,11 @@ Copy `.env.example` or create `.env` with:
 ```env
 DATABASE_URL="postgresql://..."       # Neon pooled connection
 DIRECT_URL="postgresql://..."         # Neon direct connection (for migrations)
-EMBEDDING_SERVICE_URL=http://localhost:8001
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_VISION_MODEL=qwen2.5vl:7b                    # VLM for image upload OCR
-TAVILY_API_KEY=tvly-xxxxx                            # Optional — enables real-time web search in RAG
+EMBEDDING_SERVICE_URL=http://localhost:8001           # Paused — only needed when pgvector search is re-enabled
+GEMINI_API_KEY=your_gemini_api_key                   # From Google AI Studio
 LINE_CHANNEL_SECRET=your_channel_secret             # From LINE Developers Console
 LINE_CHANNEL_ACCESS_TOKEN=your_channel_access_token  # From LINE Developers Console
+LIFF_ID=your_liff_id                                 # From LINE Developers Console (LIFF tab)
 ```
 
 ### 3. Run database migrations and seed
@@ -68,16 +66,7 @@ python services/embedding/main.py
 
 This starts the BGE-M3 embedding microservice on port 8001. Keep it running in a separate terminal.
 
-### 5. Pull the LLM and VLM models
-
-```bash
-ollama pull scb10x/llama3.1-typhoon2-8b-instruct    # Text LLM (Thai-capable)
-ollama pull qwen2.5vl:7b                             # Vision model (image OCR)
-```
-
-Ollama serves the model on port 11434 by default.
-
-### 6. Start the dev server
+### 5. Start the dev server
 
 ```bash
 npm run dev
@@ -94,9 +83,12 @@ rag-tripbot/
 │   ├── chat/page.tsx           # Chat interface
 │   ├── templates/page.tsx      # Curated template gallery
 │   ├── upload/page.tsx         # PDF/screenshot upload + verification
+│   ├── liff/
+│   │   └── itinerary/page.tsx  # LIFF page — dark-themed day-by-day accordion
 │   ├── api/
 │   │   ├── chat/route.ts       # RAG chat endpoint
 │   │   ├── trips/route.ts      # Trip save/fetch
+│   │   ├── trips/by-code/route.ts # Fetch trip by shareCode (for LIFF)
 │   │   ├── activate/route.ts   # Share code generation
 │   │   ├── upload/route.ts     # File upload + LLM extraction
 │   │   └── line/webhook/route.ts # LINE Bot webhook handler
@@ -111,14 +103,14 @@ rag-tripbot/
 │   │   ├── embedder.ts         # Calls Python embedding service
 │   │   ├── retriever.ts        # pgvector query + metadata filtering
 │   │   ├── assembler.ts        # Block assembly + LLM prompt
-│   │   ├── web-search.ts       # Tavily web search for real-time info
+│   │   ├── web-search.ts       # searchWeb() for assembler + generateWithSearch() for LINE enriched path
 │   │   └── extractor.ts        # Parameter extraction from user messages
 │   ├── llm/
-│   │   └── client.ts           # Typhoon2-8B via Ollama
+│   │   └── client.ts           # Gemini 2.5 Flash client (generateText, generateFromVision)
 │   ├── line/
-│   │   ├── client.ts           # LINE SDK wrapper (reply/push messages)
+│   │   ├── client.ts           # LINE SDK wrapper (replyToLine, pushToLine, replyFlexMessage)
 │   │   ├── parser.ts           # Webhook event parser (DM + group)
-│   │   └── injector.ts         # Context injection prompt builder
+│   │   └── injector.ts         # Context injection + hybrid intent classification (regex + LLM)
 │   └── db/
 │       └── index.ts            # Shared Prisma client
 ├── prisma/
@@ -160,8 +152,16 @@ rag-tripbot/
 2. Turn Webhooks ON, Auto-reply OFF, Greeting messages OFF
 3. In LINE chat, type `/activate TKY-492` to link your trip
 4. Ask questions about your itinerary — the bot answers from your saved plan
+5. Type "ขอดูแผน" (or similar) to view the full itinerary — the bot sends a Flex Message with a "ดูแผนเต็ม" button that opens a dark-themed LIFF page
 
-For local testing, use [ngrok](https://ngrok.com/): `ngrok http 3000`
+The bot uses **hybrid intent classification**: a regex fast gate catches clean phrases like "ขอดูแผน" with zero API calls; typos like "plna pls" fall through to a single Gemini call that does intent classification (`[SHOW_PLAN]`) and question answering in one shot — no extra API cost. "สรุปทริป" is answered as a summary, not treated as a full plan view.
+
+For local testing, use [ngrok](https://ngrok.com/):
+
+```bash
+taskkill /F /IM ngrok.exe   # Kill existing ngrok (Windows)
+ngrok http 3000              # Start new tunnel
+```
 
 ## API Endpoints
 
@@ -171,6 +171,7 @@ For local testing, use [ngrok](https://ngrok.com/): `ngrok http 3000`
 | POST | `/api/trips` | Save finalized trip |
 | GET | `/api/trips?userId=...` | Fetch user's saved trips |
 | POST | `/api/activate` | Generate LINE activation share code |
+| GET | `/api/trips/by-code?shareCode=...` | Fetch trip itinerary by shareCode (used by LIFF page) |
 | POST | `/api/upload` | Upload file, extract itinerary via LLM |
 | POST | `/api/line/webhook` | LINE Bot webhook (signature-validated) |
 

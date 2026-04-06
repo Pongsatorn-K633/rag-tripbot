@@ -1,42 +1,52 @@
-const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434'
-const TEXT_MODEL = 'scb10x/llama3.1-typhoon2-8b-instruct'
-const VISION_MODEL = process.env.OLLAMA_VISION_MODEL ?? 'qwen2.5vl:7b'
+import { GoogleGenAI } from '@google/genai'
 
-export async function generateFromOllama(prompt: string): Promise<string> {
-  const res = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: TEXT_MODEL,
-      prompt,
-      stream: false,
-      options: {
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? ''
+const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY })
+const TIMEOUT_MS = 60_000
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('LLM request timed out')), ms)
+    ),
+  ])
+}
+
+export async function generateText(prompt: string): Promise<string> {
+  const response = await withTimeout(
+    ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
         temperature: 0.3,
-        num_predict: 2048,
+        maxOutputTokens: 2048,
       },
     }),
-  })
-  if (!res.ok) throw new Error(`Ollama error: ${res.status}`)
-  const data = await res.json()
-  return data.response
+    TIMEOUT_MS,
+  )
+  return response.text ?? ''
 }
 
 export async function generateFromVision(prompt: string, imageBase64: string): Promise<string> {
-  const res = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: VISION_MODEL,
-      prompt,
-      images: [imageBase64],
-      stream: false,
-      options: {
+  const response = await withTimeout(
+    ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { text: prompt },
+            { inlineData: { mimeType: 'image/jpeg', data: imageBase64 } },
+          ],
+        },
+      ],
+      config: {
         temperature: 0.3,
-        num_predict: 2048,
+        maxOutputTokens: 2048,
       },
     }),
-  })
-  if (!res.ok) throw new Error(`Ollama vision error: ${res.status}`)
-  const data = await res.json()
-  return data.response
+    TIMEOUT_MS,
+  )
+  return response.text ?? ''
 }

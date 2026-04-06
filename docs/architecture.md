@@ -53,9 +53,8 @@ User asks questions → Bot injects itinerary JSON into prompt → Instant answe
 | Database | Neon (PostgreSQL) | Relational data (trips, LINE contexts) |
 | Vector DB | pgvector (on Neon) | Itinerary block embeddings |
 | Embedding | BAAI/bge-m3 (1024-dim) | Text → vector via sentence-transformers |
-| LLM | Typhoon2-8B via Ollama | Thai-capable generation |
-| VLM | Qwen2.5-VL 7B via Ollama | Image OCR → itinerary JSON extraction |
-| Web Search | Tavily API | Real-time web search to enhance RAG with latest info |
+| LLM | Gemini 2.5 Flash | Thai-capable generation (text + vision) |
+| Web Search | Gemini with Google Search grounding | Real-time web search to enhance RAG with latest info |
 | LINE Integration | LINE Messaging API + Webhook | Tailored chatbot delivery |
 
 ---
@@ -129,7 +128,7 @@ Extract Parameters (month, duration, vibe)
     │
     ├──────────────────────────┐
     ▼                          ▼
-Query pgvector             Tavily Web Search
+Query pgvector             Gemini Google Search grounding
 (metadata filters)         (real-time info)
     │                          │
     ▼                          ▼
@@ -141,13 +140,13 @@ Retrieve blocks            Web results
 Prompt: Blocks + Web Results + User Message
                │
                ▼
-Typhoon2-8B assembles itinerary
+Gemini 2.5 Flash assembles itinerary
                │
                ▼
 Return structured JSON to frontend
 ```
 
-Both sources run **in parallel**. pgvector provides the base itinerary structure; Tavily enriches it with real-time info (seasonal forecasts, trending spots, closures, prices). If `TAVILY_API_KEY` is not set, web search is silently skipped.
+Both sources run **in parallel**. pgvector provides the base itinerary structure; Gemini with Google Search grounding enriches it with real-time info (seasonal forecasts, trending spots, closures, prices). If `GEMINI_API_KEY` is not set, web search is silently skipped.
 
 ### System Prompt Strategy (Web)
 
@@ -176,23 +175,80 @@ Extract lineId (userId or groupId)
 Lookup LineContext → Trip → itinerary JSON
     │
     ▼
-Prompt: System Prompt + Full Itinerary JSON + User Message
+Hybrid intent classification (isFullPlanRequest)
     │
-    ▼
-Typhoon2-8B generates answer
+    ├── Regex fast gate match ("ขอดูแผน", "plan please"…) ──┐
+    │                                                         │
+    └── No regex match → Gemini call (Step 1 classify +       │
+        Step 2 answer in one prompt)                          │
+         │                                                    │
+         ├── Returns [SHOW_PLAN] token ──────────────────────┤
+         │                                                    ▼
+         │                                          LIFF view path:
+         │                                          Reply Flex Message
+         │                                          with "ดูแผนเต็ม"
+         │                                          button → opens
+         │                                          app/liff/itinerary
+         │                                          (dark-themed UI,
+         │                                          fetches trip via
+         │                                          /api/trips/by-code)
+         │
+         ▼
+Fast path: answer from itinerary only (same Gemini call Step 2)
     │
-    ▼
-Reply via LINE Messaging API
+    ├── Answer sufficient → Reply via LINE
+    │
+    └── Answer insufficient (fallback phrases detected)
+        │
+        ▼
+    Enriched path: generateWithSearch() — single Gemini 2.5 Flash
+    call with Google Search grounding + persona prompt built in
+        │
+        ▼
+    Reply via LINE Messaging API
 ```
+
+### Hybrid Intent Classification
+
+`isFullPlanRequest()` uses a two-layer approach to detect "show full plan" requests:
+
+1. **Regex fast gate** — catches clean requests like "ขอดูแผน", "plan please", "itinerary" with 0 API calls.
+2. **LLM fallback** — if regex does not match, the Gemini prompt includes intent classification as Step 1. If Gemini detects a "show plan" intent (even with typos like "plna pls"), it returns `[SHOW_PLAN]` token. Otherwise it proceeds to answer the question normally in Step 2. This is done in the **same Gemini call** — no extra API cost.
+
+Prompt structure:
+- **Step 1: จำแนกความต้องการ** — classify if user wants to VIEW the full plan → `[SHOW_PLAN]`
+- **Step 2: ตอบคำถาม** — answer the question from itinerary
+
+Note: "สรุปทริป" (trip summary) goes to Step 2 (Gemini answers), NOT treated as a full plan view request.
+
+### LIFF Integration
+
+Instead of dumping the full itinerary as text in LINE chat, the bot sends a Flex Message with a button that opens a LIFF (LINE Front-end Framework) page showing the itinerary in a beautiful dark-themed UI.
+
+- **LIFF ID** stored in `.env` as `LIFF_ID`
+- **LIFF page** `app/liff/itinerary/page.tsx` — fetches trip by shareCode via `/api/trips/by-code?shareCode=XXX`, renders day-by-day accordion with dark theme
+- **API endpoint** `GET /api/trips/by-code?shareCode=XXX` — returns trip itinerary JSON
+- **LINE client** `lib/line/client.ts` — `replyFlexMessage()` helper for Flex Messages
+- **Injector** `lib/line/injector.ts` — `answerWithContext()` returns `liffView` object when a full plan is requested
+- **Webhook** `app/api/line/webhook/route.ts` — handles `liffView` result by sending a Flex Message with "ดูแผนเต็ม" button
 
 ### System Prompt Strategy (LINE)
 
-```
-"You are an expert travel guide for this specific user/group. You must
-only answer questions based on the following JSON itinerary. If they ask
-about something not in this schedule, politely remind them of their plan.
+**Fast path:** The bot first tries to answer from the itinerary JSON alone using `generateText()`. The prompt includes Step 1 intent classification — if the user wants to view the plan, Gemini emits `[SHOW_PLAN]` and the handler switches to the LIFF flow.
 
+**Enriched path:** If the fast answer contains fallback phrases (e.g., "ไม่มีข้อมูลในแผน"), the bot calls `generateWithSearch()` from `lib/rag/web-search.ts` — a single Gemini 2.5 Flash call with Google Search grounding and the persona prompt built in. No separate web search step is needed; Gemini searches Google directly as part of generation.
+
+```
+Fast path prompt:
+"You are an expert travel guide.
+Step 1: จำแนกความต้องการ — if user wants to VIEW the full plan, reply [SHOW_PLAN].
+Step 2: ตอบคำถาม — otherwise, answer from the itinerary JSON only.
 [FULL ITINERARY JSON]"
+
+Enriched path prompt (sent to generateWithSearch):
+"You are an expert travel guide. This question is not in the itinerary.
+Search Google and answer from web results.
+[ITINERARY JSON for reference]"
 ```
 
 ---
@@ -203,9 +259,12 @@ about something not in this schedule, politely remind them of their plan.
 rag-tripbot/
 ├── app/                        # Next.js App Router
 │   ├── page.tsx                # Landing / chat UI
+│   ├── liff/
+│   │   └── itinerary/page.tsx  # LIFF page — dark-themed day-by-day accordion
 │   ├── api/
 │   │   ├── chat/route.ts       # Web RAG chat endpoint
 │   │   ├── trips/route.ts      # Trip CRUD
+│   │   ├── trips/by-code/route.ts  # GET shareCode -> trip JSON (for LIFF)
 │   │   ├── activate/route.ts   # Generate share code
 │   │   └── line/webhook/route.ts  # LINE webhook handler
 │   └── components/
@@ -214,7 +273,7 @@ rag-tripbot/
 │   │   ├── retriever.ts        # pgvector query + metadata filtering
 │   │   ├── embedder.ts         # BGE-M3 embedding calls
 │   │   └── assembler.ts        # Block assembly logic
-│   ├── llm/                    # Ollama / Typhoon2 client
+│   ├── llm/                    # Gemini 2.5 Flash client (generateText, generateFromVision)
 │   ├── line/                   # LINE SDK helpers
 │   └── db/                     # Prisma client
 ├── prisma/
@@ -249,7 +308,7 @@ rag-tripbot/
 - [x] Implement retrieval logic with pgvector + metadata filtering (`lib/rag/retriever.ts`)
 - [x] Implement block assembly + LLM prompt pipeline (`lib/rag/assembler.ts`)
 - [x] Implement parameter extraction from user messages (`lib/rag/extractor.ts`)
-- [x] Implement Ollama/Typhoon2-8B LLM client (`lib/llm/client.ts`)
+- [x] Implement Gemini 2.5 Flash LLM client (`lib/llm/client.ts`)
 
 **Frontend (Web Agent — Completed 2026-04-04)**
 - [x] Build chat UI — `ChatWindow`, `MessageBubble`, `ItineraryCard`, `ActivationBanner` components
@@ -262,9 +321,11 @@ rag-tripbot/
 
 - [x] Set up LINE Messaging API webhook at `/api/line/webhook` with HMAC-SHA256 signature validation
 - [x] Implement `/activate` command handler — upserts `LineContext` to link lineId → tripId
-- [x] Implement context injection pipeline (`lib/line/injector.ts`) — injects itinerary JSON into Typhoon2 prompt
+- [x] Implement context injection pipeline (`lib/line/injector.ts`) — fast path (itinerary-only via `generateText`) + enriched path (single `generateWithSearch` call with Google Search grounding)
 - [x] Handle both DM (user source) and group chat (group source) via `lib/line/parser.ts`
-- [x] LINE SDK client wrapper (`lib/line/client.ts`) — `replyToLine` and `pushToLine`
+- [x] LINE SDK client wrapper (`lib/line/client.ts`) — `replyToLine`, `pushToLine`, `replyFlexMessage`
+- [x] LIFF integration — `app/liff/itinerary/page.tsx` dark-themed itinerary view + `GET /api/trips/by-code` endpoint; full plan requests return a Flex Message with "ดูแผนเต็ม" button instead of dumping text
+- [x] Hybrid intent classification (regex fast gate + LLM `[SHOW_PLAN]` fallback in the same Gemini call)
 
 ### Phase 4 — Upload & Templates (Completed 2026-04-04)
 
@@ -273,7 +334,7 @@ rag-tripbot/
 - [x] Implement PDF/screenshot upload endpoint (`app/api/upload/route.ts`) — LLM-based text extraction
 - [x] Build upload page with drag-and-drop UI (`app/upload/page.tsx`)
 - [x] Build verification UI — reuses `ItineraryCard` for user review before saving
-- [x] VLM integration — Qwen2.5-VL 7B via Ollama for image OCR; Typhoon2 for PDF text extraction
+- [x] VLM integration — Gemini 2.5 Flash for image OCR and PDF text extraction
 
 ---
 
@@ -282,7 +343,7 @@ rag-tripbot/
 | Question | Options | Notes |
 |---|---|---|
 | ~~Embedding service architecture~~ | ~~Python microservice vs. Next.js API calling Python~~ | **Decided:** Python FastAPI microservice at `services/embedding/` |
-| ~~VLM choice~~ | ~~GPT-4V / Gemini / local model~~ | **Decided:** Qwen2.5-VL 7B via Ollama — multilingual (Thai/English/Japanese) OCR |
-| Hosting | Vercel + Neon vs. self-hosted | Ollama needs GPU — likely a separate server |
+| ~~VLM choice~~ | ~~GPT-4V / Gemini / local model~~ | **Decided:** Gemini 2.5 Flash — handles both text + vision natively |
+| Hosting | Vercel + Neon vs. self-hosted | Gemini is cloud API — no GPU server needed |
 | Auth (Web) | NextAuth / Clerk / none | Depends on whether user accounts are needed |
-| LINE rich messages | Flex Messages vs. plain text | Better UX but more implementation effort |
+| ~~LINE rich messages~~ | ~~Flex Messages vs. plain text~~ | **Decided:** Flex Message with LIFF button for full plan view; plain text for Q&A |

@@ -1,4 +1,4 @@
-import { generateFromOllama } from '../llm/client'
+import { generateText } from '../llm/client'
 
 export interface ExtractedParams {
   month: string
@@ -21,7 +21,7 @@ Return ONLY JSON with keys: month (string), duration (number of days), vibe (arr
 If month or duration cannot be determined, use null.
 Message: "${userMessage}"`
 
-  const raw = await generateFromOllama(prompt)
+  const raw = await generateText(prompt)
   const clean = raw.replace(/```json|```/g, '').trim()
   const parsed = JSON.parse(clean)
 

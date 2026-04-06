@@ -12,7 +12,7 @@ A two-chatbot system for Japan trip planning targeting Thai travelers.
 - **Web App** (Next.js): Planning phase — Hybrid Modular RAG chatbot
 - **LINE Bot**: Execution phase — Context injection chatbot on the go
 
-Target stack: Next.js · Prisma · Neon (PostgreSQL + pgvector) · BGE-M3 · Typhoon2-8B via Ollama · LINE Messaging API
+Target stack: Next.js · Prisma · Neon (PostgreSQL + pgvector) · BGE-M3 · Gemini 2.5 Flash · LINE Messaging API
 
 ---
 
@@ -23,7 +23,7 @@ Target stack: Next.js · Prisma · Neon (PostgreSQL + pgvector) · BGE-M3 · Typ
 | `agents/db-agent.md` | DB Agent | Prisma schema, Neon connection, pgvector table, seed scripts |
 | `agents/rag-agent.md` | RAG Agent | Embedder, retriever, block assembler, LLM prompt pipeline |
 | `agents/web-agent.md` | Web Agent | Next.js UI, API routes (chat, trips, activate), itinerary flow |
-| `agents/line-agent.md` | LINE Agent | Webhook handler, /activate command, context injection pipeline |
+| `agents/line-agent.md` | LINE Agent | Webhook handler, /activate command, context injection pipeline, LIFF itinerary view |
 
 ---
 
@@ -51,12 +51,14 @@ Delegate entirely to `db-agent`. It must complete:
 
 ### Phase 3 — LINE Bot (LINE Agent leads)
 Delegate entirely to `line-agent`. It must complete:
-- [ ] LINE webhook route wired at `/api/line/webhook`
-- [ ] `/activate TKY-492` command stores lineId → tripId in `LineContext`
-- [ ] Context injection pipeline: lineId → Trip JSON → Typhoon2 → LINE reply
-- [ ] Group chat and DM both handled
+- [x] LINE webhook route wired at `/api/line/webhook`
+- [x] `/activate TKY-492` command stores lineId → tripId in `LineContext`
+- [x] Context injection pipeline: lineId → Trip JSON → Gemini Flash → LINE reply
+- [x] Group chat and DM both handled
+- [x] LIFF integration — full plan view via Flex Message button instead of text dump
+- [x] Hybrid intent classification — regex fast gate + LLM fallback for "show plan" detection
 
-**Gate:** Activate command works; a question about the itinerary returns a correct answer.
+**Gate:** Activate command works; a question about the itinerary returns a correct answer. Full plan requests open a LIFF page via Flex Message.
 
 ### Phase 4 — Upload & Templates (Web Agent leads)
 Delegate to `web-agent`. RAG Agent may assist if VLM output needs embedding.
@@ -71,8 +73,8 @@ Delegate to `web-agent`. RAG Agent may assist if VLM output needs embedding.
 
 1. **Separation of concerns** — No agent writes code outside its owned directories (see each agent's `.md`).
 2. **Shared Prisma client** — All agents import from `lib/db/index.ts`. No agent creates its own DB connection.
-3. **Environment variables** — All secrets go in `.env`. No hardcoded keys anywhere.
-4. **Thai language support** — All LLM prompts must be tested with Thai input. Typhoon2-8B is the required model.
+3. **Environment variables** — All secrets go in `.env`. No hardcoded keys anywhere. This includes `LIFF_ID` for the LINE Front-end Framework.
+4. **Thai language support** — All LLM prompts must be tested with Thai input. Gemini 2.5 Flash is the required model.
 5. **Itinerary JSON is the contract** — The shape of the itinerary JSON must be agreed on in Phase 1 and never changed without updating all agents.
 6. **No pgvector logic in the web layer** — Retrieval lives in `lib/rag/retriever.ts` only.
 7. **Update architecture.md after each phase** — When an agent completes its tasks, update the phase checklist in `architecture.md` with completion status and date. This keeps the architecture doc in sync with actual progress.

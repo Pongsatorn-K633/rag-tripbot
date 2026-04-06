@@ -1,6 +1,5 @@
-import { generateFromOllama } from '../llm/client'
-import { embedText } from '../rag/embedder'
-import { searchWeb } from '../rag/web-search'
+import { generateText } from '../llm/client'
+import { generateWithSearch } from '../rag/web-search'
 import { prisma } from '../db'
 
 interface Itinerary {
@@ -28,11 +27,15 @@ function needsEnrichment(answer: string): boolean {
 }
 
 const FULL_PLAN_PATTERNS = [
+  // Thai — clear "show me the plan" intent
   /ขอ(ดู)?(แผน|แพลน)/, /(แผน|แพลน)ทั้งหมด/, /ดู(แผน|แพลน)ทั้งหมด/,
-  /ทริปนี้ไปไหนบ้าง/, /ขอ(แผน|แพลน)(ท่องเที่ยว|เที่ยว)/, /สรุปทริป/,
-  /ขอดูทริป/, /(แผน|แพลน)การเดินทาง(ทั้งหมด)?$/,
-  /show\s*(me\s*)?(the\s*)?plan/i, /full\s*plan/i, /trip\s*plan\??$/i,
-  /ขอดูทั้งหมด/, /ไปไหนบ้าง$/,
+  /ขอ(แผน|แพลน)(ท่องเที่ยว|เที่ยว)/, /ขอดูทริป/, /ขอดูทั้งหมด/,
+  /(แผน|แพลน)การเดินทาง(ทั้งหมด)?$/, /แผนทั้งหมด/, /ดูทริป/,
+  // English — clear "show me the plan" intent, not "I plan to..."
+  /^plan(\s*(pls|please|plz|thx|thanks))?\s*[?!.]?\s*$/i,
+  /(show|see|view|need|get|give|open)\s*(me\s*)?(the\s*)?(full\s*)?plan/i,
+  /^(my|the|full)\s*plan\s*[?!.]?\s*$/i,
+  /\bitinerary\b/i,
 ]
 
 function isFullPlanRequest(message: string): boolean {
@@ -40,7 +43,7 @@ function isFullPlanRequest(message: string): boolean {
   return FULL_PLAN_PATTERNS.some((p) => p.test(trimmed))
 }
 
-function formatItinerary(itinerary: Itinerary): string {
+export function formatItinerary(itinerary: Itinerary): string {
   const lines: string[] = []
   lines.push(itinerary.title ?? 'แผนการเดินทาง')
   lines.push(`${itinerary.totalDays ?? '?'} วัน | ${itinerary.season ?? ''}`)
@@ -59,41 +62,6 @@ function formatItinerary(itinerary: Itinerary): string {
   return lines.join('\n').trim()
 }
 
-async function fetchExtraContext(question: string): Promise<string> {
-  // Run pgvector search and Tavily in parallel
-  const [blocks, webResults] = await Promise.all([
-    searchBlocks(question),
-    searchWeb(`Japan ${question.slice(0, 100)}`),
-  ])
-
-  const parts: string[] = []
-
-  if (blocks.length > 0) {
-    parts.push('ข้อมูลจากฐานข้อมูล:\n' + blocks.map((b) => b.content).join('\n---\n'))
-  }
-
-  if (webResults.length > 0) {
-    parts.push('ข้อมูลล่าสุดจากเว็บ:\n' + webResults.map((r) => `${r.title}: ${r.content}`).join('\n'))
-  }
-
-  return parts.join('\n\n')
-}
-
-async function searchBlocks(query: string): Promise<{ content: string }[]> {
-  try {
-    const embedding = await embedText(query)
-    const vectorStr = `[${embedding.join(',')}]`
-    return await prisma.$queryRaw<{ content: string }[]>`
-      SELECT content
-      FROM itinerary_blocks
-      WHERE 1 - (embedding <=> ${vectorStr}::vector) > 0.3
-      ORDER BY embedding <=> ${vectorStr}::vector
-      LIMIT 3
-    `
-  } catch {
-    return []
-  }
-}
 
 export interface ChatMessage {
   role: 'user' | 'bot'
@@ -105,28 +73,40 @@ const MAX_HISTORY = 10  // keep last 10 messages (5 pairs)
 export interface AnswerResult {
   answer: string
   needsFollowUp: boolean  // true = fast answer was insufficient, enriched answer coming
+  liffView?: {            // set when user asks for full plan — sends Flex Message with LIFF link
+    title: string
+    totalDays: number
+    season: string
+    shareCode: string
+  }
 }
 
 // Quick first pass — answers from itinerary only
 export async function answerWithContext(
   userQuestion: string,
   itineraryJson: object,
-  chatHistory: ChatMessage[] = []
+  chatHistory: ChatMessage[] = [],
+  shareCode?: string | null
 ): Promise<AnswerResult> {
-  // Step 1: Classify intent — is this a "show full plan" request?
-  const wantsFullPlan = isFullPlanRequest(userQuestion)
+  const itinerary = itineraryJson as Itinerary
 
-  if (wantsFullPlan) {
-    return { answer: formatItinerary(itineraryJson as Itinerary), needsFollowUp: false }
+  // Fast gate: regex catches clean "show plan" requests (0 API calls)
+  if (isFullPlanRequest(userQuestion)) {
+    return buildLiffOrTextResult(itinerary, shareCode)
   }
 
-  // Step 2: Try answering from itinerary alone (fast path)
+  // Gemini call: classify intent + answer in one shot
   const recentHistory = chatHistory.slice(-MAX_HISTORY)
   const fastPrompt = buildContextPrompt(userQuestion, itineraryJson, '', recentHistory)
-  const fastAnswer = await generateFromOllama(fastPrompt)
+  const fastAnswer = await generateText(fastPrompt)
   const trimmed = fastAnswer.trim()
 
-  // Step 3: Check if the answer indicates info is not in the plan
+  // Gemini classified as "show plan" request (catches typos, fuzzy intent)
+  if (trimmed === '[SHOW_PLAN]') {
+    return buildLiffOrTextResult(itinerary, shareCode)
+  }
+
+  // Check if the answer indicates info is not in the plan
   if (needsEnrichment(trimmed)) {
     return { answer: trimmed, needsFollowUp: true }
   }
@@ -134,23 +114,37 @@ export async function answerWithContext(
   return { answer: trimmed, needsFollowUp: false }
 }
 
-// Second pass — enrich with pgvector + Tavily, only called when needed
+function buildLiffOrTextResult(itinerary: Itinerary, shareCode?: string | null): AnswerResult {
+  if (shareCode) {
+    return {
+      answer: '',
+      needsFollowUp: false,
+      liffView: {
+        title: itinerary.title ?? 'แผนการเดินทาง',
+        totalDays: itinerary.totalDays ?? itinerary.days?.length ?? 0,
+        season: itinerary.season ?? '',
+        shareCode,
+      },
+    }
+  }
+  // Fallback if no shareCode — send text
+  return { answer: formatItinerary(itinerary), needsFollowUp: false }
+}
+
+// Second pass — single Gemini call with Google Search grounding + persona
 export async function answerWithEnrichedContext(
   userQuestion: string,
   itineraryJson: object,
   chatHistory: ChatMessage[] = []
 ): Promise<string> {
-  const extraContext = await fetchExtraContext(userQuestion)
   const noResults = 'ขออภัยครับ ผมค้นหาข้อมูลจากแหล่งภายนอกแล้ว แต่ไม่พบข้อมูลที่ตรงกับคำถามนี้ครับ ลองถามใหม่ในมุมอื่นได้นะครับ'
-  if (!extraContext) return noResults
 
   const recentHistory = chatHistory.slice(-MAX_HISTORY)
-  const enrichedPrompt = buildEnrichedPrompt(userQuestion, itineraryJson, extraContext, recentHistory)
-  const enrichedAnswer = await generateFromOllama(enrichedPrompt)
-  const trimmed = enrichedAnswer.trim()
+  const prompt = buildEnrichedPrompt(userQuestion, itineraryJson, recentHistory)
+  const answer = await generateWithSearch(prompt)
+  const trimmed = answer.trim()
 
-  // If LLM still couldn't answer, override with a clear message
-  if (needsEnrichment(trimmed)) return noResults
+  if (!trimmed || needsEnrichment(trimmed)) return noResults
   return trimmed
 }
 
@@ -172,7 +166,7 @@ export async function saveChatHistory(
 
   await prisma.lineContext.update({
     where: { lineId },
-    data: { chatHistory: trimmed },
+    data: { chatHistory: trimmed as unknown as import('@prisma/client').Prisma.InputJsonValue },
   })
 }
 
@@ -193,7 +187,14 @@ function buildContextPrompt(
     : ''
 
   return `คุณคือไกด์ท่องเที่ยวญี่ปุ่นส่วนตัว พูดเป็นมิตร สุภาพ ใช้คำลงท้ายเช่น "ครับ/นะครับ"
+
+ขั้นตอนที่ 1 — จำแนกความต้องการ:
+- ถ้าผู้ใช้ต้องการ "เปิดดู" แผนการเดินทางทั้งหมด (เช่น ขอดูแผน, ขอแพลน, show plan, need plan, plna pls, แม้สะกดผิด) → ตอบเพียงคำว่า [SHOW_PLAN] เท่านั้น ห้ามตอบอย่างอื่น
+- ถ้าผู้ใช้ถามคำถามเกี่ยวกับทริป (รวมถึงสรุป, แนะนำ, ถามรายละเอียด, สรุปทริป) → ไปขั้นตอนที่ 2
+
+ขั้นตอนที่ 2 — ตอบคำถาม:
 ตอบกระชับแต่ให้ครบถ้วนเป็นธรรมชาติ (2-4 ประโยค) อย่าตอบแค่คำเดียว
+ห้ามขึ้นต้นด้วยคำทักทายเช่น "สวัสดีครับ" — ตอบคำถามตรงๆ เลย
 
 กฎสำคัญ:
 - ตอบจากแผนการเดินทางและข้อมูลเพิ่มเติมที่ให้มาเท่านั้น
@@ -211,7 +212,6 @@ ${JSON.stringify(itinerary)}${extraSection}${historySection}
 function buildEnrichedPrompt(
   question: string,
   itinerary: object,
-  extraContext: string,
   chatHistory: ChatMessage[] = []
 ): string {
   const historySection = chatHistory.length > 0
@@ -222,18 +222,16 @@ function buildEnrichedPrompt(
 
   return `คุณคือไกด์ท่องเที่ยวญี่ปุ่นส่วนตัว พูดเป็นมิตร สุภาพ ใช้คำลงท้ายเช่น "ครับ/นะครับ"
 ตอบกระชับแต่ให้ครบถ้วนเป็นธรรมชาติ (2-4 ประโยค) อย่าตอบแค่คำเดียว
+ห้ามขึ้นต้นด้วยคำทักทายเช่น "สวัสดีครับ" — ตอบคำถามตรงๆ เลย
 
-คำถามนี้ไม่มีในแผนการเดินทาง แต่เราค้นหาข้อมูลเพิ่มเติมมาให้แล้ว
-- ตอบจากข้อมูลเพิ่มเติมที่ค้นหามาเป็นหลัก
-- ห้ามแต่งเรื่องหรือเดาข้อมูลที่ไม่มีในข้อมูลที่ให้มา
-- ถ้าข้อมูลที่ค้นมายังตอบไม่ได้ ให้ตอบว่า "ไม่มีข้อมูล"
+คำถามนี้ไม่มีในแผนการเดินทางด้านล่าง ให้ค้นหาจาก Google Search แล้วตอบ
+- ตอบจากข้อมูลที่ค้นหาจากเว็บเป็นหลัก
+- ห้ามแต่งเรื่องหรือเดาข้อมูลที่ไม่พบจากการค้นหา
+- ถ้าค้นหาแล้วยังตอบไม่ได้ ให้ตอบว่า "ไม่มีข้อมูล"
 - ใช้บทสนทนาก่อนหน้าเพื่อเข้าใจบริบท
 
 แผนการเดินทาง (อ้างอิง):
-${JSON.stringify(itinerary)}
-
-ข้อมูลที่ค้นหามา:
-${extraContext}${historySection}
+${JSON.stringify(itinerary)}${historySection}
 
 คำถาม: ${question}`
 }

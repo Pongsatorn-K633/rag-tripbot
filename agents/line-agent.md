@@ -13,15 +13,19 @@ app/
   api/
     line/
       webhook/route.ts    ← Main webhook handler (you own this entirely)
+    trips/
+      by-code/route.ts    ← GET /api/trips/by-code?shareCode=XXX (returns trip itinerary JSON for LIFF)
+  liff/
+    itinerary/page.tsx    ← LIFF page — fetches trip by shareCode, renders day-by-day accordion (dark theme)
 lib/
   line/
-    client.ts             ← LINE SDK wrapper (send messages)
+    client.ts             ← LINE SDK wrapper (replyToLine, pushToLine, replyFlexMessage)
     parser.ts             ← Parse incoming webhook events
-    injector.ts           ← Build context-injected prompt from Trip JSON
+    injector.ts           ← Build context-injected prompt from Trip JSON + hybrid intent classification
 ```
 
 **Do NOT touch:** `app/page.tsx`, `app/chat/`, `lib/rag/`, `lib/db/schema.prisma`,
-`prisma/`, `app/api/chat/`, `app/api/trips/`, `app/api/activate/`
+`prisma/`, `app/api/chat/`, `app/api/activate/`
 
 ---
 
@@ -30,7 +34,7 @@ lib/
 Before starting, verify with the orchestrator that Phase 2 is complete:
 - `LineContext` table exists in Neon (DB Agent's work)
 - `lib/db/index.ts` exports `prisma` (DB Agent's work)
-- `lib/llm/client.ts` exports `generateFromOllama` (RAG Agent's work)
+- `lib/llm/client.ts` exports `generateText` (RAG Agent's work)
 
 ---
 
@@ -40,6 +44,7 @@ Add to `.env`:
 ```env
 LINE_CHANNEL_SECRET=your_channel_secret
 LINE_CHANNEL_ACCESS_TOKEN=your_channel_access_token
+LIFF_ID=your_liff_id
 ```
 
 Install LINE SDK:
@@ -58,7 +63,7 @@ Enable: Webhooks ON, Auto-reply OFF, Greeting messages OFF
 ## LINE SDK Client (`lib/line/client.ts`)
 
 ```typescript
-import { Client, Message } from '@line/bot-sdk'
+import { Client, Message, FlexMessage } from '@line/bot-sdk'
 
 const lineClient = new Client({
   channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN!,
@@ -83,7 +88,17 @@ export async function pushToLine(
     text,
   })
 }
+
+// Send a Flex Message with a button that opens a LIFF page
+export async function replyFlexMessage(
+  replyToken: string,
+  flexContent: FlexMessage
+): Promise<void> {
+  await lineClient.replyMessage(replyToken, flexContent)
+}
 ```
+
+The `replyFlexMessage()` function is used when the user requests to view the full plan. The webhook handler builds a Flex Message with a "ดูแผนเต็ม" button that opens the LIFF itinerary page.
 
 ---
 
@@ -124,34 +139,57 @@ export function parseEvent(event: WebhookEvent): ParsedEvent | null {
 
 ## Context Injector (`lib/line/injector.ts`)
 
-This is the core of the LINE bot — it takes the stored itinerary JSON and injects it
-into the LLM prompt so the bot only answers within the trip context.
+This is the core of the LINE bot — it takes the stored itinerary JSON and answers
+questions using a two-pass strategy with **hybrid intent classification**:
+
+### Hybrid Intent Classification (`isFullPlanRequest`)
+
+Uses a two-layer approach to detect "show full plan" requests:
+
+1. **Regex fast gate** — catches clean requests like "ขอดูแผน", "plan please", "itinerary" with 0 API calls.
+2. **LLM fallback** — if regex does not match, the Gemini prompt includes intent classification as Step 1. If Gemini detects a "show plan" intent (even with typos like "plna pls"), it returns `[SHOW_PLAN]` token. Otherwise it proceeds to answer the question normally in Step 2. This is done in the SAME Gemini call — no extra API cost.
+
+The prompt structure:
+- **Step 1: จำแนกความต้องการ** — classify if user wants to VIEW the full plan -> `[SHOW_PLAN]`
+- **Step 2: ตอบคำถาม** — answer the question from itinerary
+
+Note: "สรุปทริป" (trip summary) goes to Step 2 (Gemini answers), NOT treated as a full plan view request.
+
+### Answer Strategies
+
+1. **Full plan request detected** (`answerWithContext` returns `liffView` object): The webhook handler sends a Flex Message with a "ดูแผนเต็ม" button that opens the LIFF itinerary page — no text dump of the full itinerary.
+2. **Fast path** (`answerWithContext`): Answers from the itinerary JSON only using `generateText()`. Returns `needsFollowUp: true` if the answer contains fallback phrases (e.g., "ไม่มีข้อมูลในแผน").
+3. **Enriched path** (`answerWithEnrichedContext`): A single Gemini 2.5 Flash call via `generateWithSearch()` from `lib/rag/web-search.ts` — uses Google Search grounding with the persona prompt built in. No separate web search step needed.
 
 ```typescript
-import { generateFromOllama } from '../llm/client'
+import { generateText } from '../llm/client'
+import { generateWithSearch } from '../rag/web-search'
 
+// Returns liffView when user wants full plan, otherwise answers normally
 export async function answerWithContext(
   userQuestion: string,
-  itineraryJson: object
+  itineraryJson: object,
+  chatHistory: ChatMessage[] = []
+): Promise<AnswerResult> {
+  // Step 1: Regex fast gate for full plan requests
+  // Step 2: If no regex match, LLM prompt includes intent classification
+  //         — returns { liffView: { shareCode } } if [SHOW_PLAN] detected
+  //         — returns { answer, needsFollowUp } otherwise
+}
+
+// Enriched path — single Gemini call with Google Search grounding
+export async function answerWithEnrichedContext(
+  userQuestion: string,
+  itineraryJson: object,
+  chatHistory: ChatMessage[] = []
 ): Promise<string> {
-  const prompt = buildContextPrompt(userQuestion, itineraryJson)
-  const answer = await generateFromOllama(prompt)
+  const prompt = buildEnrichedPrompt(userQuestion, itineraryJson, chatHistory)
+  const answer = await generateWithSearch(prompt)  // one API call
   return answer.trim()
 }
-
-function buildContextPrompt(question: string, itinerary: object): string {
-  return `คุณคือไกด์ท่องเที่ยวส่วนตัวที่เชี่ยวชาญเรื่องญี่ปุ่น
-คุณตอบคำถามได้เฉพาะจากแผนการเดินทางด้านล่างเท่านั้น
-ถ้าถามเรื่องที่ไม่อยู่ในแผน ให้บอกว่าไม่มีข้อมูลในแผนของคุณ และแนะนำให้ดูแผนอีกครั้ง
-
-แผนการเดินทาง:
-${JSON.stringify(itinerary, null, 2)}
-
-คำถาม: ${question}
-
-ตอบเป็นภาษาไทย กระชับ ชัดเจน ไม่เกิน 3 ประโยค:`
-}
 ```
+
+`buildEnrichedPrompt()` includes the persona and instructs Gemini to search Google directly — no `extraContext` parameter needed.
 
 ---
 
@@ -164,8 +202,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { middleware, WebhookEvent } from '@line/bot-sdk'
 import { prisma } from '@/lib/db'
 import { parseEvent } from '@/lib/line/parser'
-import { replyToLine } from '@/lib/line/client'
-import { answerWithContext } from '@/lib/line/injector'
+import { replyToLine, pushToLine, replyFlexMessage } from '@/lib/line/client'
+import { answerWithContext, answerWithEnrichedContext } from '@/lib/line/injector'
 
 const lineConfig = {
   channelSecret: process.env.LINE_CHANNEL_SECRET!,
@@ -259,8 +297,49 @@ async function handleQuestion(lineId: string, replyToken: string, text: string) 
     return
   }
 
-  const answer = await answerWithContext(text, context.trip.itinerary as object)
-  await replyToLine(replyToken, answer)
+  const result = await answerWithContext(text, context.trip.itinerary as object)
+
+  // LIFF view path — user wants to see the full plan
+  if (result.liffView) {
+    const liffUrl = `https://liff.line.me/${process.env.LIFF_ID}?shareCode=${result.liffView.shareCode}`
+    await replyFlexMessage(replyToken, {
+      type: 'flex',
+      altText: 'ดูแผนเต็ม',
+      contents: {
+        type: 'bubble',
+        body: {
+          type: 'box',
+          layout: 'vertical',
+          contents: [
+            { type: 'text', text: context.trip.title, weight: 'bold', size: 'lg' },
+            { type: 'text', text: 'กดปุ่มเพื่อดูแผนเต็มแบบสวยงาม', size: 'sm', color: '#888888', margin: 'md' },
+          ],
+        },
+        footer: {
+          type: 'box',
+          layout: 'vertical',
+          contents: [
+            {
+              type: 'button',
+              style: 'primary',
+              action: { type: 'uri', label: 'ดูแผนเต็ม', uri: liffUrl },
+            },
+          ],
+        },
+      },
+    })
+    return
+  }
+
+  // Two-pass: fast answer from itinerary, then enriched if needed
+  const { answer, needsFollowUp } = result
+  await replyToLine(replyToken, answer!)
+
+  // If fast answer was insufficient, send enriched answer as follow-up
+  if (needsFollowUp) {
+    const enriched = await answerWithEnrichedContext(text, context.trip.itinerary as object)
+    await pushToLine(context.lineId, enriched)
+  }
 }
 ```
 
@@ -283,6 +362,9 @@ Test commands to run in LINE:
 1. `/activate TKY-492` → should reply with trip title confirmation
 2. `วันแรกไปที่ไหน?` → should answer from itinerary JSON
 3. `แนะนำร้านอาหารในโตเกียว` → should reply it's not in the itinerary
+4. `ขอดูแผน` → should send a Flex Message with "ดูแผนเต็ม" button (opens LIFF page)
+5. `plna pls` → should also trigger LIFF view (LLM fallback catches typos)
+6. `สรุปทริป` → should NOT open LIFF — Gemini answers with a summary instead
 
 ---
 
@@ -295,6 +377,12 @@ Test commands to run in LINE:
 - [ ] Out-of-scope question returns graceful Thai fallback
 - [ ] Both DM (user source) and group chat (group source) work
 - [ ] LINE Developers Console shows 200 responses in webhook log
+- [ ] "ขอดูแผน" sends Flex Message with LIFF button (regex fast gate)
+- [ ] Typos like "plna pls" also trigger LIFF view (LLM fallback)
+- [ ] "สรุปทริป" is answered by Gemini, NOT treated as full plan view
+- [ ] LIFF page at `/liff/itinerary` loads and renders the itinerary in dark-themed accordion UI
+- [ ] `GET /api/trips/by-code?shareCode=XXX` returns trip itinerary JSON
+- [ ] `LIFF_ID` is set in `.env`
 
 ---
 
@@ -304,6 +392,7 @@ Test commands to run in LINE:
 - Never store the LINE channel secret in code — only in `.env`
 - Always validate the LINE signature before processing any event
 - Import `prisma` from `@/lib/db` — never create a new PrismaClient
-- Import `generateFromOllama` from `@/lib/llm/client` — never call Ollama directly
+- Import `generateText` from `@/lib/llm/client` for itinerary-only answers
+- Import `generateWithSearch` from `@/lib/rag/web-search` for enriched answers (single Gemini call with Google Search grounding)
 - Keep LLM responses under 300 characters for LINE readability — add instruction in prompt
 - Do not modify `lib/rag/` — the LINE bot uses context injection only, not RAG retrieval

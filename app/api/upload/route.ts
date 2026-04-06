@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateFromOllama, generateFromVision } from '@/lib/llm/client'
+import { generateText, generateFromVision } from '@/lib/llm/client'
 
 // ── Itinerary JSON contract shape ──────────────────────────────────────────
 // Must match the project-wide contract defined in CLAUDE.md.
@@ -66,19 +66,19 @@ export async function POST(req: NextRequest) {
       const imageBase64 = buffer.toString('base64')
       raw = await generateFromVision(EXTRACTION_PROMPT_TEMPLATE('Extract the itinerary from this image.'), imageBase64)
     } else {
-      // PDF or text: extract UTF-8 text and send to Typhoon2
+      // PDF or text: extract UTF-8 text and send to Gemini
       let textContent = ''
       try {
         textContent = buffer.toString('utf-8')
       } catch {
         textContent = `[Could not read file: ${file.name}]`
       }
-      raw = await generateFromOllama(EXTRACTION_PROMPT_TEMPLATE(textContent))
+      raw = await generateText(EXTRACTION_PROMPT_TEMPLATE(textContent))
     }
   } catch (err) {
     console.error('[/api/upload] LLM call error:', err)
     return NextResponse.json(
-      { error: 'Failed to process file. Make sure Ollama is running with the required models.' },
+      { error: 'Failed to process file. Check that GEMINI_API_KEY is configured.' },
       { status: 500 },
     )
   }

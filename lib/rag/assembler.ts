@@ -1,6 +1,6 @@
 import { retrieveBlocks, RetrievalParams, ItineraryBlock } from './retriever'
 import { searchWeb } from './web-search'
-import { generateFromOllama } from '../llm/client'
+import { generateText } from '../llm/client'
 
 export async function assembleItinerary(
   params: RetrievalParams,
@@ -21,7 +21,7 @@ export async function assembleItinerary(
     : ''
 
   const prompt = buildAssemblyPrompt(params, blocksText, webText, userMessage)
-  const raw = await generateFromOllama(prompt)
+  const raw = await generateText(prompt)
 
   // Strip markdown fences if model wraps output
   const clean = raw.replace(/```json|```/g, '').trim()

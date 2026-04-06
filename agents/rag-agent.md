@@ -15,7 +15,7 @@ lib/
     retriever.ts      ← pgvector query + metadata filtering
     assembler.ts      ← Block combination logic + LLM prompt
   llm/
-    client.ts         ← Typhoon2-8B via Ollama HTTP client
+    client.ts         ← Gemini 2.5 Flash via @google/genai SDK
 services/
   embedding/
     main.py             ← FastAPI embedding microservice
@@ -38,7 +38,7 @@ User Query
 [retriever.ts] Query pgvector with metadata filters
     │           (type, duration, season, geographic chain)
     ▼
-[assembler.ts] Combine blocks → build prompt → call Typhoon2
+[assembler.ts] Combine blocks → build prompt → call Gemini Flash
     │
     ▼
 Return: structured Itinerary JSON
@@ -210,7 +210,7 @@ export async function retrieveBlocks(params: RetrievalParams): Promise<Itinerary
 
 ```typescript
 import { retrieveBlocks, RetrievalParams, ItineraryBlock } from './retriever'
-import { generateFromOllama } from '../llm/client'
+import { generateText } from '../llm/client'
 
 export async function assembleItinerary(
   params: RetrievalParams,
@@ -222,7 +222,7 @@ export async function assembleItinerary(
   ).join('\n\n---\n\n')
 
   const prompt = buildAssemblyPrompt(params, blocksText, userMessage)
-  const raw = await generateFromOllama(prompt)
+  const raw = await generateText(prompt)
 
   // Strip markdown fences if model wraps output
   const clean = raw.replace(/```json|```/g, '').trim()
@@ -271,32 +271,47 @@ Reminder: Thai citizens do not need a visa for Japan stays under 15 days.`
 ## LLM Client (`lib/llm/client.ts`)
 
 ```typescript
-const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434'
-const MODEL = 'scb10x/llama3.1-typhoon2-8b-instruct'
+import { GoogleGenAI } from '@google/genai'
 
-export async function generateFromOllama(prompt: string): Promise<string> {
-  const res = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: MODEL,
-      prompt,
-      stream: false,
-      options: {
-        temperature: 0.3,   // Low temp for structured JSON output
-        num_predict: 2048,
-      },
-    }),
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? ''
+const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY })
+
+export async function generateText(prompt: string): Promise<string> {
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      temperature: 0.3,
+      maxOutputTokens: 2048,
+    },
   })
-  if (!res.ok) throw new Error(`Ollama error: ${res.status}`)
-  const data = await res.json()
-  return data.response
+  return response.text ?? ''
+}
+
+export async function generateFromVision(prompt: string, imageBase64: string): Promise<string> {
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: [
+      {
+        role: 'user',
+        parts: [
+          { text: prompt },
+          { inlineData: { mimeType: 'image/jpeg', data: imageBase64 } },
+        ],
+      },
+    ],
+    config: {
+      temperature: 0.3,
+      maxOutputTokens: 2048,
+    },
+  })
+  return response.text ?? ''
 }
 ```
 
 Add to `.env`:
 ```env
-OLLAMA_BASE_URL=http://localhost:11434
+GEMINI_API_KEY=your_gemini_api_key
 ```
 
 ---
@@ -327,7 +342,7 @@ Return ONLY JSON with keys: month (string), duration (number of days), vibe (arr
 If month or duration cannot be determined, use null.
 Message: "${userMessage}"`
 
-  const raw = await generateFromOllama(prompt)
+  const raw = await generateText(prompt)
   const clean = raw.replace(/```json|```/g, '').trim()
   const parsed = JSON.parse(clean)
 
@@ -348,7 +363,7 @@ Message: "${userMessage}"`
 - [ ] `embedText("test")` returns array of 1024 numbers
 - [ ] Retriever finds core block for a 7-day December query
 - [ ] Assembler returns valid JSON matching the itinerary contract
-- [ ] Ollama is running with the model pulled: `ollama pull scb10x/llama3.1-typhoon2-8b-instruct`
+- [ ] `GEMINI_API_KEY` is set in `.env` and Gemini 2.5 Flash is accessible
 - [ ] Thai input works end-to-end
 
 ---
