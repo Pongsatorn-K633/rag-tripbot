@@ -37,16 +37,16 @@ function ItineraryContent() {
     }
   }
   const [itinerary, setItinerary] = useState<Itinerary | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  // Derive initial state from shareCode so we don't have to setState
+  // synchronously inside the effect (which the React 19 lint rule forbids).
+  const [loading, setLoading] = useState<boolean>(() => Boolean(shareCode))
+  const [error, setError] = useState<string | null>(() =>
+    shareCode ? null : 'ไม่พบรหัสแผนการเดินทาง',
+  )
   const [openDay, setOpenDay] = useState<number | null>(1)
 
   useEffect(() => {
-    if (!shareCode) {
-      setError('ไม่พบรหัสแผนการเดินทาง')
-      setLoading(false)
-      return
-    }
+    if (!shareCode) return
 
     fetch(`/api/trips/by-code?shareCode=${encodeURIComponent(shareCode)}`)
       .then((res) => {
@@ -94,10 +94,10 @@ function ItineraryContent() {
 
       {/* Day list */}
       <div className="divide-y" style={{ borderColor: '#1a2744' }}>
-        {itinerary.days.map((day) => {
+        {itinerary.days.map((day, idx) => {
           const isOpen = openDay === day.day
           return (
-            <div key={day.day}>
+            <div key={`${idx}-${day.day}`}>
               <button
                 className="w-full text-left px-5 py-4 flex items-center justify-between"
                 style={{ backgroundColor: isOpen ? '#1a2744' : '#0f1a2e' }}
