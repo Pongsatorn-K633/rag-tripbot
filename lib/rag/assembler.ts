@@ -21,7 +21,7 @@ export async function assembleItinerary(
     : ''
 
   const prompt = buildAssemblyPrompt(params, blocksText, webText, userMessage)
-  const raw = await generateText(prompt)
+  const raw = await generateText(prompt, { maxOutputTokens: 8192 })
 
   // Strip markdown fences if model wraps output
   const clean = raw.replace(/```json|```/g, '').trim()

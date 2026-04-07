@@ -21,7 +21,7 @@ Return ONLY JSON with keys: month (string), duration (number of days), vibe (arr
 If month or duration cannot be determined, use null.
 Message: "${userMessage}"`
 
-  const raw = await generateText(prompt)
+  const raw = await generateText(prompt, { maxOutputTokens: 4096 })
   const clean = raw.replace(/```json|```/g, '').trim()
   const parsed = JSON.parse(clean)
 

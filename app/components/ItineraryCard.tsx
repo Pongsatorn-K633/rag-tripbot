@@ -52,10 +52,10 @@ export default function ItineraryCard({
 
       {/* Day accordion */}
       <div className="divide-y divide-gray-100 bg-white">
-        {itinerary.days.map((day) => {
+        {itinerary.days.map((day, idx) => {
           const isOpen = openDay === day.day
           return (
-            <div key={day.day}>
+            <div key={`${idx}-${day.day}`}>
               {/* Day header — clickable toggle */}
               <button
                 className="w-full text-left px-5 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"

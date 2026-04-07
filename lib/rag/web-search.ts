@@ -39,7 +39,7 @@ export async function generateWithSearch(prompt: string): Promise<string> {
         config: {
           tools: [{ googleSearch: {} }],
           temperature: 0.3,
-          maxOutputTokens: 2048,
+          maxOutputTokens: 4096,
         },
       }),
       new Promise<never>((_, reject) =>

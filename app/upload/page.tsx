@@ -35,14 +35,35 @@ export default function UploadPage() {
   const [itinerary, setItinerary] = useState<Itinerary | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [shareCode, setShareCode] = useState<string | null>(null)
+  const [debug, setDebug] = useState<{
+    kind?: string
+    fileName?: string
+    fileType?: string
+    fileSize?: number
+    sheetText?: string | null
+    geminiRaw?: string
+  } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // ── File processing ──────────────────────────────────────────────────────
 
   async function processFile(file: File) {
-    const allowed = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg']
-    if (!allowed.includes(file.type) && !file.name.match(/\.(pdf|png|jpe?g)$/i)) {
-      setError('รองรับเฉพาะไฟล์ PDF, PNG หรือ JPG เท่านั้น')
+    const allowedMime = [
+      'application/pdf',
+      'image/png',
+      'image/jpeg',
+      'image/jpg',
+      'image/webp',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+    ]
+    const allowedExt = /\.(pdf|png|jpe?g|webp|xlsx|xls)$/i
+    if (!allowedMime.includes(file.type) && !allowedExt.test(file.name)) {
+      setError('รองรับเฉพาะไฟล์ PDF, รูปภาพ (PNG/JPG/WebP), หรือ Excel (.xlsx/.xls)')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError('ไฟล์ใหญ่เกิน 10 MB')
       return
     }
 
@@ -54,12 +75,12 @@ export default function UploadPage() {
       formData.append('file', file)
 
       const res = await fetch('/api/upload', { method: 'POST', body: formData })
+      const body = await res.json().catch(() => ({}))
+      if (body?.debug) setDebug(body.debug)
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
         throw new Error(body.error ?? 'อัปโหลดไม่สำเร็จ')
       }
-      const { itinerary: extracted } = await res.json()
-      setItinerary(extracted)
+      setItinerary(body.itinerary)
       setPageState('review')
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'เกิดข้อผิดพลาด'
@@ -144,6 +165,7 @@ export default function UploadPage() {
     setItinerary(null)
     setShareCode(null)
     setError(null)
+    setDebug(null)
     setPageState('idle')
   }
 
@@ -194,6 +216,53 @@ export default function UploadPage() {
           </div>
         )}
 
+        {/* Debug panel — visible whenever debug info exists, even on error */}
+        {error && debug && (
+          <details
+            open
+            className="mb-4 rounded-lg overflow-hidden"
+            style={{ backgroundColor: '#0f1730', border: '1px solid #2a4070' }}
+          >
+            <summary
+              className="px-4 py-3 text-sm font-semibold cursor-pointer select-none"
+              style={{ color: '#c9a84c' }}
+            >
+              🔍 Debug — what the model received & returned
+            </summary>
+            <div className="px-4 py-3 space-y-3 text-xs" style={{ color: '#a0aec0' }}>
+              <div>
+                <span style={{ color: '#718096' }}>File:</span>{' '}
+                <code>{debug.fileName}</code> ({debug.fileType || 'unknown'},{' '}
+                {debug.fileSize?.toLocaleString()} B) → kind=<b>{debug.kind}</b>
+              </div>
+              {debug.sheetText && (
+                <div>
+                  <div className="mb-1" style={{ color: '#c9a84c' }}>
+                    SheetJS extracted text:
+                  </div>
+                  <pre
+                    className="p-3 rounded overflow-auto max-h-64 whitespace-pre-wrap break-words"
+                    style={{ backgroundColor: '#0a1224', color: '#cbd5e0' }}
+                  >
+                    {debug.sheetText}
+                  </pre>
+                </div>
+              )}
+              <div>
+                <div className="mb-1" style={{ color: '#c9a84c' }}>
+                  Gemini raw output ({debug.geminiRaw?.length ?? 0} chars):
+                </div>
+                <pre
+                  className="p-3 rounded overflow-auto max-h-64 whitespace-pre-wrap break-words"
+                  style={{ backgroundColor: '#0a1224', color: '#cbd5e0' }}
+                >
+                  {debug.geminiRaw || '(empty)'}
+                </pre>
+              </div>
+            </div>
+          </details>
+        )}
+
         {/* Upload zone — shown when idle or uploading */}
         {(pageState === 'idle' || pageState === 'uploading') && (
           <div
@@ -235,7 +304,7 @@ export default function UploadPage() {
                     ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์
                   </p>
                   <p className="text-sm" style={{ color: '#718096' }}>
-                    รองรับ PDF, PNG, JPG — ขนาดสูงสุด 10 MB
+                    รองรับ PDF, รูปภาพ (PNG/JPG/WebP), Excel (.xlsx/.xls) — ขนาดสูงสุด 10 MB
                   </p>
                 </div>
                 <div
@@ -250,7 +319,7 @@ export default function UploadPage() {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".pdf,.png,.jpg,.jpeg"
+              accept=".pdf,.png,.jpg,.jpeg,.webp,.xlsx,.xls"
               className="hidden"
               onChange={handleFileChange}
               disabled={pageState === 'uploading'}
@@ -288,6 +357,50 @@ export default function UploadPage() {
                   onConfirm={handleConfirm}
                   confirmLoading={pageState === 'saving'}
                 />
+                {debug && (
+                  <details
+                    className="mt-4 rounded-lg overflow-hidden"
+                    style={{ backgroundColor: '#0f1730', border: '1px solid #2a4070' }}
+                  >
+                    <summary
+                      className="px-4 py-3 text-sm font-semibold cursor-pointer select-none"
+                      style={{ color: '#c9a84c' }}
+                    >
+                      🔍 Debug — what the model received & returned
+                    </summary>
+                    <div className="px-4 py-3 space-y-3 text-xs" style={{ color: '#a0aec0' }}>
+                      <div>
+                        <span style={{ color: '#718096' }}>File:</span>{' '}
+                        <code>{debug.fileName}</code> ({debug.fileType || 'unknown'},{' '}
+                        {debug.fileSize?.toLocaleString()} B) → kind=<b>{debug.kind}</b>
+                      </div>
+                      {debug.sheetText && (
+                        <div>
+                          <div className="mb-1" style={{ color: '#c9a84c' }}>
+                            SheetJS extracted text (sent to Gemini):
+                          </div>
+                          <pre
+                            className="p-3 rounded overflow-auto max-h-64 whitespace-pre-wrap break-words"
+                            style={{ backgroundColor: '#0a1224', color: '#cbd5e0' }}
+                          >
+                            {debug.sheetText}
+                          </pre>
+                        </div>
+                      )}
+                      <div>
+                        <div className="mb-1" style={{ color: '#c9a84c' }}>
+                          Gemini raw output:
+                        </div>
+                        <pre
+                          className="p-3 rounded overflow-auto max-h-64 whitespace-pre-wrap break-words"
+                          style={{ backgroundColor: '#0a1224', color: '#cbd5e0' }}
+                        >
+                          {debug.geminiRaw}
+                        </pre>
+                      </div>
+                    </div>
+                  </details>
+                )}
                 <button
                   onClick={handleReUpload}
                   disabled={pageState === 'saving'}
@@ -311,16 +424,16 @@ export default function UploadPage() {
               หมายเหตุเกี่ยวกับการวิเคราะห์ไฟล์
             </p>
             <p>
-              ระบบใช้ AI ในการอ่านและแปลงข้อมูลจากไฟล์ที่อัปโหลด —
-              ภาพ (PNG, JPG) และ PDF ใช้ Gemini 2.0 Flash สำหรับวิเคราะห์และสกัดข้อมูล
-              ผลลัพธ์อาจไม่สมบูรณ์ 100% — กรุณาตรวจสอบแผนการเดินทางก่อนบันทึก
+              รูปภาพและ PDF จะถูกส่งให้ Gemini 2.5 Flash อ่านและสกัดข้อมูลโดยตรง (รองรับภาษาไทย)
+              ส่วนไฟล์ Excel (.xlsx/.xls) ระบบจะแปลงเป็นข้อความก่อนแล้วให้ Gemini จัดรูปแบบให้เข้ากับโครงสร้างแผนการเดินทาง
+              ผลลัพธ์อาจไม่สมบูรณ์ 100% — กรุณาตรวจสอบก่อนบันทึก
             </p>
           </div>
         )}
       </div>
 
       <p className="mt-16 text-center text-xs" style={{ color: '#4a5568' }}>
-        Phase 4 · Templates & Upload
+        {/* Phase 4 · Templates & Upload */}
       </p>
     </main>
   )

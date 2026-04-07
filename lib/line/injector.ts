@@ -98,7 +98,7 @@ export async function answerWithContext(
   // Gemini call: classify intent + answer in one shot
   const recentHistory = chatHistory.slice(-MAX_HISTORY)
   const fastPrompt = buildContextPrompt(userQuestion, itineraryJson, '', recentHistory)
-  const fastAnswer = await generateText(fastPrompt)
+  const fastAnswer = await generateText(fastPrompt, { maxOutputTokens: 4096 })
   const trimmed = fastAnswer.trim()
 
   // Gemini classified as "show plan" request (catches typos, fuzzy intent)

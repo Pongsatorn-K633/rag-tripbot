@@ -375,11 +375,11 @@ export default function TemplatesPage() {
           &larr; กลับหน้าแรก
         </Link>
         <Link
-          href="/chat"
+          href="/upload"
           className="text-sm font-medium transition-opacity hover:opacity-70"
           style={{ color: '#a0aec0' }}
         >
-          วางแผนเองด้วย AI &rarr;
+          มีแผนอยู่แล้ว? อัปโหลดที่นี่ &rarr;
         </Link>
       </div>
 
@@ -413,7 +413,7 @@ export default function TemplatesPage() {
 
       {/* Footer */}
       <p className="mt-16 text-center text-xs" style={{ color: '#4a5568' }}>
-        Phase 4 · Templates & Upload
+        {/* Phase 4 · Templates & Upload */}
       </p>
 
       {/* Modal overlay */}

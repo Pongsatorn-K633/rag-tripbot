@@ -28,29 +28,33 @@ export default function Home() {
         ผู้ช่วยวางแผนเที่ยวญี่ปุ่นสำหรับนักเดินทางชาวไทย
       </p>
       <p
-        className="text-center text-sm max-w-xs leading-relaxed mb-10"
+        className="text-center text-sm max-w-xs leading-relaxed mb-5"
         style={{ color: '#718096' }}
       >
         Japan trip planning assistant for Thai travelers — powered by AI
       </p>
 
       {/* CTAs */}
-      <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xs">
-        <Link
-          href="/chat"
-          className="flex-1 text-center rounded-xl py-4 font-semibold text-sm transition-opacity hover:opacity-90"
-          style={{ backgroundColor: '#c9a84c', color: '#1a2744' }}
-        >
-          วางแผนการเดินทาง
-        </Link>
-        <Link
-          href="/templates"
-          className="flex-1 text-center rounded-xl py-4 font-semibold text-sm transition-opacity hover:opacity-80"
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full max-w-xs">
+        <div
+          aria-disabled="true"
+          title="อยู่ระหว่างการปรับปรุง"
+          className="flex-1 text-center rounded-xl py-2 font-semibold text-sm cursor-not-allowed relative"
           style={{
             backgroundColor: 'transparent',
-            color: '#c9a84c',
-            border: '1px solid #c9a84c',
+            color: '#4a5568',
+            border: '1px dashed #4a5568',
           }}
+        >
+          วางแผนการเดินทาง
+          {/* <span className="block text-[10px] font-normal mt-1" style={{ color: '#4a5568' }}>
+            อยู่ระหว่างการปรับปรุง
+          </span> */}
+        </div>
+        <Link
+          href="/templates"
+          className="flex-1 text-center rounded-xl py-2 font-semibold text-sm transition-opacity hover:opacity-90"
+          style={{ backgroundColor: '#c9a84c', color: '#1a2744' }}
         >
           เลือกแพ็คเกจสำเร็จรูป
         </Link>
@@ -67,7 +71,7 @@ export default function Home() {
 
       {/* Footer note */}
       <p className="mt-16 text-xs" style={{ color: '#4a5568' }}>
-        Phase 4 · Templates &amp; Upload
+        Go Go ~
       </p>
     </main>
   )
