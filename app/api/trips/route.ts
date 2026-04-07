@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
 export async function POST(req: NextRequest) {
-  const { userId, title, itinerary } = await req.json()
+  const { userId, title, itinerary, startDate, source } = await req.json()
 
   if (!userId || !title || !itinerary) {
     return NextResponse.json(
@@ -18,7 +18,13 @@ export async function POST(req: NextRequest) {
   })
 
   const trip = await prisma.trip.create({
-    data: { userId, title, itinerary },
+    data: {
+      userId,
+      title,
+      itinerary,
+      startDate: startDate ? new Date(startDate) : undefined,
+      source: source ?? undefined,
+    },
   })
 
   return NextResponse.json({ trip })

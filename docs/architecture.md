@@ -286,7 +286,7 @@ rag-tripbot/
 ├── services/
 │   └── embedding/
 │       └── main.py             # FastAPI embedding microservice
-├── architecture.md             # ← This file
+├── docs/architecture.md        # ← This file
 ├── .env
 ├── package.json
 └── requirements.txt            # Python deps (embedding service)

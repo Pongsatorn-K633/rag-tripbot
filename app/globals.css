@@ -1,1 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Noto Sans Thai", ui-sans-serif, system-ui, sans-serif;
+  --font-headline: "Manrope", "Noto Sans Thai", sans-serif;
+
+  --color-basel-brick: #B43325;
+  --color-briefing-cream: #F8F7F4;
+  --color-zen-black: #231a0e;
+}
+
+@layer base {
+  body {
+    @apply bg-briefing-cream text-zen-black font-sans antialiased;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -1,12 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
-import TemplateCard, { type Itinerary } from '@/app/components/TemplateCard'
+import { motion } from 'motion/react'
+import { ArrowRight } from 'lucide-react'
+import { type Itinerary } from '@/app/components/TemplateCard'
 import ItineraryCard from '@/app/components/ItineraryCard'
 import ActivationBanner from '@/app/components/ActivationBanner'
+import { IMG } from '@/lib/images'
 
-// ── Curated template data ────────────────────────────────────────────────────
+// ── Japan stock images ───────────────────────────────────────────────────────
+
+const TEMPLATE_IMAGES = [IMG.stock1, IMG.stock3, IMG.stock2, IMG.stock4]
+
+// ── Curated template data ─────────────────────────────────────────────────────
 
 const TEMPLATES: (Itinerary & { description: string })[] = [
   {
@@ -173,7 +179,7 @@ const TEMPLATES: (Itinerary & { description: string })[] = [
         day: 1,
         location: 'Kyoto',
         activities: [
-          { time: '08:00', name: 'Philosopher\'s Path Cherry Blossoms', notes: 'ซากุระบานสวยสุดช่วงต้น April' },
+          { time: '08:00', name: "Philosopher's Path Cherry Blossoms", notes: 'ซากุระบานสวยสุดช่วงต้น April' },
           { time: '11:00', name: 'Nanzen-ji Temple Complex' },
           { time: '15:00', name: 'Heian Shrine & Garden' },
           { time: '19:00', name: 'Pontocho Alley Dinner' },
@@ -307,6 +313,7 @@ export default function TemplatesPage() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [shareCode, setShareCode] = useState<string | null>(null)
+  const [startDate, setStartDate] = useState('')
 
   const selectedTemplate = selectedIndex !== null ? TEMPLATES[selectedIndex] : null
 
@@ -315,7 +322,6 @@ export default function TemplatesPage() {
     setSaveState('saving')
 
     try {
-      // Retrieve or create a stable userId in localStorage
       let userId = ''
       if (typeof window !== 'undefined') {
         userId = localStorage.getItem('tripbot_user_id') ?? ''
@@ -325,7 +331,6 @@ export default function TemplatesPage() {
         }
       }
 
-      // Save trip
       const saveRes = await fetch('/api/trips', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -333,12 +338,13 @@ export default function TemplatesPage() {
           userId,
           title: selectedTemplate.title,
           itinerary: selectedTemplate,
+          source: 'template',
+          startDate: startDate || undefined,
         }),
       })
       if (!saveRes.ok) throw new Error('Failed to save trip')
       const { trip } = await saveRes.json()
 
-      // Generate share code — use first city as prefix hint
       const primaryCity = selectedTemplate.days[0]?.location ?? 'JPN'
       const activateRes = await fetch('/api/activate', {
         method: 'POST',
@@ -361,88 +367,85 @@ export default function TemplatesPage() {
     setSelectedIndex(null)
     setSaveState('idle')
     setShareCode(null)
+    setStartDate('')
   }
 
   return (
-    <main className="min-h-screen px-6 py-10" style={{ backgroundColor: '#1a2744' }}>
-      {/* Top nav */}
-      <div className="max-w-5xl mx-auto mb-8 flex items-center justify-between">
-        <Link
-          href="/"
-          className="text-sm font-medium transition-opacity hover:opacity-70"
-          style={{ color: '#c9a84c' }}
-        >
-          &larr; กลับหน้าแรก
-        </Link>
-        <Link
-          href="/upload"
-          className="text-sm font-medium transition-opacity hover:opacity-70"
-          style={{ color: '#a0aec0' }}
-        >
-          มีแผนอยู่แล้ว? อัปโหลดที่นี่ &rarr;
-        </Link>
-      </div>
-
-      {/* Page header */}
-      <div className="max-w-5xl mx-auto mb-10 text-center">
-        <h1 className="text-3xl font-bold mb-2" style={{ color: '#c9a84c' }}>
-          แพ็คเกจสำเร็จรูป
+    <main className="pt-32 pb-24 px-6 max-w-7xl mx-auto">
+      {/* Hero header */}
+      <header className="mb-20">
+        <h1 className="text-5xl md:text-7xl font-headline font-extrabold tracking-tighter text-basel-brick mb-6">
+          Template Gallery
         </h1>
-        <p className="text-base" style={{ color: '#a0aec0' }}>
+        <p className="text-zen-black/70 text-lg max-w-2xl leading-relaxed font-sans">
           เลือกแผนการเดินทางที่คัดสรรแล้ว แล้วปรับแต่งตามต้องการได้เลย
         </p>
-        <p className="text-sm mt-1" style={{ color: '#718096' }}>
+        <p className="text-zen-black/40 text-sm mt-1 font-sans">
           Curated Japan itineraries — pick one and make it yours
         </p>
+      </header>
+
+      {/* Section header */}
+      <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6 border-b-2 border-zen-black/5 pb-8">
+        <div>
+          <span className="text-basel-brick font-extrabold text-sm uppercase tracking-[0.3em] mb-4 block font-headline">Curated Collections</span>
+          <h2 className="text-5xl font-headline font-black tracking-tighter text-zen-black">แพ็คเกจสำเร็จรูป</h2>
+        </div>
       </div>
 
       {/* Template grid */}
-      <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
         {TEMPLATES.map((tpl, idx) => (
-          <TemplateCard
+          <motion.div
             key={idx}
-            template={tpl}
-            onSelect={() => {
+            whileHover={{ y: -10 }}
+            className="group flex flex-col bg-white p-4 rounded-xl shadow-sm hover:shadow-2xl transition-all duration-300 cursor-pointer"
+            onClick={() => {
               setSelectedIndex(idx)
               setSaveState('idle')
               setShareCode(null)
             }}
-          />
+          >
+            <div className="relative aspect-[4/5] overflow-hidden mb-6 bg-briefing-cream rounded-lg">
+              <img
+                alt={tpl.title}
+                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                src={TEMPLATE_IMAGES[idx]}
+              />
+              <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-zen-black/80 to-transparent">
+                <span className="bg-basel-brick text-briefing-cream px-3 py-1 text-[10px] font-black uppercase tracking-widest font-headline">
+                  {tpl.totalDays} DAYS
+                </span>
+              </div>
+            </div>
+            <h3 className="text-2xl font-headline font-bold text-zen-black mb-2">{tpl.title}</h3>
+            <p className="text-zen-black/60 text-sm font-sans leading-relaxed mb-4">{tpl.description}</p>
+            <button className="mt-auto text-basel-brick font-black text-xs uppercase tracking-widest flex items-center gap-2 group-hover:translate-x-2 transition-transform font-headline">
+              PREVIEW <ArrowRight size={14} />
+            </button>
+          </motion.div>
         ))}
       </div>
-
-      {/* Footer */}
-      <p className="mt-16 text-center text-xs" style={{ color: '#4a5568' }}>
-        {/* Phase 4 · Templates & Upload */}
-      </p>
 
       {/* Modal overlay */}
       {selectedTemplate && (
         <div
           className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-10 px-4"
-          style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+          style={{ backgroundColor: 'rgba(35,26,14,0.75)' }}
           onClick={(e) => {
-            // Close on backdrop click only when not in saving state
             if (e.target === e.currentTarget && saveState !== 'saving') handleClose()
           }}
         >
-          <div
-            className="w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl"
-            style={{ backgroundColor: '#1a2744', border: '1px solid #2a4070' }}
-          >
+          <div className="w-full max-w-lg bg-briefing-cream border border-zen-black/10 shadow-2xl overflow-hidden">
             {/* Modal header */}
-            <div
-              className="px-5 py-4 flex items-center justify-between"
-              style={{ borderBottom: '1px solid #2a4070' }}
-            >
-              <h2 className="font-semibold text-base" style={{ color: '#c9a84c' }}>
+            <div className="px-6 py-5 flex items-center justify-between border-b border-zen-black/10">
+              <h2 className="font-headline font-black text-xl tracking-tighter text-zen-black">
                 ยืนยันแผนการเดินทาง
               </h2>
               {saveState !== 'saving' && (
                 <button
                   onClick={handleClose}
-                  className="text-lg leading-none transition-opacity hover:opacity-60"
-                  style={{ color: '#a0aec0' }}
+                  className="text-zen-black/40 hover:text-zen-black text-2xl leading-none transition-colors"
                   aria-label="ปิด"
                 >
                   &times;
@@ -457,18 +460,31 @@ export default function TemplatesPage() {
                   <ActivationBanner shareCode={shareCode} />
                   <button
                     onClick={handleClose}
-                    className="mt-4 w-full py-3 rounded-lg font-semibold text-sm"
-                    style={{ backgroundColor: '#1e3057', color: '#a0aec0', border: '1px solid #2a4070' }}
+                    className="mt-4 w-full py-4 border border-zen-black/20 font-headline font-bold text-sm uppercase tracking-widest text-zen-black/60 hover:bg-zen-black hover:text-briefing-cream transition-all"
                   >
                     เลือกแพ็คเกจอื่น
                   </button>
                 </>
               ) : (
-                <ItineraryCard
-                  itinerary={selectedTemplate}
-                  onConfirm={handleConfirm}
-                  confirmLoading={saveState === 'saving'}
-                />
+                <>
+                  <div className="mb-4 px-1">
+                    <label className="block text-xs font-bold uppercase tracking-widest text-basel-brick mb-1">
+                      วันเริ่มเดินทาง (ไม่ระบุก็ได้)
+                    </label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      disabled={saveState === 'saving'}
+                      className="w-full bg-briefing-cream border border-zen-black/20 px-4 py-3 font-medium text-sm text-zen-black focus:outline-none focus:border-basel-brick transition-colors disabled:opacity-40"
+                    />
+                  </div>
+                  <ItineraryCard
+                    itinerary={selectedTemplate}
+                    onConfirm={handleConfirm}
+                    confirmLoading={saveState === 'saving'}
+                  />
+                </>
               )}
             </div>
           </div>

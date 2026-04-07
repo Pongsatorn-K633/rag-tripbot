@@ -12,5 +12,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Trip not found' }, { status: 404 })
   }
 
-  return NextResponse.json({ itinerary: trip.itinerary })
+  return NextResponse.json({
+    itinerary: trip.itinerary,
+    startDate: trip.startDate ?? null,
+    totalDays: (trip.itinerary as { totalDays?: number } | null)?.totalDays ?? null,
+  })
 }

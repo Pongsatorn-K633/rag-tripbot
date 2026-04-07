@@ -21,6 +21,8 @@ model Trip {
   title       String
   itinerary   Json
   shareCode   String?       @unique
+  startDate   DateTime?
+  source      String?
   createdAt   DateTime      @default(now())
   activeChats LineContext[]
 }

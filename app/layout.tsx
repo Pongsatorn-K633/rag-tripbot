@@ -1,13 +1,8 @@
 import type { Metadata } from 'next'
-import { Sarabun } from 'next/font/google'
 import './globals.css'
-
-const sarabun = Sarabun({
-  subsets: ['thai', 'latin'],
-  weight: ['300', '400', '600', '700'],
-  variable: '--font-sarabun',
-  display: 'swap',
-})
+import Navbar from '@/app/components/Navbar'
+import Footer from '@/app/components/Footer'
+import ClientLayout from '@/app/components/ClientLayout'
 
 export const metadata: Metadata = {
   title: 'Dopamichi',
@@ -31,8 +26,14 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="th" className={sarabun.variable}>
-      <body className={sarabun.className}>{children}</body>
+    <html lang="th">
+      <body className="flex flex-col min-h-screen">
+        <Navbar />
+        <ClientLayout>
+          {children}
+        </ClientLayout>
+        <Footer />
+      </body>
     </html>
   )
 }
