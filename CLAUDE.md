@@ -14,6 +14,8 @@ A two-chatbot system for Japan trip planning targeting Thai travelers.
 
 Target stack: Next.js · Prisma · Neon (PostgreSQL + pgvector) · BGE-M3 · Gemini 2.5 Flash · LINE Messaging API
 
+**Production domain:** `dopamichi.com` (deployed on Vercel). All LINE webhook + LIFF URLs point at this domain. See `docs/deployment.md` for the full deploy + smoke-test checklist.
+
 ---
 
 ## Subagent Roster

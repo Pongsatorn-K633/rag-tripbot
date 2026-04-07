@@ -1,5 +1,9 @@
 # Architecture — RAG TripBot
 
+> **Production:** [dopamichi.com](https://dopamichi.com) — deployed on Vercel.
+> See `docs/deployment.md` for env vars, DNS, LINE webhook config, and the
+> pre-deploy checklist.
+
 ## System Overview
 
 Two-chatbot system for Japan trip planning, targeting Thai travelers.
