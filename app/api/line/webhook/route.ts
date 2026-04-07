@@ -99,58 +99,63 @@ async function handleQuestion(lineId: string, replyToken: string, text: string) 
         await replyFlexMessage(replyToken, `แผนการเดินทาง: ${result.liffView.title}`, {
           type: 'bubble',
           size: 'mega',
-          header: {
+          body: {
             type: 'box',
             layout: 'vertical',
-            backgroundColor: '#1a2744',
-            paddingAll: '20px',
+            backgroundColor: '#000000',
+            paddingAll: '18px',
+            spacing: 'none',
             contents: [
               {
                 type: 'text',
-                text: result.liffView.title,
-                color: '#c9a84c',
-                size: 'lg',
+                text: `FULL ${result.liffView.totalDays} DAYS ITINERARY HERE`,
+                color: '#B43325',
+                size: 'xs',
                 weight: 'bold',
               },
               {
                 type: 'text',
-                text: `${result.liffView.totalDays} วัน · ${result.liffView.season}`,
-                color: '#a0aec0',
-                size: 'sm',
+                text: result.liffView.title,
+                color: '#F8F7F4',
+                size: 'xl',
+                weight: 'bold',
+                wrap: true,
                 margin: 'sm',
               },
-            ],
-          },
-          body: {
-            type: 'box',
-            layout: 'vertical',
-            paddingAll: '20px',
-            contents: [
               {
                 type: 'text',
-                text: 'กดปุ่มด้านล่างเพื่อดูแผนการเดินทางแบบเต็ม',
-                size: 'sm',
-                color: '#555555',
+                text: 'กดปุ่มด้านล่างเพื่อเปิดแผนการเดินทางแบบเต็ม',
+                size: 'xs',
+                color: '#F8F7F466',
                 wrap: true,
+                margin: 'lg',
               },
             ],
           },
           footer: {
             type: 'box',
             layout: 'vertical',
-            paddingAll: '15px',
+            backgroundColor: '#000000',
+            paddingAll: '16px',
+            paddingTop: 'none',
             contents: [
               {
                 type: 'button',
                 action: {
                   type: 'uri',
-                  label: 'ดูแผนเต็ม',
+                  label: 'ดูแผนเที่ยว',
                   uri: liffUrl,
                 },
                 style: 'primary',
-                color: '#1a2744',
+                color: '#B43325',
+                height: 'sm',
+                margin: 'none',
               },
             ],
+          },
+          styles: {
+            body: { backgroundColor: '#000000' },
+            footer: { backgroundColor: '#000000' },
           },
         })
       } else {
