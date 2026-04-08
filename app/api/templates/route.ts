@@ -18,6 +18,7 @@ export async function GET() {
       coverImage: true,
       totalDays: true,
       season: true,
+      shareCode: true,
       createdAt: true,
     },
   })

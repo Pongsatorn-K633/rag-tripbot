@@ -48,8 +48,28 @@ export const authConfig = {
     strategy: 'jwt',
   },
   callbacks: {
-    // Minimal authorized callback used by the edge middleware. The real
-    // route-level guards live in `middleware.ts` below this config.
+    // These run in BOTH the edge middleware instance and the full Node-runtime
+    // instance in lib/auth.ts. The full config's `jwt` callback overrides this
+    // for first sign-in, but the edge instance needs its own minimal version
+    // so `req.auth.user.role` is populated when decoding an existing cookie.
+    //
+    // Without the session callback below, middleware reads role=undefined and
+    // incorrectly bounces SUPERADMINs away from /admin/* routes.
+    async jwt({ token, user }) {
+      if (user) {
+        const u = user as { id?: string; role?: UserRole }
+        if (u.id) token.id = u.id
+        if (u.role) token.role = u.role
+      }
+      return token
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = (token.id as string) ?? (token.sub as string)
+        session.user.role = (token.role as UserRole) ?? 'USER'
+      }
+      return session
+    },
     authorized({ auth }) {
       return !!auth
     },

@@ -7,12 +7,10 @@ import { useSession, signIn } from 'next-auth/react'
 import { type Itinerary } from '@/app/components/TemplateCard'
 import ItineraryCard from '@/app/components/ItineraryCard'
 import ActivationBanner from '@/app/components/ActivationBanner'
-import { IMG } from '@/lib/images'
+import { resolveCoverImage } from '@/lib/cover-image'
 
-// ── Fallback cover images ────────────────────────────────────────────────────
-// Used when a template row in the DB has no coverImage. We rotate through
-// these based on the template's position in the list.
-const FALLBACK_IMAGES = [IMG.stock1, IMG.stock3, IMG.stock2, IMG.stock4]
+// Cover image resolution is centralized in lib/cover-image.ts — see that file
+// for how stored IMG keys / URLs / null values are all normalized to a final URL.
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,6 +22,8 @@ interface TemplateRow {
   coverImage: string | null
   totalDays: number
   season: string | null
+  /** Canonical LINE share code — same for everyone, set by admin when the template is created */
+  shareCode: string | null
   createdAt: string
 }
 
@@ -145,42 +145,22 @@ export default function TemplatesPage() {
     setSaveState('saving')
 
     try {
-      // Use the idempotent save endpoint — returns the existing Trip if the
-      // user already hearted this template, otherwise creates a fresh one.
+      // Idempotent save — creates the user's personal Trip copy of the
+      // template (for their gallery) but does NOT mint a per-user share code.
+      // All sharing goes through the canonical Template.shareCode so every
+      // user sees the same code the admin does.
       const saveRes = await fetch(`/api/templates/${selectedTemplate.id}/save`, {
         method: 'POST',
       })
       if (!saveRes.ok) throw new Error('Failed to save template')
-      const { trip } = await saveRes.json()
-
-      // Optionally apply the start date the user picked in the modal
-      if (startDate) {
-        await fetch(`/api/trips`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: selectedTemplate.title,
-            itinerary: selectedTemplate.itinerary,
-            source: 'template',
-            templateId: selectedTemplate.id,
-            startDate,
-          }),
-        }).catch(() => null)
-      }
-
-      const primaryCity = selectedTemplate.itinerary.days[0]?.location ?? 'JPN'
-      const activateRes = await fetch('/api/activate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tripId: trip.id, primaryCity }),
-      })
-      if (!activateRes.ok) throw new Error('Failed to generate share code')
-      const { shareCode: code } = await activateRes.json()
 
       // Mark as saved in the heart state too
       setSavedTemplateIds((prev) => new Set(prev).add(selectedTemplate.id))
 
-      setShareCode(code)
+      // Show the canonical template share code (not a fresh per-user code).
+      // This is the same code displayed in the admin dashboard, so distributing
+      // the template is consistent across everyone.
+      setShareCode(selectedTemplate.shareCode)
       setSaveState('done')
     } catch (err) {
       console.error('Save error:', err)
@@ -234,8 +214,8 @@ export default function TemplatesPage() {
             <AnimatePresence mode="popLayout">
               {templates
                 .filter((t) => savedTemplateIds.has(t.id))
-                .map((tpl, idx) => {
-                  const imgSrc = tpl.coverImage || FALLBACK_IMAGES[idx % FALLBACK_IMAGES.length]
+                .map((tpl) => {
+                  const imgSrc = resolveCoverImage(tpl.coverImage, tpl.id)
                   return (
                     <motion.div
                       key={tpl.id}
@@ -319,10 +299,10 @@ export default function TemplatesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-          {templates.map((tpl, idx) => {
+          {templates.map((tpl) => {
             const isSaved = savedTemplateIds.has(tpl.id)
             const isPending = heartPending.has(tpl.id)
-            const imgSrc = tpl.coverImage || FALLBACK_IMAGES[idx % FALLBACK_IMAGES.length]
+            const imgSrc = resolveCoverImage(tpl.coverImage, tpl.id)
             return (
               <motion.div
                 key={tpl.id}

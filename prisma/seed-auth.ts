@@ -21,7 +21,6 @@
  * fetch from `/api/templates` instead of using its local const.
  */
 import { prisma } from '../lib/db'
-import { IMG } from '../lib/images'
 
 /** Reserved address that no real user can sign in with. */
 const SYSTEM_USER_EMAIL = 'system@dopamichi.local'
@@ -32,7 +31,7 @@ const TEMPLATES = [
     title: 'Tokyo & Osaka Classic',
     totalDays: 7,
     season: 'Winter',
-    coverImage: IMG.stock1,
+    coverImage: 'stock1',
     description:
       'เส้นทางยอดนิยม โตเกียว → เกียวโต → โอซาก้า ครบทุกไฮไลต์ ตั้งแต่วัดเก่าแก่จนถึงย่านช้อปปิ้งสุดฮิต',
     days: [
@@ -120,7 +119,7 @@ const TEMPLATES = [
     title: 'Hokkaido Snow Adventure',
     totalDays: 5,
     season: 'Winter',
-    coverImage: IMG.stock3,
+    coverImage: 'stock3',
     description:
       'ผจญภัยหิมะที่ฮอกไกโด สัมผัสเทศกาลหิมะซัปโปโร เล่นสกีที่นิเซโกะ และบรรยากาศเมืองริมทะเลโอทารุ',
     days: [
@@ -186,7 +185,7 @@ const TEMPLATES = [
     title: 'Kyoto Cultural Immersion',
     totalDays: 4,
     season: 'Spring',
-    coverImage: IMG.stock2,
+    coverImage: 'stock2',
     description:
       'ดื่มด่ำวัฒนธรรมญี่ปุ่นแท้ๆ ที่เกียวโต ชมซากุระบาน เยี่ยมวัดเก่าแก่ และสัมผัสชีวิตเกอิชาในย่านกิออง',
     days: [
@@ -245,7 +244,7 @@ const TEMPLATES = [
     title: 'Tokyo Summer Explorer',
     totalDays: 6,
     season: 'Summer',
-    coverImage: IMG.stock4,
+    coverImage: 'stock4',
     description:
       'สำรวจโตเกียวในฤดูร้อน เทศกาลฮานาบิ ชุดยูกาตะ สวนสนุก และเดย์ทริปสู่นิกโกะและคามาคุระ',
     days: [

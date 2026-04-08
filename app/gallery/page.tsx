@@ -1,12 +1,15 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { CloudUpload, CheckCircle, Trash2, ArrowRight, Flower, Lock, Heart } from 'lucide-react'
+import { CloudUpload, CheckCircle, Trash2, ArrowRight, Flower, Lock, Shield } from 'lucide-react'
+import Link from 'next/link'
 import { motion, AnimatePresence } from 'motion/react'
 import { useSession, signIn } from 'next-auth/react'
 import ItineraryCard from '@/app/components/ItineraryCard'
 import ActivationBanner from '@/app/components/ActivationBanner'
+import CoverUpload from '@/app/components/CoverUpload'
 import { IMG } from '@/lib/images'
+import { resolveCoverImage } from '@/lib/cover-image'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -40,7 +43,10 @@ interface SavedTrip {
   startDate?: string | null
   source?: string | null
   templateId?: string | null
+  coverImage?: string | null
   totalDays?: number | null
+  /** True if this trip has been promoted to a published Template and cannot be deleted */
+  locked?: boolean
 }
 
 type UploadState = 'idle' | 'uploading' | 'review' | 'saving' | 'done'
@@ -48,17 +54,6 @@ type UploadState = 'idle' | 'uploading' | 'review' | 'saving' | 'done'
 // ── Stock image pool (reused from Home) ──────────────────────────────────────
 
 const STOCK_IMAGES = [IMG.stock1, IMG.stock2, IMG.stock3, IMG.stock4]
-
-// Deterministic image pick for saved templates — a saved template must always
-// show the same cover image regardless of its position in the gallery list.
-// We hash the templateId (or trip id as a fallback) to an index in STOCK_IMAGES.
-function stableImageFor(key: string): string {
-  let hash = 0
-  for (let i = 0; i < key.length; i++) {
-    hash = (hash * 31 + key.charCodeAt(i)) | 0
-  }
-  return STOCK_IMAGES[Math.abs(hash) % STOCK_IMAGES.length]
-}
 
 // ── Gallery page ─────────────────────────────────────────────────────────────
 
@@ -72,6 +67,7 @@ export default function GalleryPage() {
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [uploadShareCode, setUploadShareCode] = useState<string | null>(null)
   const [uploadStartDate, setUploadStartDate] = useState('')
+  const [uploadCoverImage, setUploadCoverImage] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Saved trips state
@@ -79,28 +75,6 @@ export default function GalleryPage() {
   const [tripsLoading, setTripsLoading] = useState(true)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
-
-  // templateId → coverImage map. Fetched once so saved-template cards can
-  // show the exact same image as the /templates page (instead of a hash).
-  const [templateCovers, setTemplateCovers] = useState<Record<string, string>>({})
-
-  useEffect(() => {
-    async function loadTemplateCovers() {
-      try {
-        const res = await fetch('/api/templates')
-        if (!res.ok) return
-        const data = await res.json()
-        const map: Record<string, string> = {}
-        for (const t of data.templates ?? []) {
-          if (t.coverImage) map[t.id] = t.coverImage
-        }
-        setTemplateCovers(map)
-      } catch {
-        // silently fail — falls back to stableImageFor()
-      }
-    }
-    loadTemplateCovers()
-  }, [])
 
   // ── Load saved trips on mount (guests get empty array from the API) ───────
   useEffect(() => {
@@ -209,6 +183,7 @@ export default function GalleryPage() {
           itinerary: uploadedItinerary,
           source: 'upload',
           startDate: uploadStartDate || undefined,
+          coverImage: uploadCoverImage || undefined,
         }),
       })
       if (!saveRes.ok) throw new Error('บันทึกไม่สำเร็จ')
@@ -226,8 +201,20 @@ export default function GalleryPage() {
       setUploadShareCode(shareCode)
       setUploadState('done')
 
-      // Refresh saved trips list
-      setSavedTrips((prev) => [{ id: trip.id, title: trip.title, createdAt: trip.createdAt, itinerary: uploadedItinerary }, ...prev])
+      // Refresh saved trips list — include the cover image so the new card
+      // renders with the user's uploaded image immediately, no page refresh.
+      setSavedTrips((prev) => [
+        {
+          id: trip.id,
+          title: trip.title,
+          createdAt: trip.createdAt,
+          itinerary: uploadedItinerary,
+          source: 'upload',
+          coverImage: uploadCoverImage,
+          startDate: uploadStartDate || null,
+        },
+        ...prev,
+      ])
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'เกิดข้อผิดพลาด'
       setUploadError(message)
@@ -240,6 +227,7 @@ export default function GalleryPage() {
     setUploadShareCode(null)
     setUploadError(null)
     setUploadStartDate('')
+    setUploadCoverImage(null)
     setUploadState('idle')
   }
 
@@ -249,7 +237,21 @@ export default function GalleryPage() {
     setDeleting(true)
     try {
       const res = await fetch(`/api/trips/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('ลบไม่สำเร็จ')
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        // Special-case the 409 Conflict thrown when a trip has been promoted
+        // to a published template and is now locked. Show a dedicated
+        // dialog pointing to /support instead of the generic delete error.
+        if (res.status === 409) {
+          setDeleteConfirm(null)
+          alert(
+            (body.error as string) ??
+              'ทริปนี้ถูกเผยแพร่เป็นเทมเพลต ไม่สามารถลบได้ กรุณาติดต่อแอดมินผ่าน /support'
+          )
+          return
+        }
+        throw new Error(body.error ?? 'ลบไม่สำเร็จ')
+      }
       // Close the dialog first, then remove the trip so the AnimatePresence
       // exit animation plays on an unobscured card.
       setDeleteConfirm(null)
@@ -417,6 +419,19 @@ export default function GalleryPage() {
                         className="w-full bg-briefing-cream border border-zen-black/20 px-4 py-3 font-medium text-sm text-zen-black focus:outline-none focus:border-basel-brick transition-colors disabled:opacity-40"
                       />
                     </div>
+
+                    {/* Optional cover image */}
+                    <div className="mb-4">
+                      <label className="block text-xs font-bold uppercase tracking-widest text-basel-brick mb-2">
+                        รูปหน้าปก (ไม่ระบุก็ได้) · Cover image (optional)
+                      </label>
+                      <CoverUpload
+                        value={uploadCoverImage}
+                        onChange={setUploadCoverImage}
+                        disabled={uploadState === 'saving'}
+                      />
+                    </div>
+
                     <ItineraryCard
                       itinerary={uploadedItinerary}
                       onConfirm={handleUploadConfirm}
@@ -472,9 +487,11 @@ export default function GalleryPage() {
           return (
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-10">
               <AnimatePresence mode="popLayout">
-              {visible.map((trip, idx) => {
+              {visible.map((trip) => {
                 const itin = trip.itinerary as Itinerary | null
-                const imgSrc = STOCK_IMAGES[idx % STOCK_IMAGES.length]
+                // User's chosen cover if set, otherwise deterministic fallback
+                // from the trip id (stable per-trip, not position-based)
+                const imgSrc = resolveCoverImage(trip.coverImage, trip.id)
                 const tripTotalDays = itin?.totalDays ?? trip.totalDays ?? null
                 return (
                   <motion.div
@@ -493,14 +510,29 @@ export default function GalleryPage() {
                     transition={{ layout: { duration: 0.45, ease: [0.4, 0, 0.2, 1] } }}
                     className="group flex flex-col bg-white p-4 rounded-xl shadow-sm hover:shadow-2xl transition-all duration-300 relative"
                   >
-                    {/* Delete button */}
-                    <button
-                      onClick={() => setDeleteConfirm(trip.id)}
-                      className="absolute top-6 right-6 z-10 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 bg-white/80 rounded-full hover:bg-basel-brick hover:text-white text-zen-black/40"
-                      aria-label="ลบแผน"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    {/* Delete button — hidden on locked (promoted-to-template) trips */}
+                    {!trip.locked && (
+                      <button
+                        onClick={() => setDeleteConfirm(trip.id)}
+                        className="absolute top-6 right-6 z-10 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 bg-white/80 rounded-full hover:bg-basel-brick hover:text-white text-zen-black/40"
+                        aria-label="ลบแผน"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+
+                    {/* Lock badge for trips that have been promoted to a curated template */}
+                    {trip.locked && (
+                      <div
+                        className="absolute top-6 right-6 z-10 flex items-center gap-1 px-2 py-1 bg-basel-brick text-white shadow-md"
+                        title="ทริปนี้ถูกเผยแพร่เป็นเทมเพลต ติดต่อแอดมินผ่าน /support เพื่อขอลบ"
+                      >
+                        <Shield size={10} strokeWidth={3} />
+                        <span className="text-[8px] font-black uppercase tracking-widest">
+                          Published
+                        </span>
+                      </div>
+                    )}
 
                     <div className="relative aspect-[4/5] overflow-hidden mb-6 bg-briefing-cream rounded-lg">
                       <img
@@ -543,128 +575,6 @@ export default function GalleryPage() {
           )
         })()}
       </section>
-
-      {/* Saved Templates Section — only visible when signed in */}
-      {isSignedIn && (() => {
-        const savedTemplates = savedTrips.filter((t) => t.source === 'template')
-        if (savedTemplates.length === 0) return null
-        return (
-          <section className="mb-24">
-            <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6 border-b-2 border-zen-black/5 pb-8">
-              <div>
-                <span className="text-basel-brick font-extrabold text-sm uppercase tracking-[0.3em] mb-4 block font-headline">
-                  Saved Templates
-                </span>
-                <h2 className="text-5xl font-headline font-black tracking-tighter text-zen-black">
-                  เทมเพลตที่บันทึกไว้
-                </h2>
-                <p className="text-zen-black/50 text-sm mt-2 font-sans">
-                  Hearted from the Template Gallery — click the heart icon to unsave
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-10">
-              <AnimatePresence mode="popLayout">
-                {savedTemplates.map((trip) => {
-                  const itin = trip.itinerary as Itinerary | null
-                  // Use the actual Template.coverImage when available so the
-                  // gallery card matches the /templates page exactly. Falls
-                  // back to a deterministic hash for orphans without FK.
-                  const imgSrc =
-                    (trip.templateId && templateCovers[trip.templateId]) ||
-                    stableImageFor(trip.templateId ?? trip.id)
-                  const tripTotalDays = itin?.totalDays ?? trip.totalDays ?? null
-                  return (
-                    <motion.div
-                      key={trip.id}
-                      layout
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{
-                        opacity: 0,
-                        scale: 0.85,
-                        y: -30,
-                        filter: 'blur(8px)',
-                        transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] },
-                      }}
-                      whileHover={{ y: -10 }}
-                      transition={{ layout: { duration: 0.45, ease: [0.4, 0, 0.2, 1] } }}
-                      className="group flex flex-col bg-white p-4 rounded-xl shadow-sm hover:shadow-2xl transition-all duration-300 relative"
-                    >
-                      {/* Unsave (heart-off) button — always visible.
-                          Uses the template save endpoint when templateId is
-                          known, falls back to raw trip delete for legacy
-                          orphan rows without the FK. */}
-                      <button
-                        onClick={async () => {
-                          try {
-                            const endpoint = trip.templateId
-                              ? `/api/templates/${trip.templateId}/save`
-                              : `/api/trips/${trip.id}`
-                            const res = await fetch(endpoint, { method: 'DELETE' })
-                            if (!res.ok) throw new Error('unsave failed')
-                            setSavedTrips((prev) => prev.filter((t) => t.id !== trip.id))
-                          } catch {
-                            alert('ไม่สามารถยกเลิกการบันทึกได้')
-                          }
-                        }}
-                        className="absolute top-6 right-6 z-10 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
-                        aria-label="Unsave template"
-                      >
-                        <Heart size={18} fill="#B43325" stroke="#B43325" strokeWidth={2.5} />
-                      </button>
-
-                      <div className="relative aspect-[4/5] overflow-hidden mb-6 bg-briefing-cream rounded-lg">
-                        <img
-                          alt={trip.title}
-                          className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
-                          src={imgSrc}
-                        />
-                        <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-zen-black/80 to-transparent">
-                          <span className="bg-basel-brick text-briefing-cream px-3 py-1 text-[10px] font-black uppercase tracking-widest font-headline">
-                            {tripTotalDays ?? '?'} DAYS
-                          </span>
-                          <span className="ml-2 bg-white/20 text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest font-headline backdrop-blur-sm">
-                            TEMPLATE
-                          </span>
-                        </div>
-                      </div>
-
-                      <h3 className="text-2xl font-headline font-bold text-zen-black mb-2">
-                        {trip.title}
-                      </h3>
-                      {trip.startDate && tripTotalDays ? (
-                        <p className="text-xs text-basel-brick font-bold mb-1">
-                          {formatDateRange(trip.startDate, tripTotalDays)}
-                        </p>
-                      ) : null}
-                      <p className="text-zen-black/60 text-sm font-sans leading-relaxed mb-1">
-                        {itin?.season ?? ''}
-                      </p>
-                      {itin?.shareCode && (
-                        <p className="text-[10px] font-black uppercase tracking-widest text-basel-brick font-headline mb-2">
-                          Code: {itin.shareCode}
-                        </p>
-                      )}
-                      <p className="text-zen-black/30 text-xs font-sans mb-4">
-                        {new Date(trip.createdAt).toLocaleDateString('th-TH', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </p>
-                      <div className="mt-auto text-basel-brick font-black text-xs uppercase tracking-widest flex items-center gap-2 group-hover:translate-x-2 transition-transform font-headline">
-                        VIEW <ArrowRight size={14} />
-                      </div>
-                    </motion.div>
-                  )
-                })}
-              </AnimatePresence>
-            </div>
-          </section>
-        )
-      })()}
 
       {/* Delete confirmation dialog */}
       {deleteConfirm && (

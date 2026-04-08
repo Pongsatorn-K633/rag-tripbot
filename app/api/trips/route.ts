@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { getLockedTripIds } from '@/lib/trip-lock'
 
 /**
  * POST /api/trips
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { title, itinerary, startDate, source, templateId } = await req.json()
+  const { title, itinerary, startDate, source, templateId, coverImage } = await req.json()
 
   if (!title || !itinerary) {
     return NextResponse.json(
@@ -34,6 +35,7 @@ export async function POST(req: NextRequest) {
       startDate: startDate ? new Date(startDate) : undefined,
       source: source ?? undefined,
       templateId: templateId ?? undefined,
+      coverImage: coverImage ?? undefined,
     },
   })
 
@@ -56,5 +58,14 @@ export async function GET() {
     orderBy: { createdAt: 'desc' },
   })
 
-  return NextResponse.json({ trips })
+  // Annotate each trip with a `locked` boolean so the gallery UI can hide
+  // the delete button on trips that are referenced by a published template.
+  const shareCodes = trips.map((t) => t.shareCode).filter((c): c is string => !!c)
+  const lockedCodes = await getLockedTripIds(shareCodes)
+  const enriched = trips.map((t) => ({
+    ...t,
+    locked: !!(t.shareCode && lockedCodes.has(t.shareCode)),
+  }))
+
+  return NextResponse.json({ trips: enriched })
 }

@@ -41,6 +41,7 @@ model Trip {
   shareCode   String?       @unique
   startDate   DateTime?
   source      String? // 'chat' | 'template' | 'upload'
+  coverImage  String? // IMG registry key or Cloudinary URL; resolved via lib/cover-image.ts
   templateId  String?
   template    Template?     @relation(fields: [templateId], references: [id], onDelete: SetNull)
   createdAt   DateTime      @default(now())
@@ -59,6 +60,7 @@ model Template {
   coverImage  String?
   totalDays   Int
   season      String?
+  shareCode   String?  @unique // canonical LINE activation code; mirrored onto a hidden system-owned Trip for LINE webhook lookup
   published   Boolean  @default(true)
   createdById String
   createdBy   User     @relation("TemplateAuthor", fields: [createdById], references: [id])
