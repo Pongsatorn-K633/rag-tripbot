@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, FormEvent } from 'react'
 import { ChevronRight, Verified } from 'lucide-react'
+import { useSession, signIn } from 'next-auth/react'
 
 interface Activity {
   time: string
@@ -35,15 +36,6 @@ interface Message {
 interface SavedTrip {
   tripId: string
   shareCode: string
-}
-
-function getUserId(): string {
-  if (typeof window === 'undefined') return ''
-  const stored = localStorage.getItem('tripbot_user_id')
-  if (stored) return stored
-  const newId = crypto.randomUUID()
-  localStorage.setItem('tripbot_user_id', newId)
-  return newId
 }
 
 // ── Itinerary day renderer (dopamichi style) ─────────────────────────────────
@@ -127,6 +119,7 @@ function ItinerarySkeleton() {
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export default function ChatPage() {
+  const { data: session } = useSession()
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'bot',
@@ -197,15 +190,26 @@ export default function ChatPage() {
 
   async function handleConfirm() {
     if (!latestItinerary) return
+
+    // Guest gate — bounce to sign-in, preserve the itinerary so the user
+    // doesn't lose their chat progress when they come back.
+    if (!session?.user) {
+      try {
+        sessionStorage.setItem('pending_itinerary', JSON.stringify(latestItinerary))
+      } catch {
+        // sessionStorage can fail in private mode — not fatal
+      }
+      signIn(undefined, { callbackUrl: '/chat' })
+      return
+    }
+
     setConfirmLoading(true)
-    const userId = getUserId()
 
     try {
       const saveRes = await fetch('/api/trips', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId,
           title: latestItinerary.title ?? 'แผนการเดินทางญี่ปุ่น',
           itinerary: latestItinerary,
           source: 'chat',

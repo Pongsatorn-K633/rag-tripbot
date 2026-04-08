@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 import { generateText, generateFromFile } from '@/lib/llm/client'
+import { auth } from '@/lib/auth'
 
 // ── Itinerary JSON contract shape ──────────────────────────────────────────
 // Must match the project-wide contract defined in CLAUDE.md.
@@ -146,6 +147,16 @@ function spreadsheetToText(buffer: Buffer): string {
 }
 
 export async function POST(req: NextRequest) {
+  // Member-only: VLM extraction is expensive (Gemini multimodal calls),
+  // so we require a real session to prevent bot abuse and runaway bills.
+  const session = await auth()
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      { error: 'กรุณาสมัครสมาชิกเพื่อใช้ฟีเจอร์ AI อ่านไฟล์ · Please sign up to use AI file extraction' },
+      { status: 401 }
+    )
+  }
+
   let file: File | null = null
 
   try {

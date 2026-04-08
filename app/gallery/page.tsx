@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { CloudUpload, CheckCircle, Trash2, ArrowRight, Flower } from 'lucide-react'
-import { motion } from 'motion/react'
+import { CloudUpload, CheckCircle, Trash2, ArrowRight, Flower, Lock } from 'lucide-react'
+import { motion, AnimatePresence } from 'motion/react'
+import { useSession, signIn } from 'next-auth/react'
 import ItineraryCard from '@/app/components/ItineraryCard'
 import ActivationBanner from '@/app/components/ActivationBanner'
 import { IMG } from '@/lib/images'
@@ -47,18 +48,11 @@ type UploadState = 'idle' | 'uploading' | 'review' | 'saving' | 'done'
 
 const STOCK_IMAGES = [IMG.stock1, IMG.stock2, IMG.stock3, IMG.stock4]
 
-function getUserId(): string {
-  if (typeof window === 'undefined') return ''
-  const stored = localStorage.getItem('tripbot_user_id')
-  if (stored) return stored
-  const newId = crypto.randomUUID()
-  localStorage.setItem('tripbot_user_id', newId)
-  return newId
-}
-
 // ── Gallery page ─────────────────────────────────────────────────────────────
 
 export default function GalleryPage() {
+  const { data: session, status: sessionStatus } = useSession()
+  const isSignedIn = !!session?.user
   // Upload state
   const [uploadState, setUploadState] = useState<UploadState>('idle')
   const [isDragging, setIsDragging] = useState(false)
@@ -72,13 +66,19 @@ export default function GalleryPage() {
   const [savedTrips, setSavedTrips] = useState<SavedTrip[]>([])
   const [tripsLoading, setTripsLoading] = useState(true)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
-  // ── Load saved trips on mount ──────────────────────────────────────────────
+  // ── Load saved trips on mount (guests get empty array from the API) ───────
   useEffect(() => {
+    if (sessionStatus === 'loading') return
+    if (!isSignedIn) {
+      setSavedTrips([])
+      setTripsLoading(false)
+      return
+    }
     async function loadTrips() {
       try {
-        const userId = getUserId()
-        const res = await fetch(`/api/trips?userId=${encodeURIComponent(userId)}`)
+        const res = await fetch('/api/trips')
         if (!res.ok) throw new Error('Failed to load')
         const data = await res.json()
         setSavedTrips(data.trips ?? [])
@@ -89,11 +89,17 @@ export default function GalleryPage() {
       }
     }
     loadTrips()
-  }, [])
+  }, [isSignedIn, sessionStatus])
 
   // ── Upload handlers ────────────────────────────────────────────────────────
 
   async function processFile(file: File) {
+    // Guest gate — AI file extraction is member-only (VLM is expensive).
+    if (!isSignedIn) {
+      signIn(undefined, { callbackUrl: '/gallery' })
+      return
+    }
+
     const allowedMime = [
       'application/pdf',
       'image/png',
@@ -161,12 +167,10 @@ export default function GalleryPage() {
     setUploadState('saving')
 
     try {
-      const userId = getUserId()
       const saveRes = await fetch('/api/trips', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId,
           title: uploadedItinerary.title,
           itinerary: uploadedItinerary,
           source: 'upload',
@@ -208,14 +212,19 @@ export default function GalleryPage() {
   // ── Delete handler ─────────────────────────────────────────────────────────
 
   async function handleDelete(id: string) {
+    setDeleting(true)
     try {
       const res = await fetch(`/api/trips/${id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('ลบไม่สำเร็จ')
+      // Close the dialog first, then remove the trip so the AnimatePresence
+      // exit animation plays on an unobscured card.
+      setDeleteConfirm(null)
       setSavedTrips((prev) => prev.filter((t) => t.id !== id))
     } catch {
       alert('ไม่สามารถลบแผนได้ กรุณาลองใหม่')
-    } finally {
       setDeleteConfirm(null)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -272,7 +281,32 @@ export default function GalleryPage() {
               </div>
             )}
 
-            {(uploadState === 'idle' || uploadState === 'uploading') && (
+            {(uploadState === 'idle' || uploadState === 'uploading') && !isSignedIn && (
+              <div className="bg-zen-black border-[12px] border-zen-black flex items-center justify-center min-h-[450px]">
+                <div className="bg-white w-full h-full flex flex-col items-center justify-center p-12 border-2 border-dashed border-zen-black/10 text-center">
+                  <div className="w-24 h-24 bg-basel-brick rounded-full flex items-center justify-center mb-8 shadow-xl">
+                    <Lock className="text-briefing-cream w-10 h-10" strokeWidth={2} />
+                  </div>
+                  <h3 className="text-2xl font-headline font-bold text-zen-black mb-3 tracking-tight">
+                    Sign up to upload
+                  </h3>
+                  <p className="text-zen-black/60 font-sans text-sm mb-3 max-w-md leading-relaxed">
+                    สมัครสมาชิกฟรีเพื่อใช้ฟีเจอร์ AI อ่านไฟล์และบันทึกทริปของคุณ
+                  </p>
+                  <p className="text-zen-black/40 font-sans text-xs mb-10 max-w-md">
+                    Create a free account to use AI file extraction and save your trips.
+                  </p>
+                  <button
+                    onClick={() => signIn(undefined, { callbackUrl: '/gallery' })}
+                    className="bg-basel-brick text-briefing-cream px-10 py-5 font-bold tracking-tight hover:bg-zen-black transition-colors duration-300 font-headline uppercase"
+                  >
+                    Sign up / Sign in
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {(uploadState === 'idle' || uploadState === 'uploading') && isSignedIn && (
               <div
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -409,6 +443,7 @@ export default function GalleryPage() {
           }
           return (
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-10">
+              <AnimatePresence mode="popLayout">
               {visible.map((trip, idx) => {
                 const itin = trip.itinerary as Itinerary | null
                 const imgSrc = STOCK_IMAGES[idx % STOCK_IMAGES.length]
@@ -416,7 +451,18 @@ export default function GalleryPage() {
                 return (
                   <motion.div
                     key={trip.id}
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{
+                      opacity: 0,
+                      scale: 0.85,
+                      y: -30,
+                      filter: 'blur(8px)',
+                      transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] },
+                    }}
                     whileHover={{ y: -10 }}
+                    transition={{ layout: { duration: 0.45, ease: [0.4, 0, 0.2, 1] } }}
                     className="group flex flex-col bg-white p-4 rounded-xl shadow-sm hover:shadow-2xl transition-all duration-300 relative"
                   >
                     {/* Delete button */}
@@ -464,6 +510,7 @@ export default function GalleryPage() {
                   </motion.div>
                 )
               })}
+              </AnimatePresence>
             </div>
           )
         })()}
@@ -483,15 +530,24 @@ export default function GalleryPage() {
             <div className="flex gap-4">
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="flex-1 py-3 border border-zen-black/20 font-bold text-sm font-headline uppercase tracking-widest hover:bg-zen-black hover:text-briefing-cream transition-all"
+                disabled={deleting}
+                className="flex-1 py-3 border border-zen-black/20 font-bold text-sm font-headline uppercase tracking-widest hover:bg-zen-black hover:text-briefing-cream transition-all disabled:opacity-40"
               >
                 ยกเลิก
               </button>
               <button
                 onClick={() => handleDelete(deleteConfirm)}
-                className="flex-1 py-3 bg-basel-brick text-white font-bold text-sm font-headline uppercase tracking-widest hover:bg-zen-black transition-all"
+                disabled={deleting}
+                className="flex-1 py-3 bg-basel-brick text-white font-bold text-sm font-headline uppercase tracking-widest hover:bg-zen-black transition-all disabled:opacity-60 flex items-center justify-center gap-2"
               >
-                ลบ
+                {deleting ? (
+                  <>
+                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    กำลังลบ...
+                  </>
+                ) : (
+                  'ลบ'
+                )}
               </button>
             </div>
           </div>

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { motion } from 'motion/react'
 import { ArrowRight } from 'lucide-react'
+import { useSession, signIn } from 'next-auth/react'
 import { type Itinerary } from '@/app/components/TemplateCard'
 import ItineraryCard from '@/app/components/ItineraryCard'
 import ActivationBanner from '@/app/components/ActivationBanner'
@@ -310,6 +311,7 @@ const TEMPLATES: (Itinerary & { description: string })[] = [
 type SaveState = 'idle' | 'saving' | 'done'
 
 export default function TemplatesPage() {
+  const { data: session } = useSession()
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [shareCode, setShareCode] = useState<string | null>(null)
@@ -319,23 +321,20 @@ export default function TemplatesPage() {
 
   async function handleConfirm() {
     if (!selectedTemplate) return
+
+    // Guest gate — bounce to sign-in with callback back to /templates
+    if (!session?.user) {
+      signIn(undefined, { callbackUrl: '/templates' })
+      return
+    }
+
     setSaveState('saving')
 
     try {
-      let userId = ''
-      if (typeof window !== 'undefined') {
-        userId = localStorage.getItem('tripbot_user_id') ?? ''
-        if (!userId) {
-          userId = crypto.randomUUID()
-          localStorage.setItem('tripbot_user_id', userId)
-        }
-      }
-
       const saveRes = await fetch('/api/trips', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId,
           title: selectedTemplate.title,
           itinerary: selectedTemplate,
           source: 'template',
