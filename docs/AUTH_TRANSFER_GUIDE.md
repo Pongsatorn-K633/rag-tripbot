@@ -701,7 +701,7 @@ function SignInForm() {
             disabled={loading !== null || !email}
             className="w-full py-4 bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all disabled:opacity-40"
           >
-            {loading === 'resend' ? 'Sending link…' : 'Email me a magic link'}
+            {loading === 'resend' ? 'Sending link…' : 'Send me the email'}
           </button>
         </form>
       </div>
