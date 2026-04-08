@@ -330,6 +330,8 @@ rag-tripbot/
 - [x] LINE SDK client wrapper (`lib/line/client.ts`) — `replyToLine`, `pushToLine`, `replyFlexMessage`
 - [x] LIFF integration — `app/liff/itinerary/page.tsx` dark-themed itinerary view + `GET /api/trips/by-code` endpoint; full plan requests return a Flex Message with "ดูแผนเต็ม" button instead of dumping text
 - [x] Hybrid intent classification (regex fast gate + LLM `[SHOW_PLAN]` fallback in the same Gemini call)
+- [x] **Group-chat trigger word gate (2026-04-08)** — in group sources, the bot only replies when the message starts with `doma`, `โดมะ`, `@dopamichi` (or the bot is @-mentioned via `mention.mentionees`). Without a trigger, the bot silently ignores the message so regular group conversation is never interrupted. `/activate` always works. Implemented in `lib/line/trigger.ts` + `lib/line/parser.ts`. Requires `LINE_BOT_USER_ID` env var for real @-mention detection (text-based triggers still work without it). `@all` is intentionally **not** a trigger.
+- [x] **Group welcome message (2026-04-08)** — webhook handles the LINE `join` event and sends a bilingual greeting explaining the trigger-word rule whenever the bot is added to a new group.
 
 ### Phase 4 — Upload & Templates (Completed 2026-04-04)
 
@@ -339,6 +341,20 @@ rag-tripbot/
 - [x] Build upload page with drag-and-drop UI (`app/upload/page.tsx`)
 - [x] Build verification UI — reuses `ItineraryCard` for user review before saving
 - [x] VLM integration — Gemini 2.5 Flash for image OCR and PDF text extraction
+
+---
+
+## ⚠️ Maintenance Notice (2026-04-08)
+
+The **AI Chat (`/chat`)** route is currently in **maintenance mode**:
+
+- `/chat` is redirected to `/maintenance` via `next.config.ts` (temporary redirect)
+- The original chat UI at `app/chat/page.tsx` is **preserved intact** and will be redeployed in the near future
+- The "AI Chat" tab in the Navbar is disabled with a "Soon" badge
+- The home page pathway card for chat is greyed out and routes to `/maintenance`
+- A playful bilingual (Thai + English) maintenance screen lives at `app/maintenance/page.tsx`
+
+**To re-enable:** delete the `/chat` entry in `next.config.ts` `redirects()`, remove `disabled: true` from the chat tab in `app/components/Navbar.tsx`, and restore the original pathway card in `app/page.tsx`.
 
 ---
 

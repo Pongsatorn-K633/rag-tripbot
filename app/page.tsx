@@ -61,16 +61,19 @@ export default function Home() {
       <section id="pathways" className="px-8 py-24 border-t border-zen-black/10 scroll-mt-24">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-zen-black">
-            {/* Option A: Chat */}
+            {/* Option A: Chat — UNDER MAINTENANCE (redirects to /maintenance) */}
             <Link
-              href="/chat"
-              className="group p-12 border-b md:border-b-0 md:border-r border-zen-black hover:bg-basel-brick hover:text-briefing-cream transition-all duration-300 cursor-pointer"
+              href="/maintenance"
+              className="group relative p-12 border-b md:border-b-0 md:border-r border-zen-black bg-zen-black/[0.03] hover:bg-zen-black/10 transition-all duration-300 cursor-not-allowed"
             >
-              <MessageSquare className="w-10 h-10 mb-8" strokeWidth={1.5} />
-              <h3 className="text-3xl font-headline font-bold mb-6">วางแผนการเดินทาง</h3>
-              <p className="mb-10 text-lg opacity-80">แชทกับ AI เพื่อสร้างตารางเที่ยวตามใจคุณ บอกสไตล์ที่ชอบ งบที่มี แล้วรอรับแผนการเดินทางได้เลย</p>
-              <div className="flex items-center font-bold uppercase tracking-widest text-sm">
-                <span>Begin Chat</span>
+              <div className="absolute top-4 right-4 bg-basel-brick text-white text-[9px] font-black uppercase tracking-widest px-2 py-1">
+                Maintenance
+              </div>
+              <MessageSquare className="w-10 h-10 mb-8 opacity-40" strokeWidth={1.5} />
+              <h3 className="text-3xl font-headline font-bold mb-6 opacity-50">วางแผนการเดินทาง</h3>
+              <p className="mb-10 text-lg opacity-40">AI Concierge กำลังงีบอยู่ที่เกียวโต 🍵 เดี๋ยวตื่นมาจะรีบกลับมาช่วยวางแผนให้นะคะ</p>
+              <div className="flex items-center font-bold uppercase tracking-widest text-sm opacity-50">
+                <span>Temporarily Offline</span>
                 <ArrowRight className="ml-2 w-4 h-4" />
               </div>
             </Link>

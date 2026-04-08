@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { validateSignature, webhook } from '@line/bot-sdk'
 import { prisma } from '@/lib/db'
 import { parseEvent } from '@/lib/line/parser'
+import { checkTrigger } from '@/lib/line/trigger'
 import { replyToLine, pushToLine, replyFlexMessage } from '@/lib/line/client'
 import { answerWithContext, answerWithEnrichedContext, saveChatHistory, formatItinerary, type ChatMessage } from '@/lib/line/injector'
 
@@ -22,18 +23,44 @@ export async function POST(req: NextRequest) {
 }
 
 async function handleEvent(event: webhook.Event) {
+  // Send a welcome message whenever the bot is added to a group or room.
+  if (event.type === 'join') {
+    const replyToken = (event as webhook.JoinEvent).replyToken
+    if (replyToken) await replyToLine(replyToken, GROUP_WELCOME_MESSAGE)
+    return
+  }
+
   const parsedEvent = parseEvent(event)
   if (!parsedEvent || parsedEvent.type !== 'text' || !parsedEvent.text) return
 
-  const { lineId, sourceType, replyToken, text } = parsedEvent
+  const { lineId, sourceType, replyToken, text, mentionedBot } = parsedEvent
 
+  // /activate always works — users must be able to bind a group even before
+  // learning about the trigger word.
   if (text.toLowerCase().startsWith('/activate')) {
     await handleActivate(lineId, sourceType, replyToken, text)
     return
   }
 
-  await handleQuestion(lineId, replyToken, text)
+  // Group chats require a trigger word (doma / โดมะ / @dopamichi mention).
+  // Without it we stay silent — no error, no hint — so the bot doesn't spam
+  // regular group conversation.
+  let questionText = text
+  if (sourceType === 'group') {
+    const { triggered, cleanText } = checkTrigger(text, mentionedBot ?? false)
+    if (!triggered) return
+    questionText = cleanText || text
+  }
+
+  await handleQuestion(lineId, replyToken, questionText)
 }
+
+const GROUP_WELCOME_MESSAGE =
+  'สวัสดีครับทุกคน! ผม Dopamichi ไกด์ญี่ปุ่นส่วนตัวของกลุ่มนี้ 🗾✨\n\n' +
+  '📌 เริ่มต้นใช้งาน: พิมพ์ /activate [รหัส] เพื่อเปิดแผนการเดินทางของคุณ\n' +
+  '💬 ถามคำถาม: เพื่อไม่ให้เป็นการรบกวนเวลาคุยกันในกลุ่ม กรุณาพิมพ์ "doma" หรือ "โดมะ" นำหน้าคำถามนะครับ\n\n' +
+  'ตัวอย่าง: doma ต้องไปถึงสนามบินกี่โมง\n\n' +
+  'Hi everyone! I\'m Dopamichi, your personal Japan trip guide. In groups, just prefix your question with "doma" or "โดมะ" to talk to me.'
 
 async function handleActivate(
   lineId: string,
@@ -67,7 +94,7 @@ async function handleActivate(
 
   await replyToLine(
     replyToken,
-    `สวัสดี! 🌸 เราดึงข้อมูลแพลนเที่ยวญี่ปุ่นของคุณมาเรียบร้อยแล้ว "${trip.title}" ผมพร้อมตอบทุกข้อสงสัยในรูทนี้ พิมพ์คำถามของคุณมาได้เลย!`
+    `แผนเที่ยวพร้อมแล้ว! "${trip.title}" ⛩️🎉 ผมพร้อมตอบทุกข้อสงสัยในรูทนี้ พิมพ์คำถามของคุณมาได้เลย!\nเพื่อไม่ให้เป็นการรบกวนเวลาคุยกันในกลุ่ม หากต้องการเรียกใช้ไกด์ส่วนตัว แค่พิมพ์คำว่า doma หรือ โดมะ นำหน้าคำถามได้เลยครับ`
   )
 }
 
@@ -80,7 +107,7 @@ async function handleQuestion(lineId: string, replyToken: string, text: string) 
   if (!context) {
     await replyToLine(
       replyToken,
-      'ยังไม่ได้เปิดใช้งานแผนการเดินทาง กรุณาพิมพ์ /activate [รหัส] ก่อนนะคะ'
+      'ยังไม่ได้เปิดใช้งานแผนการเดินทาง กรุณาพิมพ์ /activate [รหัส] ก่อนนะครับ'
     )
     return
   }

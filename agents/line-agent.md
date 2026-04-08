@@ -20,7 +20,8 @@ app/
 lib/
   line/
     client.ts             ← LINE SDK wrapper (replyToLine, pushToLine, replyFlexMessage)
-    parser.ts             ← Parse incoming webhook events
+    parser.ts             ← Parse incoming webhook events (incl. @-mention detection)
+    trigger.ts            ← Group-chat trigger word gate (doma / โดมะ / @dopamichi)
     injector.ts           ← Build context-injected prompt from Trip JSON + hybrid intent classification
 ```
 
@@ -44,8 +45,29 @@ Add to `.env`:
 ```env
 LINE_CHANNEL_SECRET=your_channel_secret
 LINE_CHANNEL_ACCESS_TOKEN=your_channel_access_token
+LINE_BOT_USER_ID=your_bot_user_id   # Basic settings → "Your user ID" — used for @-mention detection in groups
 LIFF_ID=your_liff_id
 ```
+
+## Group-Chat Trigger Word Gate (2026-04-08)
+
+To avoid forcing users into a dedicated bot-only group, the webhook requires a
+**trigger word** before it will respond to any message in a `group` source.
+
+**Triggers (case-insensitive):**
+- `doma ...` — English prefix
+- `โดมะ ...` — Thai prefix
+- `@dopamichi ...` / `@doma ...` / `@โดมะ ...` — literal @-mention text
+- A real LINE @-mention of the bot (detected via `mention.mentionees` matching `LINE_BOT_USER_ID`)
+
+**Rules:**
+- Without a trigger, the bot **silently ignores** the message (no reply, no hint)
+- `/activate` always works, trigger or not — users must be able to bind a group
+- `@all` is **not** a trigger
+- DMs (`user` source) don't need a trigger
+- On `join` event (bot added to group), send a bilingual welcome explaining the rule
+
+Implementation: `lib/line/trigger.ts` → `checkTrigger(text, mentionedBot)` returns `{ triggered, cleanText }`. The cleanText (trigger prefix stripped) is what gets passed to the RAG pipeline.
 
 Install LINE SDK:
 ```bash
@@ -292,7 +314,7 @@ async function handleQuestion(lineId: string, replyToken: string, text: string) 
   if (!context) {
     await replyToLine(
       replyToken,
-      'ยังไม่ได้เปิดใช้งานแผนการเดินทาง กรุณาพิมพ์ /activate [รหัส] ก่อนนะคะ'
+      'ยังไม่ได้เปิดใช้งานแผนการเดินทาง กรุณาพิมพ์ /activate [รหัส] ก่อนนะครับ'
     )
     return
   }

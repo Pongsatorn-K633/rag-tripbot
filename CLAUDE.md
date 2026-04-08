@@ -43,6 +43,8 @@ Delegate entirely to `db-agent`. It must complete:
 
 **Gate:** All migrations applied. Schema up to date. Seed data verified.
 
+> ⚠️ **Maintenance notice (2026-04-08):** `/chat` is temporarily redirected to `/maintenance` via `next.config.ts`. The chat UI code at `app/chat/page.tsx` is preserved untouched and will be re-deployed soon. See `docs/architecture.md` for the re-enable checklist.
+
 ### Phase 2 — Web RAG Chatbot (RAG Agent + Web Agent in parallel)
 - Delegate **backend pipeline** to `rag-agent`: embedder → retriever → assembler → LLM prompt
 - Delegate **frontend + API routes** to `web-agent`: chat UI → `/api/chat` → trip save → activation code

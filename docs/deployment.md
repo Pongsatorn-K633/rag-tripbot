@@ -122,6 +122,13 @@ EMBEDDING_SERVICE_URL=http://localhost:8001
 # LINE Bot (from LINE Developers Console)
 LINE_CHANNEL_SECRET=<actual secret>
 LINE_CHANNEL_ACCESS_TOKEN=<actual token>
+# Bot's own user ID — Basic settings → "Your user ID".
+# Required for real @-mention detection in group chats (text triggers
+# "doma" / "โดมะ" / "@dopamichi" still work without it).
+LINE_BOT_USER_ID=<actual bot user id>
+# Bot's own userId — Basic settings → "Your user ID". Required for @-mention
+# detection in group chats so the trigger-word gate can recognise @dopamichi.
+LINE_BOT_USER_ID=<actual bot user id>
 
 # LIFF (from LINE Developers Console → LIFF tab)
 LIFF_ID=<actual liff id>

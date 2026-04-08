@@ -24,18 +24,23 @@ export default function Footer() {
             <span className="font-headline font-bold text-sm text-zen-black">dopamichi</span>
           </div>
           <p className="font-sans text-xs tracking-widest uppercase text-zen-black/60">
-            &copy; 2024 dopamichi. All rights reserved.
+            &copy; 2026 dopamichi. All rights reserved.
           </p>
         </div>
 
         <div className="flex gap-10">
-          {['Privacy', 'Terms', 'Support', 'About'].map((link) => (
+          {[
+            { label: 'Privacy', href: '/privacy' },
+            { label: 'Terms', href: '/terms' },
+            { label: 'Support', href: '/support' },
+            { label: 'About', href: '/about' },
+          ].map((link) => (
             <a
-              key={link}
-              href="#"
+              key={link.label}
+              href={link.href}
               className="font-sans text-xs tracking-widest uppercase text-zen-black/60 hover:underline hover:text-basel-brick transition-all"
             >
-              {link}
+              {link.label}
             </a>
           ))}
         </div>
