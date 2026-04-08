@@ -1356,6 +1356,11 @@ Then re-seed templates (step 6.2).
 
 ## 19. Phased Rollout Checklist
 
+> ✅ **Phases A–G completed 2026-04-09.** The checkboxes below are kept as
+> historical record. See `CLAUDE.md` § Phase 5 and `docs/architecture.md`
+> § Phase 5 for the final architecture summary. Only item NOT done: chat
+> re-enable (deferred — `/chat → /maintenance` redirect still active).
+
 Do these in order. Each phase is independently deployable and reversible.
 
 ### Phase A — Foundation (no user-facing changes)

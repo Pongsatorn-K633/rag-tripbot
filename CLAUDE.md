@@ -64,12 +64,86 @@ Delegate entirely to `line-agent`. It must complete:
 
 **Gate:** Activate command works; a question about the itinerary returns a correct answer. Full plan requests open a LIFF page via Flex Message.
 
-### Phase 4 — Upload & Templates (Web Agent leads)
-Delegate to `web-agent`. RAG Agent may assist if VLM output needs embedding.
-- [ ] Template gallery page
-- [ ] PDF/screenshot upload endpoint
-- [ ] VLM integration for JSON extraction
-- [ ] User verification UI for extracted JSON
+### Phase 4 — Upload & Templates (Web Agent leads) — COMPLETED 2026-04-04
+- [x] Template gallery page
+- [x] PDF/screenshot upload endpoint
+- [x] VLM integration for JSON extraction
+- [x] User verification UI for extracted JSON
+
+### Phase 5 — Auth + Admin System (Completed 2026-04-09)
+
+Full NextAuth v5 + role-based access control rollout. See `docs/AUTH_TRANSFER_GUIDE.md`
+for the full implementation guide and `eaaefbc` / `5b7d73e` for the final commits.
+
+**Phase A — Foundation:**
+- [x] Downgrade Prisma v7 → v6 for `@auth/prisma-adapter` compatibility
+- [x] Install `next-auth@beta`, `@auth/prisma-adapter`, `resend`
+- [x] Google OAuth + Resend credentials wired via `.env`
+- [x] Expanded Prisma schema: `UserRole` enum, `Template`, `Account`, `Session`,
+  `VerificationToken`, `Trip.coverImage`, `Trip.templateId`, `Template.shareCode`
+- [x] `itinerary_blocks` declared as `Unsupported("vector(1024)")` so `db push`
+  preserves the pgvector table
+
+**Phase B — Auth wiring:**
+- [x] Edge-safe split config: `auth.config.ts` (middleware) + `lib/auth.ts` (full)
+- [x] JWT session strategy with encode-strip to avoid HTTP 431
+- [x] Brand-matched auth pages (signin, verify-request, error) — bilingual
+- [x] Middleware route guards: `/admin/*` requires ADMIN+, `/admin/users` SUPERADMIN
+- [x] Navbar `NavUserMenu` — session-aware
+- [x] Superadmin bootstrap via `events.createUser` + `SUPERADMIN_EMAILS` env
+
+**Phase C — API gating:**
+- [x] `POST/GET/DELETE /api/trips*` all read identity from session, not body
+- [x] Owner check + admin override on deletes
+- [x] `POST /api/upload` member-only to prevent VLM abuse
+- [x] Gallery guest state + signin bounces + pending_itinerary preservation
+
+**Phase D — Template system:**
+- [x] Hardcoded templates migrated to `Template` table
+- [x] `GET /api/templates` public, `POST/DELETE /api/templates/[id]/save` member-only
+- [x] Heart icon save/unsave with optimistic updates + rollback
+- [x] "Your Saved" section on `/templates` (above Curated Collections)
+
+**Phase E — Admin dashboard + cover system + share code unification:**
+- [x] `/admin/dashboard` with Trips and Templates tabs
+- [x] 5 admin API routes: trips list, templates CRUD, promote from trip
+- [x] Cover image system: `Template.coverImage` stores IMG key or Cloudinary URL,
+  resolved at render time with auto-injected `c_fill,g_auto,ar_4:5,f_auto,q_auto`
+- [x] Custom branded `CoverUpload` component (replaces `CldUploadWidget` — no freeze)
+- [x] Cloudinary library browser with Search API (supports both asset_folder and
+  classic folder systems), delete-from-library + stale-cover cleanup sweep
+- [x] Unified share codes: `Template.shareCode` canonical, same for everyone;
+  promote reuses source trip's existing code; system-owned bridge Trip for
+  LINE lookup when minted fresh
+- [x] Trip lock system: trips promoted to published templates are locked from
+  user deletion; red "Published" shield badge; admin override with cascade
+  shareCode regeneration on next dashboard load
+
+**Phase F — Superadmin user management:**
+- [x] `/admin/users` with stats + user table
+- [x] `/api/admin/users` list / `/api/admin/users/[id]` PATCH (role) / DELETE
+- [x] Guardrails: cannot modify/delete self, cannot modify/delete SUPERADMINs,
+  cannot delete system user
+- [x] Cascade handling: delete user reassigns their created Templates to the
+  system user, then cascade-deletes Trips/Sessions/Accounts/LineContexts
+- [x] Two-step delete confirmation (GitHub/Vercel pattern — type email to confirm)
+
+**Phase G — Hardening:**
+- [x] Upstash rate limiting wired via `lib/rate-limit.ts` with graceful fallback
+- [x] Magic link send rate-limited (5 per 10 min per email, blocks spam + enum)
+- [x] `/api/upload` rate-limited (30 per min per user, blocks VLM abuse)
+- [x] Branded HTML email template for magic links (bilingual, brand colors)
+- [ ] Chat re-enable — deferred; `/chat → /maintenance` redirect still active
+
+### Auth system quick reference
+
+- **Providers:** Google OAuth (with `allowDangerousEmailAccountLinking: true`) + Resend magic link
+- **Session:** JWT strategy, httpOnly cookie, encode-stripped to avoid HTTP 431
+- **Roles:** `USER` / `ADMIN` / `SUPERADMIN` enum on `User.role`
+- **Superadmin bootstrap:** email in `SUPERADMIN_EMAILS` env var → auto-promoted on first sign-in via `events.createUser` hook in `lib/auth.ts`
+- **Middleware:** `middleware.ts` at project root uses `auth.config.ts` (edge-safe); API routes use `lib/auth.ts` + `requireSession/requireAdmin/requireSuperAdmin` from `lib/authz.ts`
+- **Share code data flow:** `Template.shareCode` canonical; promoting a Trip reuses its shareCode; otherwise `generateShareCodeForTemplate()` creates a system-owned bridge Trip (see `lib/share-code.ts`)
+- **Cover image pipeline:** `Template.coverImage` / `Trip.coverImage` stores IMG key or Cloudinary URL; `resolveCoverImage()` in `lib/cover-image.ts` normalizes; Cloudinary URLs get `c_fill,g_auto,ar_4:5,f_auto,q_auto` transformations injected at render time
 
 ---
 

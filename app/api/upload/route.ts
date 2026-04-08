@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 import { generateText, generateFromFile } from '@/lib/llm/client'
 import { auth } from '@/lib/auth'
+import { apiRateLimit, checkLimit, getClientIp } from '@/lib/rate-limit'
 
 // ── Itinerary JSON contract shape ──────────────────────────────────────────
 // Must match the project-wide contract defined in CLAUDE.md.
@@ -154,6 +155,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { error: 'กรุณาสมัครสมาชิกเพื่อใช้ฟีเจอร์ AI อ่านไฟล์ · Please sign up to use AI file extraction' },
       { status: 401 }
+    )
+  }
+
+  // Rate limit per authenticated user — 30 uploads/min/user. Stops a
+  // compromised account or rogue client from running up the Gemini bill.
+  const rlKey = `upload:${session.user.id}`
+  const { success, remaining, reset } = await checkLimit(apiRateLimit, rlKey)
+  if (!success) {
+    const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000))
+    return NextResponse.json(
+      {
+        error:
+          'ใช้งานบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่อีกครั้ง · ' +
+          'Too many upload requests. Please wait a moment and try again.',
+        retryAfter,
+      },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': retryAfter.toString(),
+          'X-RateLimit-Remaining': remaining.toString(),
+        },
+      }
     )
   }
 

@@ -342,6 +342,74 @@ rag-tripbot/
 - [x] Build verification UI — reuses `ItineraryCard` for user review before saving
 - [x] VLM integration — Gemini 2.5 Flash for image OCR and PDF text extraction
 
+### Phase 5 — Auth + Admin + Hardening (Completed 2026-04-09)
+
+Full NextAuth v5 + role-based access control rollout. See `docs/AUTH_TRANSFER_GUIDE.md`
+for the step-by-step implementation guide.
+
+**Phase A — Foundation:** Prisma v7 → v6 downgrade (for `@auth/prisma-adapter`
+compatibility), expanded schema with `UserRole` enum, `Template`, `Account`,
+`Session`, `VerificationToken`, `Trip.coverImage`, `Trip.templateId`,
+`Template.shareCode`. `itinerary_blocks` declared as `Unsupported("vector(1024)")`
+so `db push` preserves the pgvector table.
+
+**Phase B — Auth wiring:** Edge-safe split config (`auth.config.ts` for
+middleware + `lib/auth.ts` for full Node). JWT session strategy with encode
+stripping to avoid HTTP 431. Brand-matched bilingual auth pages. Middleware
+guards `/admin/*` (ADMIN+) and `/admin/users` (SUPERADMIN). Superadmin
+bootstrap via `SUPERADMIN_EMAILS` env + `events.createUser` hook.
+
+**Phase C — API gating:** All `/api/trips*`, `/api/activate`, `/api/upload`
+read identity from session instead of request body. Owner + admin override
+checks on deletes. Gallery guest state with sign-up CTA.
+
+**Phase D — Template system migration:** Hardcoded templates moved to DB,
+`POST/DELETE /api/templates/[id]/save` endpoints, heart icon with optimistic
+updates + rollback, "Your Saved" section on `/templates`.
+
+**Phase E — Admin dashboard + cover system + share codes:**
+- `/admin/dashboard` with Trips and Templates tabs, promote-from-trip flow
+- Cover images stored as IMG keys or Cloudinary URLs, resolved via
+  `lib/cover-image.ts` with auto-injected `c_fill,g_auto,ar_4:5,f_auto,q_auto`
+  transformations. Custom branded `CoverUpload` component (no widget freeze).
+  Admin Cloudinary library browser (Search API, supports both dynamic
+  `asset_folder` and classic `folder` systems). Delete-from-library + stale
+  cover cleanup sweep.
+- Share codes unified: `Template.shareCode` canonical (same for all users);
+  promote reuses source trip's code; `generateShareCodeForTemplate()` creates
+  a hidden system-owned bridge Trip for LINE lookup when minting fresh.
+- Trip lock: promoted trips are locked from user deletion (red "Published"
+  shield badge). Admin override nulls the template's shareCode, which gets
+  auto-backfilled on the next dashboard load.
+
+**Phase F — Superadmin user management:** `/admin/users` with role
+promote/demote + delete. Cannot modify/delete self or SUPERADMINs. Templates
+created by a deleted user get reassigned to the system user before cascade.
+Two-step typed-email delete confirmation.
+
+**Phase G — Hardening:** Upstash rate limiting via `lib/rate-limit.ts` with
+graceful fallback when env vars are missing:
+- `authRateLimit` — 5 magic-link requests per 10 min per email
+- `apiRateLimit` — 30 requests per min per user on `/api/upload`
+Branded HTML email template for magic links (bilingual, brand colors). Custom
+`sendVerificationRequest` in `lib/auth.ts` uses Resend SDK directly.
+
+### Auth system quick reference
+
+| Component | Location |
+|---|---|
+| Edge-safe auth config | `auth.config.ts` (providers + minimal callbacks) |
+| Full auth config | `lib/auth.ts` (adapter + jwt encode strip + Resend + createUser hook) |
+| Middleware route guards | `middleware.ts` (uses edge config) |
+| Authz helpers | `lib/authz.ts` — `requireSession`, `requireAdmin`, `requireSuperAdmin` |
+| Rate limiting | `lib/rate-limit.ts` — `authRateLimit`, `apiRateLimit`, `checkLimit` |
+| Share code generation | `lib/share-code.ts` — `generateShareCodeForTemplate`, `getSystemUserId` |
+| Cover image resolver | `lib/cover-image.ts` — `resolveCoverImage` with Cloudinary transform injection |
+| Cloudinary direct upload | `lib/cloudinary-upload.ts` + `app/components/CoverUpload.tsx` |
+| Trip lock detection | `lib/trip-lock.ts` — `getTripLockInfo`, `getLockedTripIds` |
+| Auth pages | `app/auth/signin` · `verify-request` · `error` |
+| Admin pages | `app/admin/dashboard` · `app/admin/users` |
+
 ---
 
 ## ⚠️ Maintenance Notice (2026-04-08)
