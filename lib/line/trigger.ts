@@ -16,11 +16,17 @@
 const TRIGGER_WORDS = ['doma', 'โดมะ', 'dopamichi']
 
 // Build a regex that matches any trigger word at the very start of the text,
-// optionally preceded by '@', and followed by a word boundary / punctuation / space.
+// optionally preceded by '@', and followed by end-of-string / punctuation / space.
 // Examples that match:  "doma hello"  "โดมะ, ไปไหนดี"  "@dopamichi help"  "Doma:hi"
+//
+// Note: we cannot use `\b` (word boundary) here because JS's `\w` is ASCII-only,
+// so `\b` never fires between Thai letters (e.g. "โดมะ") and a following space —
+// meaning "โดมะ hello" would fail to match. Instead we use a unicode-aware
+// negative lookahead: after the trigger, the next char must NOT be a letter or
+// digit in ANY script. This requires the `u` flag.
 const TRIGGER_REGEX = new RegExp(
-  `^@?(${TRIGGER_WORDS.map(escapeRegex).join('|')})\\b[\\s,:.!?\\-]*`,
-  'i'
+  `^@?(${TRIGGER_WORDS.map(escapeRegex).join('|')})(?![\\p{L}\\p{N}_])[\\s,:.!?\\-]*`,
+  'iu'
 )
 
 function escapeRegex(s: string): string {

@@ -3,6 +3,7 @@ import './globals.css'
 import Navbar from '@/app/components/Navbar'
 import Footer from '@/app/components/Footer'
 import ClientLayout from '@/app/components/ClientLayout'
+import Providers from '@/app/providers'
 
 export const metadata: Metadata = {
   title: 'Dopamichi',
@@ -28,11 +29,13 @@ export default function RootLayout({
   return (
     <html lang="th">
       <body className="flex flex-col min-h-screen">
-        <Navbar />
-        <ClientLayout>
-          {children}
-        </ClientLayout>
-        <Footer />
+        <Providers>
+          <Navbar />
+          <ClientLayout>
+            {children}
+          </ClientLayout>
+          <Footer />
+        </Providers>
       </body>
     </html>
   )

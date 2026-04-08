@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { User } from 'lucide-react'
+import { User, LogOut } from 'lucide-react'
+import { useSession, signIn, signOut } from 'next-auth/react'
 import { IMG } from '@/lib/images'
 
 const TABS = [
@@ -73,12 +74,59 @@ export default function Navbar() {
           )}
         </div>
 
-        <div className="flex items-center gap-4">
-          <button className="active:scale-95 duration-150 transition-transform text-basel-brick">
-            <User size={28} strokeWidth={1.5} />
-          </button>
-        </div>
+        <NavUserMenu />
       </nav>
     </header>
+  )
+}
+
+function NavUserMenu() {
+  const { data: session, status } = useSession()
+
+  if (status === 'loading') {
+    return <div className="w-10 h-10" />
+  }
+
+  if (!session?.user) {
+    return (
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => signIn()}
+          className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-zen-black hover:text-basel-brick transition-colors"
+        >
+          <User size={20} strokeWidth={2} />
+          <span className="hidden sm:inline">Sign in</span>
+        </button>
+      </div>
+    )
+  }
+
+  const isAdmin = session.user.role === 'ADMIN' || session.user.role === 'SUPERADMIN'
+  const displayName = session.user.name ?? session.user.email ?? 'User'
+
+  return (
+    <div className="flex items-center gap-4">
+      {isAdmin && (
+        <Link
+          href="/admin/dashboard"
+          className="text-[10px] font-black uppercase tracking-widest text-basel-brick border border-basel-brick px-2 py-1 hover:bg-basel-brick hover:text-white transition-all"
+        >
+          Admin
+        </Link>
+      )}
+      <div className="hidden md:flex flex-col items-end leading-tight">
+        <span className="text-xs font-bold text-zen-black">{displayName}</span>
+        <span className="text-[8px] font-black uppercase tracking-widest text-zen-black/40">
+          {session.user.role}
+        </span>
+      </div>
+      <button
+        onClick={() => signOut({ callbackUrl: '/' })}
+        title="Sign out"
+        className="text-zen-black/60 hover:text-basel-brick transition-colors"
+      >
+        <LogOut size={20} strokeWidth={2} />
+      </button>
+    </div>
   )
 }

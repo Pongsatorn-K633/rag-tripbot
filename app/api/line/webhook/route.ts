@@ -56,11 +56,10 @@ async function handleEvent(event: webhook.Event) {
 }
 
 const GROUP_WELCOME_MESSAGE =
-  'สวัสดีครับทุกคน! ผม Dopamichi ไกด์ญี่ปุ่นส่วนตัวของกลุ่มนี้ 🗾✨\n\n' +
-  '📌 เริ่มต้นใช้งาน: พิมพ์ /activate [รหัส] เพื่อเปิดแผนการเดินทางของคุณ\n' +
-  '💬 ถามคำถาม: เพื่อไม่ให้เป็นการรบกวนเวลาคุยกันในกลุ่ม กรุณาพิมพ์ "doma" หรือ "โดมะ" นำหน้าคำถามนะครับ\n\n' +
-  'ตัวอย่าง: doma ต้องไปถึงสนามบินกี่โมง\n\n' +
-  'Hi everyone! I\'m Dopamichi, your personal Japan trip guide. In groups, just prefix your question with "doma" or "โดมะ" to talk to me.'
+  'โยโคโสะ! ผม Dopamichi ไกด์ญี่ปุ่นส่วนตัวของกลุ่มนี้ครับ 🎒✨\n\n' +
+  '📌 เมื่อระบบซิงค์ข้อมูลเรียบร้อยแล้ว: พิมพ์ /activate [รหัสทริป] เพื่อเปิดแผนการเดินทางของคุณ\n' +
+  `💬 เพื่อให้ทุกคนแพลนทริปกันได้ลื่นไหลไม่ขัดจังหวะแชท ถ้ามีคำถามถึงผม แค่พิมพ์ "doma" หรือ "โดมะ" นำหน้าประโยคได้เลยคร้าบ 🙌🏻\n\n` +
+  `💡 ตัวอย่าง: doma พรุ่งนี้ต้องไปถึงสนามบินกี่โมง\n\n`
 
 async function handleActivate(
   lineId: string,
