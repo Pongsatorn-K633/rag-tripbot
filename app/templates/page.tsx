@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { ArrowRight, Heart } from 'lucide-react'
+import { ArrowRight, Heart, ChevronDown } from 'lucide-react'
 import { useSession, signIn } from 'next-auth/react'
 import { type Itinerary } from '@/app/components/TemplateCard'
 import ItineraryCard from '@/app/components/ItineraryCard'
@@ -43,6 +43,7 @@ export default function TemplatesPage() {
   const [heartPending, setHeartPending] = useState<Set<string>>(new Set())
 
   // Modal state
+  const [savedOpen, setSavedOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [shareCode, setShareCode] = useState<string | null>(null)
@@ -191,83 +192,119 @@ export default function TemplatesPage() {
         </p>
       </header>
 
-      {/* Your Saved Templates — only visible when signed in and has saves.
-          Positioned ABOVE Curated Collections so users see their own content
-          first. Compact horizontal strip, clicking a card opens the preview
-          modal (same as the main grid). */}
-      {session?.user && savedTemplateIds.size > 0 && (
-        <section className="mb-20">
-          <div className="flex items-end justify-between mb-8 border-b-2 border-zen-black/5 pb-6">
-            <div>
-              <span className="text-basel-brick font-extrabold text-xs uppercase tracking-[0.3em] mb-2 block font-headline">
-                ♥ Your Saved
+      {/* Your Saved — collapsible accordion, CLOSED by default.
+          The header is always visible (when signed in) showing the count.
+          Click to expand/collapse. No viewport disruption. */}
+      {/* Your Saved — collapsible accordion, CLOSED by default.
+          Always visible when signed in (even with 0 saves) so the layout
+          never shifts. Click the header to expand/collapse. */}
+      {session?.user && (
+        <div className="mb-10 border border-zen-black/10 bg-white/50">
+          {/* Accordion header — always visible, clickable */}
+          <button
+            onClick={() => setSavedOpen(!savedOpen)}
+            className="w-full flex items-center justify-between px-6 py-4 hover:bg-briefing-cream/50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Heart size={16} fill={savedTemplateIds.size > 0 ? '#B43325' : 'none'} stroke="#B43325" strokeWidth={2.5} />
+              <span className="font-headline font-black text-sm tracking-tight text-zen-black">
+                เทมเพลตที่คุณชอบ · Your Saved
               </span>
-              <h2 className="text-3xl md:text-4xl font-headline font-black tracking-tighter text-zen-black italic">
-                เทมเพลตที่คุณชอบ
-              </h2>
+              {savedTemplateIds.size > 0 && (
+                <span className="bg-basel-brick text-white text-[9px] font-black px-2 py-0.5 rounded-full">
+                  {savedTemplateIds.size}
+                </span>
+              )}
             </div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-zen-black/40">
-              {savedTemplateIds.size} saved
-            </span>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            <AnimatePresence mode="popLayout">
-              {templates
-                .filter((t) => savedTemplateIds.has(t.id))
-                .map((tpl) => {
-                  const imgSrc = resolveCoverImage(tpl.coverImage, tpl.id)
-                  return (
-                    <motion.div
-                      key={tpl.id}
-                      layout
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{
-                        opacity: 0,
-                        scale: 0.85,
-                        filter: 'blur(6px)',
-                        transition: { duration: 0.35 },
-                      }}
-                      whileHover={{ y: -6 }}
-                      transition={{ layout: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } }}
-                      onClick={() => {
-                        setSelectedId(tpl.id)
-                        setSaveState('idle')
-                        setShareCode(null)
-                      }}
-                      className="group relative bg-white p-3 rounded-lg shadow-sm hover:shadow-xl transition-shadow cursor-pointer"
-                    >
-                      <button
-                        onClick={(e) => toggleHeart(tpl.id, e)}
-                        aria-label="Unsave"
-                        className="absolute top-4 right-4 z-20 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
-                      >
-                        <Heart size={14} fill="#B43325" stroke="#B43325" strokeWidth={2.5} />
-                      </button>
-                      <div className="relative aspect-[4/3] overflow-hidden mb-3 bg-briefing-cream rounded">
-                        <img
-                          alt={tpl.title}
-                          className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
-                          src={imgSrc}
-                        />
-                        <div className="absolute bottom-0 left-0 w-full p-3 bg-gradient-to-t from-zen-black/80 to-transparent">
-                          <span className="bg-basel-brick text-briefing-cream px-2 py-0.5 text-[9px] font-black uppercase tracking-widest font-headline">
-                            {tpl.totalDays}D
-                          </span>
-                        </div>
-                      </div>
-                      <h3 className="text-sm font-headline font-bold text-zen-black truncate">
-                        {tpl.title}
-                      </h3>
-                      <p className="text-[10px] text-zen-black/40 font-bold uppercase tracking-widest">
-                        {tpl.season ?? ''}
+            <ChevronDown
+              size={18}
+              className={`text-zen-black/40 transition-transform duration-300 ${
+                savedOpen ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+
+          {/* Accordion content — animated expand/collapse */}
+          <AnimatePresence initial={false}>
+            {savedOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="px-6 pb-6 pt-2">
+                  {savedTemplateIds.size === 0 ? (
+                    <div className="py-8 text-center border-2 border-dashed border-zen-black/10">
+                      <p className="text-zen-black/40 text-sm font-sans">
+                        กดรูปหัวใจเพื่อบันทึกเทมเพลตที่ชอบ · Heart a template below to save it here
                       </p>
-                    </motion.div>
-                  )
-                })}
-            </AnimatePresence>
-          </div>
-        </section>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                      <AnimatePresence mode="popLayout">
+                        {templates
+                          .filter((t) => savedTemplateIds.has(t.id))
+                          .map((tpl) => {
+                            const imgSrc = resolveCoverImage(tpl.coverImage, tpl.id)
+                            return (
+                              <motion.div
+                                key={tpl.id}
+                                layout
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{
+                                  opacity: 0,
+                                  scale: 0.85,
+                                  filter: 'blur(6px)',
+                                  transition: { duration: 0.35 },
+                                }}
+                                whileHover={{ y: -6 }}
+                                transition={{ layout: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } }}
+                                onClick={() => {
+                                  setSelectedId(tpl.id)
+                                  setSaveState('idle')
+                                  setShareCode(null)
+                                }}
+                                className="group relative bg-white p-3 rounded-lg shadow-sm hover:shadow-xl transition-shadow cursor-pointer"
+                              >
+                                <button
+                                  onClick={(e) => toggleHeart(tpl.id, e)}
+                                  aria-label="Unsave"
+                                  className="absolute top-4 right-4 z-20 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
+                                >
+                                  <Heart size={14} fill="#B43325" stroke="#B43325" strokeWidth={2.5} />
+                                </button>
+                                <div className="relative aspect-[4/3] overflow-hidden mb-3 bg-briefing-cream rounded">
+                                  <img
+                                    alt={tpl.title}
+                                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                                    src={imgSrc}
+                                  />
+                                  <div className="absolute bottom-0 left-0 w-full p-3 bg-gradient-to-t from-zen-black/80 to-transparent">
+                                    <span className="bg-basel-brick text-briefing-cream px-2 py-0.5 text-[9px] font-black uppercase tracking-widest font-headline">
+                                      {tpl.totalDays}D
+                                    </span>
+                                  </div>
+                                </div>
+                                <h3 className="text-sm font-headline font-bold text-zen-black truncate">
+                                  {tpl.title}
+                                </h3>
+                                <p className="text-[10px] text-zen-black/40 font-bold uppercase tracking-widest">
+                                  {tpl.season ?? ''}
+                                </p>
+                              </motion.div>
+                            )
+                          })}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       )}
 
       {/* Section header */}

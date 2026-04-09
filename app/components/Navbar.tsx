@@ -1,8 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { User, LogOut } from 'lucide-react'
+import { User, LogOut, Menu, X } from 'lucide-react'
 import { useSession, signIn, signOut } from 'next-auth/react'
 import { IMG } from '@/lib/images'
 
@@ -16,6 +17,7 @@ const TABS = [
 
 export default function Navbar() {
   const pathname = usePathname()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   // Hide on liff routes only
   if (pathname.startsWith('/liff')) {
@@ -33,6 +35,7 @@ export default function Navbar() {
         <Link
           href="/"
           className="flex items-center gap-3"
+          onClick={() => setMobileOpen(false)}
         >
           <img
             alt="dopamichi logo"
@@ -44,6 +47,7 @@ export default function Navbar() {
           </span>
         </Link>
 
+        {/* Desktop tabs */}
         <div className="hidden md:flex items-center gap-8 font-headline tracking-tight font-bold text-lg">
           {TABS.map((tab) =>
             tab.disabled ? (
@@ -74,11 +78,66 @@ export default function Navbar() {
           )}
         </div>
 
-        <NavUserMenu />
+        {/* Right side: user menu (desktop) + hamburger (mobile) */}
+        <div className="flex items-center gap-3">
+          <div className="hidden md:block">
+            <NavUserMenu />
+          </div>
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="md:hidden text-zen-black/70 hover:text-basel-brick transition-colors"
+            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+          >
+            {mobileOpen ? <X size={24} strokeWidth={2} /> : <Menu size={24} strokeWidth={2} />}
+          </button>
+        </div>
       </nav>
+
+      {/* Mobile dropdown */}
+      {mobileOpen && (
+        <div className="md:hidden border-t border-zen-black/5 bg-white/95 backdrop-blur-md">
+          <div className="px-8 py-6 space-y-4">
+            {/* Nav links */}
+            {TABS.map((tab) =>
+              tab.disabled ? (
+                <div
+                  key={tab.id}
+                  className="flex items-center justify-between py-2 text-zen-black/30"
+                >
+                  <span className="font-headline font-bold text-lg">{tab.label}</span>
+                  <span className="text-[8px] font-black uppercase tracking-widest bg-basel-brick text-white px-1.5 py-0.5 rounded-sm">
+                    Soon
+                  </span>
+                </div>
+              ) : (
+                <Link
+                  key={tab.id}
+                  href={tab.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={`block py-2 font-headline font-bold text-lg transition-colors ${
+                    isActive(tab.href)
+                      ? 'text-basel-brick'
+                      : 'text-zen-black/70 hover:text-basel-brick'
+                  }`}
+                >
+                  {tab.label}
+                </Link>
+              )
+            )}
+
+            {/* Divider */}
+            <div className="border-t border-zen-black/10 pt-4">
+              <MobileUserMenu onClose={() => setMobileOpen(false)} />
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   )
 }
+
+// ── Desktop user menu ────────────────────────────────────────────────────────
 
 function NavUserMenu() {
   const { data: session, status } = useSession()
@@ -89,15 +148,13 @@ function NavUserMenu() {
 
   if (!session?.user) {
     return (
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => signIn()}
-          className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-zen-black hover:text-basel-brick transition-colors"
-        >
-          <User size={20} strokeWidth={2} />
-          <span className="hidden sm:inline">Sign in</span>
-        </button>
-      </div>
+      <button
+        onClick={() => signIn()}
+        className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-zen-black hover:text-basel-brick transition-colors"
+      >
+        <User size={20} strokeWidth={2} />
+        <span>Sign in</span>
+      </button>
     )
   }
 
@@ -114,7 +171,7 @@ function NavUserMenu() {
           Admin
         </Link>
       )}
-      <div className="hidden md:flex flex-col items-end leading-tight">
+      <div className="flex flex-col items-end leading-tight">
         <span className="text-xs font-bold text-zen-black">{displayName}</span>
         <span className="text-[8px] font-black uppercase tracking-widest text-zen-black/40">
           {session.user.role}
@@ -126,6 +183,60 @@ function NavUserMenu() {
         className="text-zen-black/60 hover:text-basel-brick transition-colors"
       >
         <LogOut size={20} strokeWidth={2} />
+      </button>
+    </div>
+  )
+}
+
+// ── Mobile user menu ─────────────────────────────────────────────────────────
+
+function MobileUserMenu({ onClose }: { onClose: () => void }) {
+  const { data: session, status } = useSession()
+
+  if (status === 'loading') {
+    return <div className="py-2 text-zen-black/30 text-sm">Loading...</div>
+  }
+
+  if (!session?.user) {
+    return (
+      <button
+        onClick={() => { signIn(); onClose() }}
+        className="w-full py-3 bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all"
+      >
+        Sign in
+      </button>
+    )
+  }
+
+  const isAdmin = session.user.role === 'ADMIN' || session.user.role === 'SUPERADMIN'
+  const displayName = session.user.name ?? session.user.email ?? 'User'
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-bold text-zen-black">{displayName}</p>
+          <p className="text-[9px] font-black uppercase tracking-widest text-zen-black/40">
+            {session.user.role}
+          </p>
+        </div>
+      </div>
+
+      {isAdmin && (
+        <Link
+          href="/admin/dashboard"
+          onClick={onClose}
+          className="block w-full py-3 text-center border-2 border-basel-brick text-basel-brick font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-basel-brick hover:text-white transition-all"
+        >
+          Admin Dashboard
+        </Link>
+      )}
+
+      <button
+        onClick={() => { signOut({ callbackUrl: '/' }); onClose() }}
+        className="w-full py-3 border-2 border-zen-black text-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-white transition-all"
+      >
+        Sign out
       </button>
     </div>
   )
