@@ -22,7 +22,7 @@ export default function SupportPage() {
             <h3 className="font-headline font-bold text-xl mb-2">Email</h3>
             <p className="text-sm text-zen-black/60 mb-3">For detailed issues</p>
             <a className="text-basel-brick font-bold text-sm underline" href="mailto:dopamichi.info@gmail.com">
-              support@dopamichi.com
+              dopamichi.info@gmail.com
             </a>
           </div>
           <div className="p-8 border-b md:border-b-0 md:border-r border-zen-black">

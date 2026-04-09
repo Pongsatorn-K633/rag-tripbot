@@ -280,7 +280,7 @@ export default function GalleryPage() {
     <main className="pt-32 pb-24 px-6 max-w-7xl mx-auto">
       {/* Hero */}
       <header className="mb-20">
-        <h1 className="text-5xl md:text-7xl font-headline font-extrabold tracking-tighter text-basel-brick mb-6">The Digital Curator</h1>
+        <h1 className="text-4xl md:text-5xl lg:text-7xl font-headline font-extrabold tracking-tighter text-basel-brick mb-6">The Digital Curator</h1>
         <p className="text-zen-black/70 text-lg max-w-2xl leading-relaxed font-sans">
           อัปโหลดแผนเดิม หรือดูแผนที่บันทึกไว้ของคุณ ทุกการเดินทางจะเป็นไปอย่างราบรื่น
         </p>
@@ -454,10 +454,10 @@ export default function GalleryPage() {
 
       {/* Saved Trips Section */}
       <section className="mb-24">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6 border-b-2 border-zen-black/5 pb-8">
+        <div className="flex flex-col md:flex-row justify-between md:items-end mb-16 gap-4 md:gap-6 border-b-2 border-zen-black/5 pb-8">
           <div>
             <span className="text-basel-brick font-extrabold text-sm uppercase tracking-[0.3em] mb-4 block font-headline">Your Collection</span>
-            <h2 className="text-5xl font-headline font-black tracking-tighter text-zen-black">แผนการเดินทางของคุณ</h2>
+            <h2 className="text-3xl md:text-5xl font-headline font-black tracking-tighter text-zen-black">แผนการเดินทางของคุณ</h2>
             <p className="text-zen-black/50 text-sm mt-2 font-sans">Saved Journeys</p>
           </div>
         </div>
