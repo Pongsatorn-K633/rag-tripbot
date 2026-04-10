@@ -634,7 +634,6 @@ export default function GalleryPage() {
                   src={IMG.logo}
                   alt="background pattern"
                   fill
-                  unoptimized
                   className="object-cover grayscale scale-150 rotate-12"
                   sizes="(max-width: 768px) 100vw, 50vw"
                 />

@@ -45,8 +45,9 @@ export const IMG = {
   liffHero: 'https://lh3.googleusercontent.com/aida-public/AB6AXuATw90m5PYZIo_nX274DHOFpi_jrovymhssMZsnw4xYN3b7vSX-3Z7SqGdEZg_W1HqCUvHu7ophYzUILFV_Ku7tnghUy10JChBv2lO_dbupxpWKzBrzcR0qNvd85lacsFu-ORqST1CaGIbT2YcfofOFXCDAP9-fjqN0krp1e5WL8S67j-zn6xjJjpSBr45UPq9x-ah51yV0VJf5NuaPOtx_TUZ0sDvODKq5i4JLe1SNqa3wS3Re2QWsSlRwbYw-YqhFz6GTk9i4_lU',
 
   // ── Dopamichi logo ─────────────────────────────────────────────────────────
-  // Used in Navbar, Footer, gallery upload panel background, and LIFF top bar
-  logo: 'https://lh3.googleusercontent.com/aida/ADBb0ujJkeXD0IWKAlWW1ufnz559MGeV2BHEGaeEN_iGGXcVXhP9ArWjQ-FI_-JQcKrgoSU1MiKHkuL2DgAVbY3ZsVMK8_CqVX9DLHD1iz4C0MbbWiOj9_QEeGbVV9tJMRgdTh2T4w7Md7oV9FhaIEi6pAlSFIgNlHvKw0iO5xx9NheGqfPz97ITN4pPcGIBGPTYkVEzAZUHs_G7UYnQoLm0mdI6CeHTel1Hb1MzrlYvZBQ77iwQthjiddYTPJAZmcIey8SwdXFsruh5OA',
+  // Used in Navbar, Footer, gallery upload panel background, and LIFF top bar.
+  // Served from /public/ — permanent, no CDN dependency, no expiring URLs.
+  logo: '/android-chrome-192x192.png',
 
   // ── Stock photo pool ───────────────────────────────────────────────────────
   // Reused across gallery/page.tsx (STOCK_IMAGES) and templates/page.tsx (TEMPLATE_IMAGES).

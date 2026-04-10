@@ -112,7 +112,6 @@ function ItineraryContent() {
             alt="dopamichi logo"
             width={28}
             height={28}
-            unoptimized
             className="h-7 w-7 object-contain"
           />
           <span className="font-headline font-bold tracking-tighter text-briefing-cream text-lg">
