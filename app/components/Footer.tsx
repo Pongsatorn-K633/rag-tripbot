@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import Image from 'next/image'
 import { IMG } from '@/lib/images'
 
 export default function Footer() {
@@ -16,10 +17,12 @@ export default function Footer() {
       <div className="flex flex-col md:flex-row justify-between items-center px-12 w-full max-w-screen-2xl mx-auto gap-8">
         <div className="flex flex-col items-center md:items-start gap-2">
           <div className="flex items-center gap-2">
-            <img
-              alt="logo"
-              className="h-5 w-5 grayscale opacity-50"
+            <Image
               src={IMG.logo}
+              alt="logo"
+              width={20}
+              height={20}
+              className="h-5 w-5 grayscale opacity-50"
             />
             <span className="font-headline font-bold text-sm text-zen-black">dopamichi</span>
           </div>

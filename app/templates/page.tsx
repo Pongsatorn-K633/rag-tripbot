@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { motion, AnimatePresence } from 'motion/react'
 import { ArrowRight, Heart, ChevronDown } from 'lucide-react'
 import { useSession, signIn } from 'next-auth/react'
@@ -277,10 +278,12 @@ export default function TemplatesPage() {
                                   <Heart size={14} fill="#B43325" stroke="#B43325" strokeWidth={2.5} />
                                 </button>
                                 <div className="relative aspect-[4/3] overflow-hidden mb-3 bg-briefing-cream rounded">
-                                  <img
-                                    alt={tpl.title}
-                                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                                  <Image
                                     src={imgSrc}
+                                    alt={tpl.title}
+                                    fill
+                                    className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                                   />
                                   <div className="absolute bottom-0 left-0 w-full p-3 bg-gradient-to-t from-zen-black/80 to-transparent">
                                     <span className="bg-basel-brick text-briefing-cream px-2 py-0.5 text-[9px] font-black uppercase tracking-widest font-headline">
@@ -374,10 +377,12 @@ export default function TemplatesPage() {
                 </button>
 
                 <div className="relative aspect-[4/5] overflow-hidden mb-6 bg-briefing-cream rounded-lg">
-                  <img
-                    alt={tpl.title}
-                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                  <Image
                     src={imgSrc}
+                    alt={tpl.title}
+                    fill
+                    className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
                   />
                   <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-zen-black/80 to-transparent">
                     <span className="bg-basel-brick text-briefing-cream px-3 py-1 text-[10px] font-black uppercase tracking-widest font-headline">

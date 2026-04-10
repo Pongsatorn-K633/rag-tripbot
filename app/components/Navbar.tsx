@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { User, LogOut, Menu, X } from 'lucide-react'
 import { useSession, signIn, signOut } from 'next-auth/react'
@@ -37,10 +38,12 @@ export default function Navbar() {
           className="flex items-center gap-3"
           onClick={() => setMobileOpen(false)}
         >
-          <img
-            alt="dopamichi logo"
-            className="h-8 w-8 object-contain"
+          <Image
             src={IMG.logo}
+            alt="dopamichi logo"
+            width={32}
+            height={32}
+            className="h-8 w-8 object-contain"
           />
           <span className="text-2xl font-headline font-bold tracking-tighter text-zen-black">
             dopamichi

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { MessageSquare, BookOpen, Upload, ArrowRight, Compass } from 'lucide-react'
 import { motion } from 'motion/react'
 import { IMG } from '@/lib/images'
@@ -43,11 +44,13 @@ export default function Home() {
             transition={{ duration: 1 }}
             className="relative"
           >
-            <div className="aspect-square bg-zen-black overflow-hidden grayscale contrast-125">
-              <img
-                alt="Japanese Aesthetic"
-                className="w-full h-full object-cover opacity-80"
+            <div className="aspect-square bg-zen-black overflow-hidden grayscale contrast-125 relative">
+              <Image
                 src={IMG.homeHero}
+                alt="Japanese Aesthetic"
+                fill
+                className="object-cover opacity-80"
+                sizes="(max-width: 1024px) 100vw, 50vw"
               />
             </div>
             <div className="absolute -bottom-4 -left-4 bg-basel-brick text-briefing-cream px-6 py-4 font-bold text-sm tracking-widest uppercase">
@@ -113,10 +116,12 @@ export default function Home() {
       <section className="px-8 py-24 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 h-auto md:h-[500px]">
           <div className="md:col-span-2 relative bg-zen-black group overflow-hidden">
-            <img
-              alt="Tokyo"
-              className="w-full h-full object-cover grayscale opacity-50 transition-all duration-700 group-hover:scale-105 group-hover:opacity-100 group-hover:grayscale-0"
+            <Image
               src={IMG.homeTokyo}
+              alt="Tokyo"
+              fill
+              className="object-cover grayscale opacity-50 transition-all duration-700 group-hover:scale-105 group-hover:opacity-100 group-hover:grayscale-0"
+              sizes="(max-width: 768px) 100vw, 50vw"
             />
             <div className="absolute inset-0 p-10 flex flex-col justify-end">
               <h4 className="text-briefing-cream text-4xl font-headline font-bold uppercase tracking-tight">Tokyo Nights</h4>
@@ -125,10 +130,12 @@ export default function Home() {
 
           <div className="md:col-span-2 grid grid-cols-2 gap-4">
             <div className="relative bg-zen-black group overflow-hidden">
-              <img
-                alt="Kyoto"
-                className="w-full h-full object-cover grayscale opacity-50 group-hover:opacity-100 group-hover:grayscale-0 transition-all"
+              <Image
                 src={IMG.homeKyoto}
+                alt="Kyoto"
+                fill
+                className="object-cover grayscale opacity-50 group-hover:opacity-100 group-hover:grayscale-0 transition-all"
+                sizes="(max-width: 768px) 100vw, 25vw"
               />
               <div className="absolute inset-0 p-6 flex flex-col justify-end">
                 <h4 className="text-briefing-cream font-headline font-bold uppercase text-sm">Zen Heritage</h4>
@@ -136,10 +143,12 @@ export default function Home() {
             </div>
 
             <div className="relative bg-zen-black group overflow-hidden">
-              <img
-                alt="Fuji"
-                className="w-full h-full object-cover grayscale opacity-50 group-hover:opacity-100 group-hover:grayscale-0 transition-all"
+              <Image
                 src={IMG.homeFuji}
+                alt="Fuji"
+                fill
+                className="object-cover grayscale opacity-50 group-hover:opacity-100 group-hover:grayscale-0 transition-all"
+                sizes="(max-width: 768px) 100vw, 25vw"
               />
               <div className="absolute inset-0 p-6 flex flex-col justify-end">
                 <h4 className="text-briefing-cream font-headline font-bold uppercase text-sm">The Peak</h4>

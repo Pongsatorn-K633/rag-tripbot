@@ -128,11 +128,17 @@ for the full implementation guide and `eaaefbc` / `5b7d73e` for the final commit
   system user, then cascade-deletes Trips/Sessions/Accounts/LineContexts
 - [x] Two-step delete confirmation (GitHub/Vercel pattern — type email to confirm)
 
-**Phase G — Hardening:**
+**Phase G — Hardening + Polish:**
 - [x] Upstash rate limiting wired via `lib/rate-limit.ts` with graceful fallback
 - [x] Magic link send rate-limited (5 per 10 min per email, blocks spam + enum)
 - [x] `/api/upload` rate-limited (30 per min per user, blocks VLM abuse)
 - [x] Branded HTML email template for magic links (bilingual, brand colors)
+- [x] All `<img>` tags migrated to `next/image` `<Image />` with `remotePatterns`
+  configured for `lh3.googleusercontent.com` + `res.cloudinary.com` in
+  `next.config.ts` — automatic lazy loading, WebP/AVIF, responsive `sizes`
+- [x] Mobile hamburger navbar (all tabs + user menu in dropdown)
+- [x] Saved templates collapsible accordion (closed by default, no viewport shift)
+- [x] Responsive font sizing for Thai text headers on mobile (`text-3xl md:text-5xl`)
 - [ ] Chat re-enable — deferred; `/chat → /maintenance` redirect still active
 
 ### Auth system quick reference

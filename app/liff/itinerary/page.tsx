@@ -2,6 +2,7 @@
 
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState, Suspense } from 'react'
+import Image from 'next/image'
 import { ChevronDown } from 'lucide-react'
 import { IMG } from '@/lib/images'
 
@@ -106,10 +107,12 @@ function ItineraryContent() {
         style={{ backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)' }}
       >
         <div className="flex items-center gap-3 px-5 py-4 max-w-lg mx-auto">
-          <img
-            alt="dopamichi logo"
-            className="h-7 w-7 object-contain"
+          <Image
             src={IMG.logo}
+            alt="dopamichi logo"
+            width={28}
+            height={28}
+            className="h-7 w-7 object-contain"
           />
           <span className="font-headline font-bold tracking-tighter text-briefing-cream text-lg">
             dopamichi
@@ -122,10 +125,12 @@ function ItineraryContent() {
         {/* Hero section */}
         <div className="mb-10 relative overflow-hidden rounded-2xl h-72 flex flex-col justify-end p-8">
           {/* Background image */}
-          <img
+          <Image
             src={IMG.liffHero}
             alt="Japan scenery"
-            className="absolute inset-0 w-full h-full object-cover grayscale brightness-50"
+            fill
+            className="object-cover grayscale brightness-50"
+            sizes="100vw"
           />
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />

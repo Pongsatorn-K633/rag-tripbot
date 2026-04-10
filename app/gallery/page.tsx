@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import Image from 'next/image'
 import { CloudUpload, CheckCircle, Trash2, ArrowRight, Flower, Lock, Shield } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'motion/react'
@@ -535,10 +536,12 @@ export default function GalleryPage() {
                     )}
 
                     <div className="relative aspect-[4/5] overflow-hidden mb-6 bg-briefing-cream rounded-lg">
-                      <img
-                        alt={trip.title}
-                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                      <Image
                         src={imgSrc}
+                        alt={trip.title}
+                        fill
+                        className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
                       />
                       <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-zen-black/80 to-transparent">
                         <span className="bg-basel-brick text-briefing-cream px-3 py-1 text-[10px] font-black uppercase tracking-widest font-headline">
@@ -626,11 +629,13 @@ export default function GalleryPage() {
               transition={{ duration: 0.8, ease: 'easeOut' }}
               className="relative w-full aspect-square max-w-md bg-white border border-basel-brick/10 rounded-[3rem] overflow-hidden flex items-center justify-center group shadow-2xl shadow-black/5"
             >
-              <div className="absolute inset-0 opacity-5 mix-blend-multiply">
-                <img
-                  alt="background pattern"
-                  className="w-full h-full object-cover grayscale scale-150 rotate-12"
+              <div className="absolute inset-0 opacity-5 mix-blend-multiply relative">
+                <Image
                   src={IMG.logo}
+                  alt="background pattern"
+                  fill
+                  className="object-cover grayscale scale-150 rotate-12"
+                  sizes="(max-width: 768px) 100vw, 50vw"
                 />
               </div>
               <div className="relative z-10 flex flex-col items-center gap-8">

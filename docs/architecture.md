@@ -426,7 +426,68 @@ The **AI Chat (`/chat`)** route is currently in **maintenance mode**:
 
 ---
 
-## 8. Open Decisions
+## 8. UI Rendering Strategy
+
+The app uses three rendering modes depending on the page's data needs.
+All images use `next/image` `<Image />` with `remotePatterns` configured
+for `lh3.googleusercontent.com` and `res.cloudinary.com` (see
+`next.config.ts`), giving automatic lazy loading + WebP/AVIF conversion.
+
+### SSG — Static Site Generation (`○` in build output)
+
+Pre-rendered at build time, served from Vercel CDN. Zero server compute.
+Used for pages with no per-user data in the initial HTML.
+
+| Route | Notes |
+|---|---|
+| `/` | Home page — pure static |
+| `/templates` | Shell is static; template list + saved state load client-side via `useEffect` |
+| `/gallery` | Shell is static; trips + upload state are client-side |
+| `/chat` | Shell is static; chat messages are client-side state (currently behind `/maintenance` redirect) |
+| `/auth/signin`, `verify-request`, `error` | Static forms; `signIn()` runs client-side |
+| `/maintenance`, `/privacy`, `/terms`, `/about`, `/support` | Pure static, no data |
+| `/liff/itinerary` | Static shell; fetches trip by shareCode client-side |
+
+### SSR — Server-Side Rendering (`ƒ` in build output)
+
+HTML generated per request. Used when the server must check auth/role
+before deciding what to render (e.g. `await auth()` + `redirect()`).
+
+| Route | Notes |
+|---|---|
+| `/admin/dashboard` | Server component calls `auth()` + `isAdminRole()`, then renders `<AdminDashboard>` client component |
+| `/admin/users` | Server component calls `auth()` + `isSuperAdmin()`, then renders `<UsersAdmin>` client component |
+
+### CSR — Client-Side Rendering (inside `'use client'` components)
+
+After the SSG/SSR shell loads, JavaScript in the browser fetches data
+and updates the DOM. All interactive features use this pattern:
+`useSession()`, `fetch('/api/...')`, `useState`, `AnimatePresence`, etc.
+
+### Serverless Functions (API routes)
+
+Every `/api/*` route is an independent Node.js function. Runs on-demand
+(cold-start ~200ms on Vercel hobby tier). Auth is checked per-route via
+`await auth()` from `lib/auth.ts`.
+
+### Edge Runtime (middleware)
+
+`middleware.ts` runs on Vercel's edge network before every page request.
+Uses the edge-safe `auth.config.ts` (no Prisma/pg imports) to decode
+the JWT session cookie and enforce route guards (`/admin/*` requires
+ADMIN+, `/admin/users` requires SUPERADMIN).
+
+### What we do NOT use
+
+| Technique | Why not |
+|---|---|
+| ISR (Incremental Static Regeneration) | Templates change rarely; CSR fetch on mount is simpler and always fresh |
+| Streaming RSC | Admin pages use RSC but redirect or render a client wrapper — no streaming benefit |
+| PPR (Partial Pre-Rendering) | Not stable in Next 15.5; SSG + CSR achieves a similar result |
+
+---
+
+## 9. Open Decisions
 
 | Question | Options | Notes |
 |---|---|---|
