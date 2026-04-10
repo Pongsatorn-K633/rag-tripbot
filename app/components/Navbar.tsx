@@ -43,6 +43,7 @@ export default function Navbar() {
             alt="dopamichi logo"
             width={32}
             height={32}
+            unoptimized
             className="h-8 w-8 object-contain"
           />
           <span className="text-2xl font-headline font-bold tracking-tighter text-zen-black">

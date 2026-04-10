@@ -135,7 +135,9 @@ for the full implementation guide and `eaaefbc` / `5b7d73e` for the final commit
 - [x] Branded HTML email template for magic links (bilingual, brand colors)
 - [x] All `<img>` tags migrated to `next/image` `<Image />` with `remotePatterns`
   configured for `lh3.googleusercontent.com` + `res.cloudinary.com` in
-  `next.config.ts` — automatic lazy loading, WebP/AVIF, responsive `sizes`
+  `next.config.ts` — automatic lazy loading, WebP/AVIF, responsive `sizes`.
+  Logo uses `unoptimized` prop (Google `/aida/` path blocks the optimization
+  proxy; `/aida-public/` stock images work fine without it)
 - [x] Mobile hamburger navbar (all tabs + user menu in dropdown)
 - [x] Saved templates collapsible accordion (closed by default, no viewport shift)
 - [x] Responsive font sizing for Thai text headers on mobile (`text-3xl md:text-5xl`)

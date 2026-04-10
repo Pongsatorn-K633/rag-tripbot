@@ -22,6 +22,7 @@ export default function Footer() {
               alt="logo"
               width={20}
               height={20}
+              unoptimized
               className="h-5 w-5 grayscale opacity-50"
             />
             <span className="font-headline font-bold text-sm text-zen-black">dopamichi</span>

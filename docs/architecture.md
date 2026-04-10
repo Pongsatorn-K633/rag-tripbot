@@ -433,6 +433,13 @@ All images use `next/image` `<Image />` with `remotePatterns` configured
 for `lh3.googleusercontent.com` and `res.cloudinary.com` (see
 `next.config.ts`), giving automatic lazy loading + WebP/AVIF conversion.
 
+**Logo exception:** The dopamichi logo URL (`lh3.googleusercontent.com/aida/...`)
+uses a private Google path that blocks Next.js's image optimization proxy. All
+`IMG.logo` usages have `unoptimized` prop set, which loads the URL directly in
+the browser (same as `<img>`). This only affects the ~32px logo — all large
+cover/hero images (`/aida-public/...` path) go through the optimization proxy
+normally.
+
 ### SSG — Static Site Generation (`○` in build output)
 
 Pre-rendered at build time, served from Vercel CDN. Zero server compute.
