@@ -22,7 +22,7 @@ const TEMPLATES = [
     title: 'Hokkaido Snow Adventure',
     totalDays: 5,
     season: 'Winter',
-    coverImage: 'stock3',
+    coverImage: 'https://res.cloudinary.com/dubett62q/image/upload/q_auto/f_auto/v1775941309/hokkaido_woibhv.jpg',
     description:
       'ผจญภัยหิมะที่ฮอกไกโด สัมผัสเทศกาลหิมะซัปโปโร เล่นสกีที่นิเซโกะ และบรรยากาศเมืองริมทะเลโอทารุ',
     days: [
@@ -218,7 +218,7 @@ const TEMPLATES = [
     title: 'Kyoto Cultural Immersion',
     totalDays: 4,
     season: 'Spring',
-    coverImage: 'stock2',
+    coverImage: 'https://res.cloudinary.com/dubett62q/image/upload/q_auto/f_auto/v1775941309/20221009_185503_37323ab7_w1920_gkhahc.webp',
     description:
       'ดื่มด่ำวัฒนธรรมญี่ปุ่นแท้ๆ ที่เกียวโต ชมซากุระบาน เยี่ยมวัดเก่าแก่ และสัมผัสชีวิตเกอิชาในย่านกิออง',
     days: [

@@ -30,7 +30,7 @@ export const COVER_LABELS: Record<TemplateCoverKey, string> = {
   stock1: 'Tokyo',
   stock2: 'Kyoto',
   stock3: 'Fuji',
-  stock4: 'Zen',
+  stock4: 'Torii',
 }
 
 /**

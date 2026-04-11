@@ -171,6 +171,7 @@ export default function TemplatesPage() {
           itinerary: selectedTemplate.itinerary,
           source: 'plan',
           templateId: selectedTemplate.id,
+          coverImage: selectedTemplate.coverImage ?? undefined,
           startDate: startDate || undefined,
         }),
       })
