@@ -73,7 +73,7 @@ export default function ItineraryCard({
       </div>
 
       {/* Confirm button */}
-      <div className="px-4 sm:px-6 py-4 bg-white border-t border-zen-black/10">
+      <div className="px-4 sm:px-6 py-4 bg-white border-t border-zen-black/10 space-y-3">
         <button
           onClick={onConfirm}
           disabled={confirmLoading}
@@ -81,6 +81,9 @@ export default function ItineraryCard({
         >
           {confirmLoading ? 'กำลังบันทึก...' : 'Confirm & Sync Itinerary'}
         </button>
+        <p className="text-[15px] text-zen-black/50 text-center leading-relaxed">
+          สามารถทำการ edit ทริปตามความต้องการเพิ่มเติมได้หลังกด confirm
+        </p>
       </div>
     </div>
   )

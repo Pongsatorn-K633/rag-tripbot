@@ -73,8 +73,9 @@ export default function GoPage() {
         const res = await fetch('/api/trips')
         if (!res.ok) throw new Error('Failed to load')
         const data = await res.json()
-        // Only show non-template trips (uploads + chat). Template saves are bookmarks.
-        setTrips((data.trips ?? []).filter((t: SavedTrip) => t.source !== 'template'))
+        // Show ALL user trips — uploads, chat, and template-sourced.
+        // Template-sourced trips are real travel plans (user will edit + generate LINE code).
+        setTrips(data.trips ?? [])
       } catch { /* silent */ } finally { setLoading(false) }
     }
     loadTrips()

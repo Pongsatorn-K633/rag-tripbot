@@ -142,7 +142,10 @@ export default function TemplatesPage() {
     }
   }
 
-  // ── Modal confirm: save the template and mint a share code for LINE ────────
+  // ── Modal confirm: create a Trip copy in the user's Go! page ────────────
+  // This does NOT heart/favourite the template — confirm and heart are
+  // separate actions. Confirm = "I want to use this plan for a real trip."
+  // Heart = "I like this template, bookmark it for later."
   async function handleConfirm() {
     if (!selectedTemplate) return
 
@@ -154,17 +157,24 @@ export default function TemplatesPage() {
     setSaveState('saving')
 
     try {
-      // Idempotent save — creates the user's personal Trip copy of the
-      // template (for their gallery) but does NOT mint a per-user share code.
-      // All sharing goes through the canonical Template.shareCode so every
-      // user sees the same code the admin does.
-      const saveRes = await fetch(`/api/templates/${selectedTemplate.id}/save`, {
+      // Create a personal Trip copy via /api/trips (NOT /api/templates/[id]/save
+      // which would also mark it as hearted). The trip appears in /go without
+      // auto-favouriting the template.
+      // source: 'plan' (NOT 'template') so the templates page doesn't
+      // auto-heart this template. 'template' = hearted bookmark.
+      // 'plan' = confirmed trip copy ready for Go! page.
+      const saveRes = await fetch('/api/trips', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: selectedTemplate.title,
+          itinerary: selectedTemplate.itinerary,
+          source: 'plan',
+          templateId: selectedTemplate.id,
+          startDate: startDate || undefined,
+        }),
       })
       if (!saveRes.ok) throw new Error('Failed to save template')
-
-      // Mark as saved in the heart state too
-      setSavedTemplateIds((prev) => new Set(prev).add(selectedTemplate.id))
 
       setSaveState('done')
     } catch (err) {

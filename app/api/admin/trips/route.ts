@@ -4,11 +4,12 @@ import { requireAdmin } from '@/lib/authz'
 
 /**
  * GET /api/admin/trips
- * Returns every Trip in the system with the owner's email + role and any
- * LINE contexts currently bound to it. ADMIN or SUPERADMIN only.
+ * Returns every real user Trip with owner info + LINE contexts.
+ * ADMIN or SUPERADMIN only.
  *
- * Used by the admin dashboard to show a moderation table and to source
- * trips for the "Promote to template" action.
+ * Includes ALL user trips (upload, chat, AND template-sourced) so admins
+ * can see which users have generated LINE codes, even for personalized
+ * template copies. Only excludes system bridge trips (infrastructure).
  */
 export async function GET() {
   try {
@@ -18,25 +19,12 @@ export async function GET() {
     throw err
   }
 
-  // Two exclusions from All Trips:
-  //
-  //   1. System user bridge trips — invisible LINE activation infrastructure,
-  //      not user content.
-  //
-  //   2. Template bookmarks (source='template') — when a user hearts a
-  //      curated template, we create a Trip row as their personal bookmark.
-  //      That's not user-generated content worth moderating — it's a
-  //      duplicate of the admin's own published template. Excluding these
-  //      keeps All Trips focused on the content that ACTUALLY needs
-  //      moderation: uploads, chat generations, and originally-promoted
-  //      source trips (which keep their original 'upload'/'chat' source,
-  //      not 'template').
-  const raw = await prisma.trip.findMany({
+  const trips = await prisma.trip.findMany({
     where: {
-      AND: [
-        { user: { email: { not: 'system@dopamichi.local' } } },
-        { NOT: { source: 'template' } },
-      ],
+      // Only exclude system user's bridge trips (LINE activation infra).
+      // Real user trips of ALL sources (upload, chat, template) are shown
+      // so admins can see generated codes + moderation content.
+      user: { email: { not: 'system@dopamichi.local' } },
     },
     include: {
       user: { select: { id: true, email: true, name: true, role: true } },
@@ -45,18 +33,6 @@ export async function GET() {
     },
     orderBy: { createdAt: 'desc' },
   })
-
-  // Client-side safety filter — catches any edge case where the Prisma
-  // NOT filter above doesn't exclude a row (e.g. Prisma's handling of
-  // nullable fields with NOT can be surprising).
-  const trips = raw.filter((t) => t.source !== 'template')
-
-  console.log(
-    `[admin/trips] returning ${trips.length} trips ` +
-      `(raw from DB: ${raw.length}; sources: ${JSON.stringify(
-        [...new Set(raw.map((t) => t.source))]
-      )})`
-  )
 
   return NextResponse.json({ trips })
 }
