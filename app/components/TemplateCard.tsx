@@ -1,27 +1,8 @@
 'use client'
 
-interface Activity {
-  time: string
-  name: string
-  notes?: string
-}
-
-interface Day {
-  day: number
-  location: string
-  activities: Activity[]
-  accommodation: string
-  transport: string
-}
-
-export interface Itinerary {
-  title: string
-  totalDays: number
-  season: string
-  days: Day[]
-  shareCode: string | null
-  description?: string
-}
+// Re-export from canonical types so existing imports don't break
+export type { Itinerary } from '@/lib/itinerary-types'
+import type { Itinerary } from '@/lib/itinerary-types'
 
 interface TemplateCardProps {
   template: Itinerary
@@ -50,7 +31,7 @@ export default function TemplateCard({ template, onSelect }: TemplateCardProps) 
             className="text-xs font-semibold px-2 py-0.5 rounded-full"
             style={{ backgroundColor: '#c9a84c22', color: '#c9a84c', border: '1px solid #c9a84c55' }}
           >
-            {SEASON_LABELS[template.season] ?? template.season}
+            {(template.season && SEASON_LABELS[template.season]) ?? template.season ?? ''}
           </span>
           <span className="text-xs" style={{ color: '#718096' }}>
             {template.totalDays} วัน

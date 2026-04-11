@@ -10,10 +10,11 @@ import { IMG } from '@/lib/images'
 
 const TABS = [
   { id: 'home', label: 'Home', href: '/' },
+  { id: 'go', label: 'Go!', href: '/go' },
+  { id: 'templates', label: 'Templates', href: '/templates' },
+  { id: 'gallery', label: 'Doc-to-Trip', href: '/gallery' },
   // AI Chat is under maintenance — disabled in nav, /chat redirects to /maintenance
   { id: 'chat', label: 'AI Chat', href: '/chat', disabled: true },
-  { id: 'templates', label: 'Templates', href: '/templates' },
-  { id: 'gallery', label: 'Gallery', href: '/gallery' },
 ]
 
 export default function Navbar() {

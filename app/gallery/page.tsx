@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
-import { CloudUpload, CheckCircle, Trash2, ArrowRight, Flower, Lock, Shield, ChevronDown, MapPin, Hotel, Train, Clock } from 'lucide-react'
+import { CloudUpload, CheckCircle, Trash2, ArrowRight, Flower, Lock, Shield, ChevronDown, MapPin, Hotel, Train, Clock, Banknote, Timer } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'motion/react'
 import { useSession, signIn } from 'next-auth/react'
@@ -11,30 +11,13 @@ import ActivationBanner from '@/app/components/ActivationBanner'
 import CoverUpload from '@/app/components/CoverUpload'
 import { IMG } from '@/lib/images'
 import { resolveCoverImage } from '@/lib/cover-image'
+import ChoiceCarousel from '@/app/components/ChoiceCarousel'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-interface Activity {
-  time: string
-  name: string
-  notes?: string
-}
-
-interface Day {
-  day: number
-  location: string
-  activities: Activity[]
-  accommodation: string
-  transport: string
-}
-
-interface Itinerary {
-  title: string
-  totalDays: number
-  season: string
-  days: Day[]
-  shareCode: string | null
-}
+import type { Activity, Day, Itinerary, Choice, ActivityPriority } from '@/lib/itinerary-types'
+import { PRIORITY_LABEL } from '@/lib/itinerary-types'
+import CategoryIcon from '@/app/components/CategoryIcon'
 
 interface SavedTrip {
   id: string
@@ -455,8 +438,21 @@ export default function GalleryPage() {
         </div>
       </section>
 
-      {/* Saved Trips Section */}
-      <section className="mb-24">
+      {/* After upload, point user to Go! page to manage their trips */}
+      <section className="mb-24 text-center py-12 border-t border-zen-black/10">
+        <p className="text-zen-black/50 text-sm font-sans mb-3">
+          แผนที่บันทึกแล้วอยู่ในหน้า Go! · Your saved trips are in the Go! page
+        </p>
+        <Link
+          href="/go"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-zen-black text-briefing-cream font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-basel-brick transition-all"
+        >
+          Go to my trips <ArrowRight size={14} />
+        </Link>
+      </section>
+
+      {/* Old "Saved Trips" section — REMOVED, now lives at /go page */}
+      <section className="hidden">
         <div className="flex flex-col md:flex-row justify-between md:items-end mb-16 gap-4 md:gap-6 border-b-2 border-zen-black/5 pb-8">
           <div>
             <span className="text-basel-brick font-extrabold text-sm uppercase tracking-[0.3em] mb-4 block font-headline">Your Collection</span>
@@ -584,7 +580,7 @@ export default function GalleryPage() {
         })()}
       </section>
 
-      {/* Delete confirmation dialog */}
+      {/* Delete + view dialogs moved to /go page. Below is placeholder to close the hidden section above. */}
       {deleteConfirm && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-zen-black/50 px-4"
@@ -633,7 +629,7 @@ export default function GalleryPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-10 px-4"
+              className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-4 sm:py-10 px-2 sm:px-4"
               style={{ backgroundColor: 'rgba(35,26,14,0.75)' }}
               onClick={(e) => {
                 if (e.target === e.currentTarget) setViewingTripId(null)
@@ -647,9 +643,9 @@ export default function GalleryPage() {
                 className="w-full max-w-lg bg-briefing-cream border border-zen-black/10 shadow-2xl overflow-hidden"
               >
                 {/* Modal header */}
-                <div className="px-6 py-5 flex items-center justify-between border-b border-zen-black/10">
-                  <div>
-                    <h2 className="font-headline font-black text-xl tracking-tighter text-zen-black">
+                <div className="px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between border-b border-zen-black/10">
+                  <div className="min-w-0 flex-1 mr-3">
+                    <h2 className="font-headline font-black text-lg sm:text-xl tracking-tighter text-zen-black truncate">
                       {trip.title}
                     </h2>
                     {trip.startDate && itin?.totalDays ? (
@@ -669,7 +665,7 @@ export default function GalleryPage() {
 
                 {/* Share code banner */}
                 {(itin?.shareCode || trip.shareCode) && (
-                  <div className="px-6 py-3 bg-zen-black flex items-center justify-between">
+                  <div className="px-4 sm:px-6 py-3 bg-zen-black flex items-center justify-between gap-2">
                     <div>
                       <span className="text-[8px] font-black uppercase tracking-[0.4em] text-white/50 block">
                         LINE Share Code
@@ -698,7 +694,7 @@ export default function GalleryPage() {
                 )}
 
                 {/* Close button */}
-                <div className="px-6 py-4 border-t border-zen-black/10">
+                <div className="px-4 sm:px-6 py-4 border-t border-zen-black/10">
                   <button
                     onClick={() => setViewingTripId(null)}
                     className="w-full py-3 border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-briefing-cream transition-all"
@@ -782,6 +778,11 @@ export default function GalleryPage() {
 // ── Read-only itinerary accordion for the trip view modal ───────────────────
 // Mirrors the white-themed ItineraryCard design but without the confirm button.
 
+/**
+ * Read-only itinerary accordion — same rendering as ItineraryCard but without
+ * the confirm button. Supports the enhanced data model (priority, choices,
+ * accommodation choices, transport notes, cost/duration hints).
+ */
 function TripViewAccordion({ itinerary }: { itinerary: Itinerary }) {
   const [openDay, setOpenDay] = useState<number | null>(1)
   const totalDays = itinerary.totalDays ?? itinerary.days.length
@@ -789,81 +790,99 @@ function TripViewAccordion({ itinerary }: { itinerary: Itinerary }) {
 
   return (
     <div>
-      {/* Journey header */}
-      <div className="flex items-baseline justify-between px-6 py-4 border-b border-zen-black/5">
-        <h3 className="font-headline text-lg font-extrabold text-zen-black">
-          The Journey
-        </h3>
+      <div className="flex items-baseline justify-between px-4 sm:px-6 py-4 border-b border-zen-black/5">
+        <h3 className="font-headline text-lg font-extrabold text-zen-black">The Journey</h3>
         <span className="text-[10px] font-bold text-basel-brick uppercase tracking-widest">
           Day {currentOpenDay} / {totalDays}
         </span>
       </div>
 
-      {/* Day accordion */}
       <div className="divide-y divide-zen-black/5">
         {itinerary.days.map((day) => {
           const isOpen = openDay === day.day
           const paddedDay = String(day.day).padStart(2, '0')
+          const mandatoryCount = day.activities.filter((a) => a.priority === 'mandatory').length
 
           return (
             <div key={day.day}>
               <button
-                className="w-full text-left px-6 py-4 flex items-center gap-4 hover:bg-briefing-cream/50 transition-colors"
+                className="w-full text-left px-4 sm:px-6 py-4 flex items-center gap-3 sm:gap-4 hover:bg-briefing-cream/50 transition-colors"
                 onClick={() => setOpenDay(isOpen ? null : day.day)}
               >
-                <span
-                  className={[
-                    'inline-flex items-center justify-center w-11 h-11 rounded-xl font-black text-lg flex-shrink-0 transition-colors',
-                    isOpen ? 'bg-basel-brick text-white' : 'bg-zen-black/5 text-zen-black/40',
-                  ].join(' ')}
-                >
+                <span className={`inline-flex items-center justify-center w-11 h-11 rounded-xl font-black text-lg flex-shrink-0 transition-colors ${isOpen ? 'bg-basel-brick text-white' : 'bg-zen-black/5 text-zen-black/40'}`}>
                   {paddedDay}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-lg text-zen-black leading-tight truncate">
-                    {day.location}
-                  </p>
-                  <p className="text-xs text-zen-black/40 font-medium mt-0.5 flex items-center gap-1">
-                    <MapPin size={10} strokeWidth={2.5} />
-                    Day {day.day}
-                    {day.activities.length > 0 && ` · ${day.activities.length} กิจกรรม`}
+                  <p className="font-bold text-lg text-zen-black leading-tight truncate">{day.location}</p>
+                  <p className="text-xs text-zen-black/40 font-medium mt-0.5 flex items-center gap-2">
+                    <span className="flex items-center gap-1"><MapPin size={10} strokeWidth={2.5} /> Day {day.day} · {day.activities.length} กิจกรรม</span>
+                    {mandatoryCount > 0 && <span className="text-basel-brick">⚠ {mandatoryCount} must-do</span>}
+                    {(day.choices?.length ?? 0) > 0 && <span className="text-blue-600">★ {day.choices!.length} choice{day.choices!.length > 1 ? 's' : ''}</span>}
                   </p>
                 </div>
-                <ChevronDown
-                  size={18}
-                  className={[
-                    'flex-shrink-0 transition-all duration-200',
-                    isOpen ? 'rotate-180 text-basel-brick' : 'rotate-0 text-zen-black/20',
-                  ].join(' ')}
-                />
+                <ChevronDown size={18} className={`flex-shrink-0 transition-all duration-200 ${isOpen ? 'rotate-180 text-basel-brick' : 'rotate-0 text-zen-black/20'}`} />
               </button>
 
               {isOpen && (
-                <div className="px-6 pb-6 pt-2 space-y-6 border-t border-zen-black/5 bg-briefing-cream/30">
+                <div className="px-4 sm:px-6 pb-6 pt-2 space-y-6 border-t border-zen-black/5 bg-briefing-cream/30">
                   {day.activities.length > 0 && (
                     <div className="space-y-5">
-                      {day.activities.map((act, idx) => (
-                        <div key={idx} className="relative pl-7 border-l-[3px] border-basel-brick">
-                          <span className="absolute -left-[6px] top-0.5 w-2.5 h-2.5 rounded-full bg-basel-brick" />
-                          <p className="text-[10px] font-bold text-basel-brick uppercase tracking-widest flex items-center gap-1">
-                            <Clock size={10} strokeWidth={2.5} />
-                            {act.time}
-                          </p>
-                          <p className="font-bold text-base text-zen-black mt-1">{act.name}</p>
-                          {act.notes && (
-                            <p className="text-sm text-zen-black/60 mt-1.5 leading-relaxed">{act.notes}</p>
-                          )}
-                        </div>
+                      {day.activities.map((act, idx) => {
+                        const p = act.priority ?? 'optional'
+                        const borderColor = p === 'mandatory' ? 'border-red-500' : p === 'recommended' ? 'border-amber-400' : 'border-basel-brick'
+                        const dotColor = p === 'mandatory' ? 'bg-red-500' : p === 'recommended' ? 'bg-amber-400' : 'bg-basel-brick'
+                        return (
+                          <div key={idx} className={`relative pl-7 border-l-[3px] ${borderColor}`}>
+                            <span className={`absolute -left-[6px] top-0.5 w-2.5 h-2.5 rounded-full ${dotColor}`} />
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-[10px] font-bold text-basel-brick uppercase tracking-widest flex items-center gap-1">
+                                <Clock size={10} strokeWidth={2.5} /> {act.time}
+                              </p>
+                              {p === 'mandatory' && <span className="text-[8px] font-black uppercase tracking-widest bg-red-100 text-red-700 px-1.5 py-0.5 rounded">{PRIORITY_LABEL.mandatory}</span>}
+                              {p === 'recommended' && <span className="text-[8px] font-black uppercase tracking-widest bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">{PRIORITY_LABEL.recommended}</span>}
+                              {act.category && <CategoryIcon category={act.category} size={12} className="text-zen-black/50" />}
+                            </div>
+                            <p className="font-bold text-base text-zen-black mt-1">{act.name}</p>
+                            {act.notes && <p className="text-sm text-zen-black/60 mt-1.5 leading-relaxed">{act.notes}</p>}
+                            {(act.cost || act.duration) && (
+                              <div className="flex gap-3 mt-1.5">
+                                {act.cost && <span className="text-[10px] font-bold text-zen-black/50 flex items-center gap-0.5"><Banknote size={10} strokeWidth={2} /> {act.cost}</span>}
+                                {act.duration && <span className="text-[10px] font-bold text-zen-black/50 flex items-center gap-0.5"><Timer size={10} strokeWidth={2} /> {act.duration}</span>}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {day.choices && day.choices.length > 0 && (
+                    <div className="space-y-4">
+                      {day.choices.map((choice, idx) => (
+                        <ChoiceCarousel key={idx} choice={choice} />
                       ))}
                     </div>
                   )}
 
-                  {day.accommodation && (
+                  {(day.accommodation || (day.accommodationChoices && day.accommodationChoices.length > 0)) && (
                     <div className="flex items-start gap-2">
                       <Hotel size={14} className="text-basel-brick flex-shrink-0 mt-0.5" strokeWidth={2.5} />
-                      <div>
+                      <div className="flex-1">
                         <p className="text-[10px] font-bold text-basel-brick uppercase tracking-widest mb-1">ที่พัก</p>
-                        <p className="text-sm text-zen-black leading-relaxed">{day.accommodation}</p>
+                        {day.accommodation && <p className="text-sm text-zen-black leading-relaxed">{day.accommodation}</p>}
+                        {day.accommodationChoices && day.accommodationChoices.length > 0 && (
+                          <div className="mt-2 space-y-1.5">
+                            <p className="text-[9px] font-bold text-blue-600 uppercase tracking-widest">ตัวเลือก · Options</p>
+                            {day.accommodationChoices.map((opt, i) => (
+                              <div key={i} className="flex items-center gap-2 text-sm text-zen-black/70 bg-white px-3 py-2 border border-zen-black/10 rounded">
+                                <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+                                <span className="font-medium">{opt.name}</span>
+                                {opt.tier && <span className="text-[9px] font-bold uppercase tracking-widest text-zen-black/40">{opt.tier}</span>}
+                                {opt.cost && <span className="ml-auto text-xs text-basel-brick font-bold">{opt.cost}</span>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -874,6 +893,7 @@ function TripViewAccordion({ itinerary }: { itinerary: Itinerary }) {
                       <div>
                         <p className="text-[10px] font-bold text-basel-brick uppercase tracking-widest mb-1">การเดินทาง</p>
                         <p className="text-sm text-zen-black leading-relaxed">{day.transport}</p>
+                        {day.transportNotes && <p className="text-xs text-zen-black/50 mt-1 italic">{day.transportNotes}</p>}
                       </div>
                     </div>
                   )}
@@ -886,3 +906,4 @@ function TripViewAccordion({ itinerary }: { itinerary: Itinerary }) {
     </div>
   )
 }
+

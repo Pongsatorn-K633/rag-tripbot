@@ -10,6 +10,13 @@ import ItineraryCard from '@/app/components/ItineraryCard'
 import ActivationBanner from '@/app/components/ActivationBanner'
 import { resolveCoverImage } from '@/lib/cover-image'
 
+const SEASON_MONTHS: Record<string, string> = {
+  Winter: 'Dec–Feb',
+  Spring: 'Mar–May',
+  Summer: 'Jun–Aug',
+  Autumn: 'Sep–Nov',
+}
+
 // Cover image resolution is centralized in lib/cover-image.ts — see that file
 // for how stored IMG keys / URLs / null values are all normalized to a final URL.
 
@@ -287,7 +294,7 @@ export default function TemplatesPage() {
                                   />
                                   <div className="absolute bottom-0 left-0 w-full p-3 bg-gradient-to-t from-zen-black/80 to-transparent">
                                     <span className="bg-basel-brick text-briefing-cream px-2 py-0.5 text-[9px] font-black uppercase tracking-widest font-headline">
-                                      {tpl.totalDays}D
+                                      {tpl.totalDays}D{tpl.season ? ` · ${tpl.season}` : ''}
                                     </span>
                                   </div>
                                 </div>
@@ -384,15 +391,17 @@ export default function TemplatesPage() {
                     className="object-cover transition-all duration-700 group-hover:scale-105"
                     sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
                   />
-                  <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-zen-black/80 to-transparent">
-                    <span className="bg-basel-brick text-briefing-cream px-3 py-1 text-[10px] font-black uppercase tracking-widest font-headline">
-                      {tpl.totalDays} DAYS
-                    </span>
-                    {tpl.season && (
-                      <span className="ml-2 bg-white/20 text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest font-headline backdrop-blur-sm">
-                        {tpl.season}
+                  <div className="absolute bottom-0 left-0 w-full p-4 sm:p-6 bg-gradient-to-t from-zen-black/80 to-transparent">
+                    <div className="flex flex-col gap-1.5">
+                      <span className="bg-basel-brick text-briefing-cream px-3 py-1 text-[10px] font-black uppercase tracking-widest font-headline self-start">
+                        {tpl.totalDays} DAYS
                       </span>
-                    )}
+                      {tpl.season && (
+                        <span className="bg-white/20 text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest font-headline backdrop-blur-sm self-start">
+                          {tpl.season}{SEASON_MONTHS[tpl.season] ? ` · ${SEASON_MONTHS[tpl.season]}` : ''}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <h3 className="text-2xl font-headline font-bold text-zen-black mb-2">
@@ -419,7 +428,7 @@ export default function TemplatesPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-10 px-4"
+            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-4 sm:py-10 px-2 sm:px-4"
             style={{ backgroundColor: 'rgba(35,26,14,0.75)' }}
             onClick={(e) => {
               if (e.target === e.currentTarget && saveState !== 'saving') handleClose()
@@ -432,8 +441,8 @@ export default function TemplatesPage() {
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className="w-full max-w-lg bg-briefing-cream border border-zen-black/10 shadow-2xl overflow-hidden"
             >
-              <div className="px-6 py-5 flex items-center justify-between border-b border-zen-black/10">
-                <h2 className="font-headline font-black text-xl tracking-tighter text-zen-black">
+              <div className="px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between border-b border-zen-black/10">
+                <h2 className="font-headline font-black text-lg sm:text-xl tracking-tighter text-zen-black">
                   ยืนยันแผนการเดินทาง
                 </h2>
                 {saveState !== 'saving' && (

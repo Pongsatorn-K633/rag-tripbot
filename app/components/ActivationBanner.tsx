@@ -60,6 +60,10 @@ export default function ActivationBanner({ shareCode }: ActivationBannerProps) {
           <p className="text-xs mt-2" style={{ color: '#4ade80' }}>
             คัดลอกคำสั่งด้านบนแล้วไปวางใน LINE เพื่อเริ่มใช้งาน
           </p>
+          <p className="text-xs mt-2" style={{ color: '#166534' }}>
+            💡 แผนนี้มีตัวเลือกร้านอาหารให้เลือก — ถามบอทใน LINE ได้เลย เช่น
+            &quot;doma ร้านอาหารเย็นมีอะไรบ้าง&quot; หรือ &quot;doma อยากกินราเมน ไปไหนดี&quot;
+          </p>
         </div>
       </div>
     </div>
