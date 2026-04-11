@@ -87,8 +87,9 @@ export default function Navbar() {
           <div className="hidden md:block">
             <NavUserMenu />
           </div>
-          {/* Mobile: profile picture + hamburger */}
+          {/* Mobile: current page label + profile + hamburger */}
           <div className="flex md:hidden items-center gap-2">
+            <MobilePageLabel />
             <MobileAvatar />
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
@@ -355,5 +356,22 @@ function MobileAvatar() {
     <div className="w-8 h-8 rounded-full bg-zen-black/5 flex items-center justify-center border border-zen-black/10">
       <User size={14} className="text-zen-black/40" strokeWidth={2} />
     </div>
+  )
+}
+
+// ── Mobile page label (shows which page the user is on) ─────────────────────
+
+function MobilePageLabel() {
+  const pathname = usePathname()
+  const current = TABS.find((t) => {
+    if (t.href === '/') return pathname === '/'
+    return pathname.startsWith(t.href)
+  })
+  if (!current || current.href === '/') return null
+
+  return (
+    <span className="text-[9px] font-black uppercase tracking-widest text-basel-brick bg-basel-brick/10 px-2 py-1 rounded">
+      {current.label}
+    </span>
   )
 }

@@ -14,7 +14,7 @@ export default function Footer() {
 
   return (
     <footer className="w-full py-12 bg-briefing-cream/50 border-t border-zen-black/5">
-      <div className="flex flex-col md:flex-row justify-between items-center px-12 w-full max-w-screen-2xl mx-auto gap-8">
+      <div className="flex flex-col md:flex-row justify-between items-center px-4 sm:px-8 md:px-12 w-full max-w-screen-2xl mx-auto gap-6 md:gap-8">
         <div className="flex flex-col items-center md:items-start gap-2">
           <div className="flex items-center gap-2">
             <Image
@@ -31,7 +31,7 @@ export default function Footer() {
           </p>
         </div>
 
-        <div className="flex gap-10">
+        <div className="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-10">
           {[
             { label: 'Privacy', href: '/privacy' },
             { label: 'Terms', href: '/terms' },

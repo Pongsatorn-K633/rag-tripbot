@@ -276,7 +276,7 @@ export default function GalleryPage() {
             )}
 
             {(uploadState === 'idle' || uploadState === 'uploading') && !isSignedIn && (
-              <div className="bg-zen-black border-[12px] border-zen-black flex items-center justify-center min-h-[450px]">
+              <div className="bg-zen-black border-[12px] border-zen-black flex items-center justify-center min-h-[300px] md:min-h-[450px]">
                 <div className="bg-white w-full h-full flex flex-col items-center justify-center p-12 border-2 border-dashed border-zen-black/10 text-center">
                   <div className="w-24 h-24 bg-basel-brick rounded-full flex items-center justify-center mb-8 shadow-xl">
                     <Lock className="text-briefing-cream w-10 h-10" strokeWidth={2} />
@@ -306,7 +306,7 @@ export default function GalleryPage() {
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 className={[
-                  'bg-zen-black border-[12px] flex items-center justify-center min-h-[450px] group cursor-pointer transition-colors duration-500',
+                  'bg-zen-black border-[12px] flex items-center justify-center min-h-[300px] md:min-h-[450px] group cursor-pointer transition-colors duration-500',
                   isDragging ? 'border-basel-brick' : 'border-zen-black hover:border-basel-brick',
                 ].join(' ')}
               >
@@ -699,7 +699,7 @@ export default function GalleryPage() {
 
       {/* Decorative Maintenance Section */}
       <section className="border-t border-zen-black/10 pt-24">
-        <div className="max-w-5xl w-full grid grid-cols-1 md:grid-cols-2 gap-16 items-center mx-auto">
+        <div className="max-w-5xl w-full grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center mx-auto px-4 sm:px-0">
           {/* Visual */}
           <div className="relative flex justify-center items-center">
             <div className="absolute inset-0 bg-basel-brick/5 rounded-full blur-3xl scale-125" />

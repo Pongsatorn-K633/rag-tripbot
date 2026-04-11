@@ -113,9 +113,9 @@ export default function Home() {
       </section>
 
       {/* Content Preview Grid */}
-      <section className="px-8 py-24 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 h-auto md:h-[500px]">
-          <div className="md:col-span-2 relative bg-zen-black group overflow-hidden">
+      <section className="px-4 sm:px-8 py-12 sm:py-24 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:h-[500px]">
+          <div className="md:col-span-2 relative bg-zen-black group overflow-hidden h-64 md:h-full">
             <Image
               src={IMG.homeTokyo}
               alt="Tokyo"
@@ -129,7 +129,7 @@ export default function Home() {
           </div>
 
           <div className="md:col-span-2 grid grid-cols-2 gap-4">
-            <div className="relative bg-zen-black group overflow-hidden">
+            <div className="relative bg-zen-black group overflow-hidden h-48 md:h-full">
               <Image
                 src={IMG.homeKyoto}
                 alt="Kyoto"
@@ -142,7 +142,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="relative bg-zen-black group overflow-hidden">
+            <div className="relative bg-zen-black group overflow-hidden h-48 md:h-full">
               <Image
                 src={IMG.homeFuji}
                 alt="Fuji"

@@ -111,7 +111,7 @@ export default function GoPage() {
   }
 
   return (
-    <main className="pt-32 pb-24 px-6 max-w-7xl mx-auto">
+    <main className="pt-24 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 max-w-7xl mx-auto">
       {/* Hero */}
       <header className="mb-20">
         <h1 className="text-4xl md:text-5xl lg:text-7xl font-headline font-extrabold tracking-tighter text-basel-brick mb-6">
@@ -127,7 +127,7 @@ export default function GoPage() {
 
       {/* Sign-in CTA for guests */}
       {!isSignedIn && !loading && (
-        <div className="border-2 border-dashed border-zen-black/10 rounded-xl p-16 text-center mb-20">
+        <div className="border-2 border-dashed border-zen-black/10 rounded-xl p-8 sm:p-16 text-center mb-20">
           <Plane size={40} className="mx-auto mb-4 text-zen-black/20" />
           <p className="text-zen-black/60 text-lg mb-2 font-sans">สมัครสมาชิกเพื่อดูแผนการเดินทางของคุณ</p>
           <p className="text-zen-black/40 text-sm mb-6">Sign in to see your saved trips</p>
@@ -157,14 +157,14 @@ export default function GoPage() {
       {isSignedIn && !loading && (
         <>
           {trips.length === 0 ? (
-            <div className="border-2 border-dashed border-zen-black/10 rounded-xl p-16 text-center">
+            <div className="border-2 border-dashed border-zen-black/10 rounded-xl p-8 sm:p-16 text-center">
               <p className="text-zen-black/40 font-sans text-lg mb-2">ยังไม่มีแผนการเดินทาง</p>
               <p className="text-zen-black/30 font-sans text-sm mb-6">
                 สร้างแผนได้จาก <Link href="/templates" className="text-basel-brick underline">Templates</Link>&nbsp;,&nbsp;&nbsp;หากมีแผนอยู่แล้วอัปโหลดที่นี่เลย <Link href="/gallery" className="text-basel-brick underline">Doc-to-Trip</Link>
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-10">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-10">
               <AnimatePresence mode="popLayout">
                 {trips.map((trip, idx) => {
                   const itin = trip.itinerary as Itinerary | null
