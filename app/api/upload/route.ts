@@ -90,7 +90,9 @@ Rules:
 - "days" must be a sequential list: day 1, 2, 3, ... totalDays. NEVER repeat the same "day" number — merge all activities for the same calendar day into ONE day object. NEVER skip a day number.
 - Every day must have at least one activity
 - Preserve Thai text as-is when present
-- If the source is unreadable or not travel-related, create a reasonable 5-day Tokyo itinerary as a placeholder
+- If the source is unreadable, not a travel itinerary, or not related to trip planning, you MUST return EXACTLY this error JSON instead of making up an itinerary:
+  {"error":"NOT_TRAVEL_RELATED","title":null,"totalDays":0,"season":null,"days":[]}
+  Do NOT hallucinate or invent activities. Only extract what is actually in the source document.
 
 FIELD DEFINITIONS — read carefully:
 - "name": ONLY the proper noun of the place, landmark, station, restaurant, or activity name. Keep it SHORT (max ~6 words). It must be the *thing*, not a sentence describing the visit. Strip leading verbs like "Visit", "Go to", "Explore", "Mid-morning visit to", etc.
@@ -272,8 +274,22 @@ export async function POST(req: NextRequest) {
 
     const itinerary = JSON.parse(clean)
 
-    if (!itinerary.days || !Array.isArray(itinerary.days)) {
-      throw new Error('Extracted JSON missing required "days" array')
+    // Gemini signals "not a travel document" via the error field or empty days.
+    if (
+      itinerary.error === 'NOT_TRAVEL_RELATED' ||
+      !itinerary.days ||
+      !Array.isArray(itinerary.days) ||
+      itinerary.days.length === 0
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'ไฟล์ที่อัปโหลดไม่ใช่แผนการเดินทาง กรุณาตรวจสอบไฟล์อีกครั้ง · ' +
+            'The uploaded file does not appear to be a travel itinerary. Please check your file and try again.',
+          debug,
+        },
+        { status: 422 }
+      )
     }
 
     return NextResponse.json({ itinerary, debug })

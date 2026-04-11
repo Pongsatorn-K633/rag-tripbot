@@ -141,6 +141,16 @@ for the full implementation guide and `eaaefbc` / `5b7d73e` for the final commit
 - [x] Mobile hamburger navbar (all tabs + user menu in dropdown)
 - [x] Saved templates collapsible accordion (closed by default, no viewport shift)
 - [x] Responsive font sizing for Thai text headers on mobile (`text-3xl md:text-5xl`)
+- [x] Template card images now full color (removed grayscale filter)
+- [x] Gallery trip VIEW modal — click trip card → full itinerary accordion + share code
+- [x] AI extraction rejects non-trip files (returns 422 with bilingual message instead of hallucinating a fake itinerary)
+- [x] New user onboarding flow (`/onboarding`) — display name + profile picture upload with circular crop
+- [x] Profile picture upload with `react-easy-crop` (drag to reposition + zoom) → cropped to 512×512 JPEG → Cloudinary `dopamichi/profiles` folder via separate upload preset
+- [x] Settings page (`/settings`) with two tabs: General (theme toggle) + Account (edit profile)
+- [x] Dark mode infrastructure — CSS variable swap on `.dark` class, `ThemeProvider` context, localStorage persistence. Light is default; dark needs further UI polish on some pages.
+- [x] Navbar profile dropdown menu (desktop) + profile picture next to hamburger (mobile)
+- [x] Logo migrated from expired Google Aida URL to local `/public/android-chrome-192x192.png`
+- [ ] Dark mode UI polish — some components still use hardcoded `bg-white` that doesn't adapt
 - [ ] Chat re-enable — deferred; `/chat → /maintenance` redirect still active
 
 ### Auth system quick reference
@@ -152,6 +162,9 @@ for the full implementation guide and `eaaefbc` / `5b7d73e` for the final commit
 - **Middleware:** `middleware.ts` at project root uses `auth.config.ts` (edge-safe); API routes use `lib/auth.ts` + `requireSession/requireAdmin/requireSuperAdmin` from `lib/authz.ts`
 - **Share code data flow:** `Template.shareCode` canonical; promoting a Trip reuses its shareCode; otherwise `generateShareCodeForTemplate()` creates a system-owned bridge Trip (see `lib/share-code.ts`)
 - **Cover image pipeline:** `Template.coverImage` / `Trip.coverImage` stores IMG key or Cloudinary URL; `resolveCoverImage()` in `lib/cover-image.ts` normalizes; Cloudinary URLs get `c_fill,g_auto,ar_4:5,f_auto,q_auto` transformations injected at render time
+- **Profile picture pipeline:** `ProfilePictureUpload` component uses `react-easy-crop` for circular crop → canvas → 512×512 JPEG blob → uploaded to Cloudinary via separate `NEXT_PUBLIC_CLOUDINARY_PROFILE_PRESET` preset (folder: `dopamichi/profiles`)
+- **Theme system:** CSS variables in `globals.css` swap via `.dark` class on `<html>`. `ThemeProvider` context in `app/components/ThemeProvider.tsx` manages state + localStorage persistence. Light default, dark opt-in via `/settings`
+- **Onboarding:** New magic-link users (`isOnboarded: false`) are redirected to `/onboarding` by middleware. Google OAuth users are auto-marked onboarded (they already have a name). Form: display name + profile picture upload. Completes via `PATCH /api/auth/onboarding` + `session.update()`
 
 ---
 

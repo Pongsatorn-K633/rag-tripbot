@@ -27,10 +27,31 @@ export default auth((req) => {
   // LIFF (LINE in-app views) → always public, account-agnostic
   if (pathname.startsWith('/liff')) return NextResponse.next()
 
-  // /auth/* → if already logged in, bounce home
+  // /auth/* → if already logged in, bounce home (or to onboarding if needed)
   if (pathname.startsWith('/auth')) {
-    if (isLoggedIn) return NextResponse.redirect(new URL('/', nextUrl))
+    if (isLoggedIn) {
+      const isOnboarded = (req.auth?.user as { isOnboarded?: boolean } | undefined)?.isOnboarded
+      return NextResponse.redirect(
+        new URL(isOnboarded === false ? '/onboarding' : '/', nextUrl)
+      )
+    }
     return NextResponse.next()
+  }
+
+  // /onboarding → only for signed-in users who haven't onboarded yet
+  if (pathname === '/onboarding') {
+    if (!isLoggedIn) return NextResponse.redirect(new URL('/auth/signin', nextUrl))
+    const isOnboarded = (req.auth?.user as { isOnboarded?: boolean } | undefined)?.isOnboarded
+    if (isOnboarded !== false) return NextResponse.redirect(new URL('/', nextUrl))
+    return NextResponse.next()
+  }
+
+  // Signed in but not onboarded → force /onboarding (except for API, auth, onboarding itself)
+  if (isLoggedIn) {
+    const isOnboarded = (req.auth?.user as { isOnboarded?: boolean } | undefined)?.isOnboarded
+    if (isOnboarded === false && !pathname.startsWith('/auth') && pathname !== '/onboarding') {
+      return NextResponse.redirect(new URL('/onboarding', nextUrl))
+    }
   }
 
   // /admin/* → require ADMIN or SUPERADMIN

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { User, LogOut, Menu, X } from 'lucide-react'
+import { User, LogOut, Menu, X, Settings, ChevronDown, Shield } from 'lucide-react'
 import { useSession, signIn, signOut } from 'next-auth/react'
 import { IMG } from '@/lib/images'
 
@@ -31,7 +31,7 @@ export default function Navbar() {
   }
 
   return (
-    <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-zen-black/5">
+    <header className="fixed top-0 w-full z-50 bg-briefing-cream/80 backdrop-blur-md border-b border-zen-black/5">
       <nav className="flex justify-between items-center px-8 py-6 w-full max-w-screen-2xl mx-auto">
         <Link
           href="/"
@@ -86,20 +86,23 @@ export default function Navbar() {
           <div className="hidden md:block">
             <NavUserMenu />
           </div>
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden text-zen-black/70 hover:text-basel-brick transition-colors"
-            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-          >
-            {mobileOpen ? <X size={24} strokeWidth={2} /> : <Menu size={24} strokeWidth={2} />}
-          </button>
+          {/* Mobile: profile picture + hamburger */}
+          <div className="flex md:hidden items-center gap-2">
+            <MobileAvatar />
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="text-zen-black/70 hover:text-basel-brick transition-colors"
+              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+            >
+              {mobileOpen ? <X size={24} strokeWidth={2} /> : <Menu size={24} strokeWidth={2} />}
+            </button>
+          </div>
         </div>
       </nav>
 
       {/* Mobile dropdown */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-zen-black/5 bg-white/95 backdrop-blur-md">
+        <div className="md:hidden border-t border-zen-black/5 bg-briefing-cream/95 backdrop-blur-md">
           <div className="px-8 py-6 space-y-4">
             {/* Nav links */}
             {TABS.map((tab) =>
@@ -144,6 +147,7 @@ export default function Navbar() {
 
 function NavUserMenu() {
   const { data: session, status } = useSession()
+  const [dropdownOpen, setDropdownOpen] = useState(false)
 
   if (status === 'loading') {
     return <div className="w-10 h-10" />
@@ -165,28 +169,91 @@ function NavUserMenu() {
   const displayName = session.user.name ?? session.user.email ?? 'User'
 
   return (
-    <div className="flex items-center gap-4">
-      {isAdmin && (
-        <Link
-          href="/admin/dashboard"
-          className="text-[10px] font-black uppercase tracking-widest text-basel-brick border border-basel-brick px-2 py-1 hover:bg-basel-brick hover:text-white transition-all"
-        >
-          Admin
-        </Link>
-      )}
-      <div className="flex flex-col items-end leading-tight">
-        <span className="text-xs font-bold text-zen-black">{displayName}</span>
-        <span className="text-[8px] font-black uppercase tracking-widest text-zen-black/40">
-          {session.user.role}
-        </span>
-      </div>
+    <div className="relative">
+      {/* Profile button — click to toggle dropdown */}
       <button
-        onClick={() => signOut({ callbackUrl: '/' })}
-        title="Sign out"
-        className="text-zen-black/60 hover:text-basel-brick transition-colors"
+        onClick={() => setDropdownOpen(!dropdownOpen)}
+        className="flex items-center gap-2 hover:opacity-80 transition-opacity"
       >
-        <LogOut size={20} strokeWidth={2} />
+        {session.user.image ? (
+          <Image
+            src={session.user.image}
+            alt={displayName}
+            width={32}
+            height={32}
+            className="w-8 h-8 rounded-full object-cover border-2 border-zen-black/10"
+            unoptimized={session.user.image.includes('res.cloudinary.com')}
+          />
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-zen-black/5 flex items-center justify-center border-2 border-zen-black/10">
+            <User size={16} className="text-zen-black/40" strokeWidth={2} />
+          </div>
+        )}
+        <div className="flex flex-col items-start leading-tight">
+          <span className="text-xs font-bold text-zen-black">{displayName}</span>
+          <span className="text-[8px] font-black uppercase tracking-widest text-zen-black/40">
+            {session.user.role}
+          </span>
+        </div>
+        <ChevronDown
+          size={14}
+          className={`text-zen-black/40 transition-transform duration-200 ${
+            dropdownOpen ? 'rotate-180' : ''
+          }`}
+        />
       </button>
+
+      {/* Dropdown menu */}
+      {dropdownOpen && (
+        <>
+          {/* Invisible backdrop to close dropdown on outside click */}
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setDropdownOpen(false)}
+          />
+          <div className="absolute right-0 top-full mt-2 z-50 w-56 bg-briefing-cream border border-zen-black/10 shadow-xl py-2">
+            {/* User info header */}
+            <div className="px-4 py-3 border-b border-zen-black/5">
+              <p className="text-xs font-bold text-zen-black truncate">{displayName}</p>
+              <p className="text-[10px] text-zen-black/50 truncate">{session.user.email}</p>
+            </div>
+
+            {/* Menu items */}
+            <div className="py-1">
+              <Link
+                href="/settings"
+                onClick={() => setDropdownOpen(false)}
+                className="flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-zen-black/70 hover:bg-briefing-cream hover:text-zen-black transition-colors"
+              >
+                <Settings size={14} strokeWidth={2} />
+                Settings · ตั้งค่า
+              </Link>
+
+              {isAdmin && (
+                <Link
+                  href="/admin/dashboard"
+                  onClick={() => setDropdownOpen(false)}
+                  className="flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-basel-brick hover:bg-briefing-cream transition-colors"
+                >
+                  <Shield size={14} strokeWidth={2} />
+                  Admin Dashboard
+                </Link>
+              )}
+            </div>
+
+            {/* Sign out */}
+            <div className="border-t border-zen-black/5 pt-1">
+              <button
+                onClick={() => { signOut({ callbackUrl: '/' }); setDropdownOpen(false) }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-zen-black/50 hover:bg-briefing-cream hover:text-zen-black transition-colors"
+              >
+                <LogOut size={14} strokeWidth={2} />
+                Sign out
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -216,7 +283,21 @@ function MobileUserMenu({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        {session.user.image ? (
+          <Image
+            src={session.user.image}
+            alt={displayName}
+            width={40}
+            height={40}
+            className="w-10 h-10 rounded-full object-cover border-2 border-zen-black/10"
+            unoptimized={session.user.image.includes('res.cloudinary.com')}
+          />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-zen-black/5 flex items-center justify-center border-2 border-zen-black/10">
+            <User size={20} className="text-zen-black/40" strokeWidth={2} />
+          </div>
+        )}
         <div>
           <p className="text-sm font-bold text-zen-black">{displayName}</p>
           <p className="text-[9px] font-black uppercase tracking-widest text-zen-black/40">
@@ -224,6 +305,14 @@ function MobileUserMenu({ onClose }: { onClose: () => void }) {
           </p>
         </div>
       </div>
+
+      <Link
+        href="/settings"
+        onClick={onClose}
+        className="block w-full py-3 text-center border-2 border-zen-black text-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-white transition-all"
+      >
+        Settings · ตั้งค่า
+      </Link>
 
       {isAdmin && (
         <Link
@@ -237,10 +326,33 @@ function MobileUserMenu({ onClose }: { onClose: () => void }) {
 
       <button
         onClick={() => { signOut({ callbackUrl: '/' }); onClose() }}
-        className="w-full py-3 border-2 border-zen-black text-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-white transition-all"
+        className="w-full py-3 border-2 border-zen-black/40 text-zen-black/60 font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-white transition-all"
       >
         Sign out
       </button>
+    </div>
+  )
+}
+
+// ── Mobile avatar (shown next to hamburger) ──────────────────────────────────
+
+function MobileAvatar() {
+  const { data: session } = useSession()
+
+  if (!session?.user) return null
+
+  return session.user.image ? (
+    <Image
+      src={session.user.image}
+      alt={session.user.name ?? 'Profile'}
+      width={32}
+      height={32}
+      className="w-8 h-8 rounded-full object-cover border border-zen-black/10"
+      unoptimized={session.user.image.includes('res.cloudinary.com')}
+    />
+  ) : (
+    <div className="w-8 h-8 rounded-full bg-zen-black/5 flex items-center justify-center border border-zen-black/10">
+      <User size={14} className="text-zen-black/40" strokeWidth={2} />
     </div>
   )
 }

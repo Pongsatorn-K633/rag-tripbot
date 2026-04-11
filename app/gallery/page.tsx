@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
-import { CloudUpload, CheckCircle, Trash2, ArrowRight, Flower, Lock, Shield } from 'lucide-react'
+import { CloudUpload, CheckCircle, Trash2, ArrowRight, Flower, Lock, Shield, ChevronDown, MapPin, Hotel, Train, Clock } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'motion/react'
 import { useSession, signIn } from 'next-auth/react'
@@ -43,6 +43,7 @@ interface SavedTrip {
   itinerary: Itinerary
   startDate?: string | null
   source?: string | null
+  shareCode?: string | null
   templateId?: string | null
   coverImage?: string | null
   totalDays?: number | null
@@ -76,6 +77,7 @@ export default function GalleryPage() {
   const [tripsLoading, setTripsLoading] = useState(true)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [viewingTripId, setViewingTripId] = useState<string | null>(null)
 
   // ── Load saved trips on mount (guests get empty array from the API) ───────
   useEffect(() => {
@@ -509,12 +511,13 @@ export default function GalleryPage() {
                     }}
                     whileHover={{ y: -10 }}
                     transition={{ layout: { duration: 0.45, ease: [0.4, 0, 0.2, 1] } }}
-                    className="group flex flex-col bg-white p-4 rounded-xl shadow-sm hover:shadow-2xl transition-all duration-300 relative"
+                    className="group flex flex-col bg-white p-4 rounded-xl shadow-sm hover:shadow-2xl transition-all duration-300 relative cursor-pointer"
+                    onClick={() => setViewingTripId(trip.id)}
                   >
                     {/* Delete button — hidden on locked (promoted-to-template) trips */}
                     {!trip.locked && (
                       <button
-                        onClick={() => setDeleteConfirm(trip.id)}
+                        onClick={(e) => { e.stopPropagation(); setDeleteConfirm(trip.id) }}
                         className="absolute top-6 right-6 z-10 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 bg-white/80 rounded-full hover:bg-basel-brick hover:text-white text-zen-black/40"
                         aria-label="ลบแผน"
                       >
@@ -540,7 +543,7 @@ export default function GalleryPage() {
                         src={imgSrc}
                         alt={trip.title}
                         fill
-                        className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                        className="object-cover transition-all duration-700 group-hover:scale-105"
                         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
                       />
                       <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-zen-black/80 to-transparent">
@@ -567,9 +570,11 @@ export default function GalleryPage() {
                     <p className="text-zen-black/30 text-xs font-sans mb-4">
                       {new Date(trip.createdAt).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
-                    <div className="mt-auto text-basel-brick font-black text-xs uppercase tracking-widest flex items-center gap-2 group-hover:translate-x-2 transition-transform font-headline">
+                    <button
+                      className="mt-auto text-basel-brick font-black text-xs uppercase tracking-widest flex items-center gap-2 group-hover:translate-x-2 transition-transform font-headline"
+                    >
                       VIEW <ArrowRight size={14} />
-                    </div>
+                    </button>
                   </motion.div>
                 )
               })}
@@ -616,6 +621,96 @@ export default function GalleryPage() {
           </div>
         </div>
       )}
+
+      {/* Trip view modal — shows full itinerary + share code when user clicks a card */}
+      <AnimatePresence>
+        {viewingTripId && (() => {
+          const trip = savedTrips.find((t) => t.id === viewingTripId)
+          if (!trip) return null
+          const itin = trip.itinerary as Itinerary | null
+          return (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-10 px-4"
+              style={{ backgroundColor: 'rgba(35,26,14,0.75)' }}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setViewingTripId(null)
+              }}
+            >
+              <motion.div
+                initial={{ y: 40, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 40, opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                className="w-full max-w-lg bg-briefing-cream border border-zen-black/10 shadow-2xl overflow-hidden"
+              >
+                {/* Modal header */}
+                <div className="px-6 py-5 flex items-center justify-between border-b border-zen-black/10">
+                  <div>
+                    <h2 className="font-headline font-black text-xl tracking-tighter text-zen-black">
+                      {trip.title}
+                    </h2>
+                    {trip.startDate && itin?.totalDays ? (
+                      <p className="text-xs text-basel-brick font-bold mt-1">
+                        {formatDateRange(trip.startDate, itin.totalDays)}
+                      </p>
+                    ) : null}
+                  </div>
+                  <button
+                    onClick={() => setViewingTripId(null)}
+                    className="text-zen-black/40 hover:text-zen-black text-2xl leading-none transition-colors"
+                    aria-label="ปิด"
+                  >
+                    &times;
+                  </button>
+                </div>
+
+                {/* Share code banner */}
+                {(itin?.shareCode || trip.shareCode) && (
+                  <div className="px-6 py-3 bg-zen-black flex items-center justify-between">
+                    <div>
+                      <span className="text-[8px] font-black uppercase tracking-[0.4em] text-white/50 block">
+                        LINE Share Code
+                      </span>
+                      <span className="font-mono text-lg font-bold text-white">
+                        {itin?.shareCode ?? trip.shareCode}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() =>
+                        navigator.clipboard.writeText(
+                          `/activate ${itin?.shareCode ?? trip.shareCode}`
+                        )
+                      }
+                      className="text-[9px] border border-white/30 text-white px-3 py-1.5 font-bold uppercase hover:bg-white hover:text-zen-black transition-all"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                )}
+
+                {/* Itinerary content — reuses the white-themed ItineraryCard structure
+                    but without the confirm button (read-only view) */}
+                {itin && itin.days && itin.days.length > 0 && (
+                  <TripViewAccordion itinerary={itin} />
+                )}
+
+                {/* Close button */}
+                <div className="px-6 py-4 border-t border-zen-black/10">
+                  <button
+                    onClick={() => setViewingTripId(null)}
+                    className="w-full py-3 border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-briefing-cream transition-all"
+                  >
+                    Close
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )
+        })()}
+      </AnimatePresence>
 
       {/* Decorative Maintenance Section */}
       <section className="border-t border-zen-black/10 pt-24">
@@ -681,5 +776,113 @@ export default function GalleryPage() {
         </div>
       </section>
     </main>
+  )
+}
+
+// ── Read-only itinerary accordion for the trip view modal ───────────────────
+// Mirrors the white-themed ItineraryCard design but without the confirm button.
+
+function TripViewAccordion({ itinerary }: { itinerary: Itinerary }) {
+  const [openDay, setOpenDay] = useState<number | null>(1)
+  const totalDays = itinerary.totalDays ?? itinerary.days.length
+  const currentOpenDay = openDay ?? 1
+
+  return (
+    <div>
+      {/* Journey header */}
+      <div className="flex items-baseline justify-between px-6 py-4 border-b border-zen-black/5">
+        <h3 className="font-headline text-lg font-extrabold text-zen-black">
+          The Journey
+        </h3>
+        <span className="text-[10px] font-bold text-basel-brick uppercase tracking-widest">
+          Day {currentOpenDay} / {totalDays}
+        </span>
+      </div>
+
+      {/* Day accordion */}
+      <div className="divide-y divide-zen-black/5">
+        {itinerary.days.map((day) => {
+          const isOpen = openDay === day.day
+          const paddedDay = String(day.day).padStart(2, '0')
+
+          return (
+            <div key={day.day}>
+              <button
+                className="w-full text-left px-6 py-4 flex items-center gap-4 hover:bg-briefing-cream/50 transition-colors"
+                onClick={() => setOpenDay(isOpen ? null : day.day)}
+              >
+                <span
+                  className={[
+                    'inline-flex items-center justify-center w-11 h-11 rounded-xl font-black text-lg flex-shrink-0 transition-colors',
+                    isOpen ? 'bg-basel-brick text-white' : 'bg-zen-black/5 text-zen-black/40',
+                  ].join(' ')}
+                >
+                  {paddedDay}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-lg text-zen-black leading-tight truncate">
+                    {day.location}
+                  </p>
+                  <p className="text-xs text-zen-black/40 font-medium mt-0.5 flex items-center gap-1">
+                    <MapPin size={10} strokeWidth={2.5} />
+                    Day {day.day}
+                    {day.activities.length > 0 && ` · ${day.activities.length} กิจกรรม`}
+                  </p>
+                </div>
+                <ChevronDown
+                  size={18}
+                  className={[
+                    'flex-shrink-0 transition-all duration-200',
+                    isOpen ? 'rotate-180 text-basel-brick' : 'rotate-0 text-zen-black/20',
+                  ].join(' ')}
+                />
+              </button>
+
+              {isOpen && (
+                <div className="px-6 pb-6 pt-2 space-y-6 border-t border-zen-black/5 bg-briefing-cream/30">
+                  {day.activities.length > 0 && (
+                    <div className="space-y-5">
+                      {day.activities.map((act, idx) => (
+                        <div key={idx} className="relative pl-7 border-l-[3px] border-basel-brick">
+                          <span className="absolute -left-[6px] top-0.5 w-2.5 h-2.5 rounded-full bg-basel-brick" />
+                          <p className="text-[10px] font-bold text-basel-brick uppercase tracking-widest flex items-center gap-1">
+                            <Clock size={10} strokeWidth={2.5} />
+                            {act.time}
+                          </p>
+                          <p className="font-bold text-base text-zen-black mt-1">{act.name}</p>
+                          {act.notes && (
+                            <p className="text-sm text-zen-black/60 mt-1.5 leading-relaxed">{act.notes}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {day.accommodation && (
+                    <div className="flex items-start gap-2">
+                      <Hotel size={14} className="text-basel-brick flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+                      <div>
+                        <p className="text-[10px] font-bold text-basel-brick uppercase tracking-widest mb-1">ที่พัก</p>
+                        <p className="text-sm text-zen-black leading-relaxed">{day.accommodation}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {day.transport && (
+                    <div className="flex items-start gap-2">
+                      <Train size={14} className="text-basel-brick flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+                      <div>
+                        <p className="text-[10px] font-bold text-basel-brick uppercase tracking-widest mb-1">การเดินทาง</p>
+                        <p className="text-sm text-zen-black leading-relaxed">{day.transport}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
   )
 }

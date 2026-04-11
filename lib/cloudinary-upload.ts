@@ -51,12 +51,30 @@ export function validateUploadFile(file: File): string | null {
  * @param file        The image file to upload
  * @param onProgress  Optional callback fired as the upload progresses
  */
+/**
+ * @param file        The image file to upload
+ * @param onProgress  Optional callback fired as the upload progresses
+ * @param folder      Optional Cloudinary folder override (e.g. 'dopamichi/profiles').
+ *                    Only works if the upload preset allows the `folder` param.
+ *                    If the preset doesn't allow it, this is silently ignored and
+ *                    the upload lands in the preset's default folder.
+ */
+/**
+ * @param file        The image file to upload
+ * @param onProgress  Optional callback fired as the upload progresses
+ * @param target      Upload target: 'covers' (default) uses the cover preset,
+ *                    'profiles' uses the profile preset. Each preset has its
+ *                    own Asset Folder configured in the Cloudinary dashboard.
+ */
 export function uploadToCloudinary(
   file: File,
-  onProgress?: (progress: UploadProgress) => void
+  onProgress?: (progress: UploadProgress) => void,
+  target: 'covers' | 'profiles' = 'covers'
 ): Promise<UploadResult> {
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-  const preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+  const preset = target === 'profiles'
+    ? (process.env.NEXT_PUBLIC_CLOUDINARY_PROFILE_PRESET ?? process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET)
+    : process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
 
   if (!cloudName || !preset) {
     return Promise.reject(
@@ -67,11 +85,6 @@ export function uploadToCloudinary(
   const formData = new FormData()
   formData.append('file', file)
   formData.append('upload_preset', preset)
-  // NOTE: do NOT append `folder` here. Unsigned upload presets reject any
-  // parameter not explicitly whitelisted, and `folder` is NOT whitelisted by
-  // default. The folder MUST be configured on the preset itself in the
-  // Cloudinary dashboard (Settings → Upload → Upload presets → edit →
-  // "Folder" field → `dopamichi/covers`). Every upload then auto-lands there.
 
   return new Promise<UploadResult>((resolve, reject) => {
     const xhr = new XMLHttpRequest()
@@ -102,7 +115,27 @@ export function uploadToCloudinary(
           reject(new Error('Invalid response from Cloudinary'))
         }
       } else {
-        reject(new Error(`อัปโหลดล้มเหลว (HTTP ${xhr.status})`))
+        // Parse Cloudinary's error message so the user (and dev) sees
+        // the actual reason, not just "HTTP 400".
+        let detail = ''
+        try {
+          const errBody = JSON.parse(xhr.responseText)
+          detail = errBody?.error?.message ?? ''
+        } catch {
+          detail = xhr.responseText?.slice(0, 200) ?? ''
+        }
+        console.error(
+          `[cloudinary-upload] HTTP ${xhr.status}:`,
+          detail,
+          `\nPreset: ${preset}, Cloud: ${cloudName}`
+        )
+        reject(
+          new Error(
+            detail
+              ? `อัปโหลดล้มเหลว: ${detail}`
+              : `อัปโหลดล้มเหลว (HTTP ${xhr.status})`
+          )
+        )
       }
     }
 

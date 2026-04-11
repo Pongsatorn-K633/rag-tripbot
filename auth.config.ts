@@ -2,6 +2,18 @@ import type { NextAuthConfig } from 'next-auth'
 import Google from 'next-auth/providers/google'
 import type { UserRole } from '@prisma/client'
 
+// Extend JWT + Session types for onboarding flag
+declare module 'next-auth/jwt' {
+  interface JWT {
+    isOnboarded?: boolean
+  }
+}
+declare module 'next-auth' {
+  interface User {
+    isOnboarded?: boolean
+  }
+}
+
 /**
  * Edge-safe NextAuth config.
  *
@@ -55,11 +67,17 @@ export const authConfig = {
     //
     // Without the session callback below, middleware reads role=undefined and
     // incorrectly bounces SUPERADMINs away from /admin/* routes.
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session: updateSession }) {
       if (user) {
-        const u = user as { id?: string; role?: UserRole }
+        const u = user as { id?: string; role?: UserRole; isOnboarded?: boolean }
         if (u.id) token.id = u.id
         if (u.role) token.role = u.role
+        token.isOnboarded = u.isOnboarded ?? false
+      }
+      // Allow client update() calls to refresh isOnboarded after onboarding
+      if (trigger === 'update' && updateSession) {
+        const s = updateSession as { isOnboarded?: boolean }
+        if (typeof s.isOnboarded === 'boolean') token.isOnboarded = s.isOnboarded
       }
       return token
     },
@@ -67,6 +85,7 @@ export const authConfig = {
       if (session.user) {
         session.user.id = (token.id as string) ?? (token.sub as string)
         session.user.role = (token.role as UserRole) ?? 'USER'
+        ;(session.user as { isOnboarded?: boolean }).isOnboarded = token.isOnboarded ?? false
       }
       return session
     },

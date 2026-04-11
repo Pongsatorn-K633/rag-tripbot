@@ -408,6 +408,10 @@ Branded HTML email template for magic links (bilingual, brand colors). Custom
 | Cloudinary direct upload | `lib/cloudinary-upload.ts` + `app/components/CoverUpload.tsx` |
 | Trip lock detection | `lib/trip-lock.ts` — `getTripLockInfo`, `getLockedTripIds` |
 | Auth pages | `app/auth/signin` · `verify-request` · `error` |
+| Onboarding | `app/onboarding/page.tsx` — new magic-link users set name + profile picture |
+| Settings | `app/settings/page.tsx` — General (theme toggle) + Account (edit profile) |
+| Profile picture crop | `app/components/ProfilePictureUpload.tsx` — `react-easy-crop` circular crop → canvas → Cloudinary |
+| Theme system | `app/components/ThemeProvider.tsx` — `.dark` class toggle on `<html>`, localStorage persistence |
 | Admin pages | `app/admin/dashboard` · `app/admin/users` |
 
 ---

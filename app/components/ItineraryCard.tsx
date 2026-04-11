@@ -1,6 +1,17 @@
 'use client'
 
 import { useState } from 'react'
+import { ChevronDown, MapPin, Hotel, Train, Clock } from 'lucide-react'
+
+/**
+ * Itinerary preview card — white-themed version of the LIFF itinerary view.
+ *
+ * Used in the template preview modal and the gallery upload review step.
+ * Mirrors the LIFF dark-themed accordion (app/liff/itinerary/page.tsx) but
+ * with a briefing-cream/white/zen-black palette to fit the main website.
+ *
+ * The LIFF version (dark theme) is kept as-is for the LINE in-app browser.
+ */
 
 interface Activity {
   time: string
@@ -37,91 +48,146 @@ export default function ItineraryCard({
 }: ItineraryCardProps) {
   const [openDay, setOpenDay] = useState<number | null>(1)
 
+  const totalDays = itinerary.totalDays ?? itinerary.days.length
+  const currentOpenDay = openDay ?? 1
+
   return (
-    <div className="rounded-xl overflow-hidden shadow-md mt-3 mb-2" style={{ border: '1px solid #1a2744' }}>
+    <div className="rounded-xl overflow-hidden border border-zen-black/10 bg-white shadow-sm">
       {/* Header */}
-      <div className="px-5 py-4" style={{ backgroundColor: '#1a2744' }}>
-        <h2 className="text-lg font-semibold" style={{ color: '#c9a84c' }}>
-          {itinerary.title ?? 'แผนการเดินทาง'}
-        </h2>
-        <p className="text-sm mt-1" style={{ color: '#a0aec0' }}>
-          {itinerary.totalDays ? `${itinerary.totalDays} วัน` : ''}
-          {itinerary.season ? ` · ${itinerary.season}` : ''}
-        </p>
+      <div className="px-6 py-5 bg-zen-black">
+        <div className="flex items-baseline justify-between gap-4">
+          <div>
+            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-basel-brick mb-1">
+              Travel Dossier
+            </p>
+            <h2 className="font-headline font-extrabold text-xl tracking-tight text-briefing-cream leading-tight">
+              {itinerary.title ?? 'แผนการเดินทาง'}
+            </h2>
+          </div>
+          <div className="text-right flex-shrink-0">
+            <p className="text-xs font-bold text-briefing-cream/60">
+              {totalDays} วัน
+              {itinerary.season ? ` · ${itinerary.season}` : ''}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Journey section header */}
+      <div className="flex items-baseline justify-between px-6 py-4 border-b border-zen-black/5">
+        <h3 className="font-headline text-lg font-extrabold text-zen-black">
+          The Journey
+        </h3>
+        <span className="text-[10px] font-bold text-basel-brick uppercase tracking-widest">
+          Day {currentOpenDay} / {totalDays}
+        </span>
       </div>
 
       {/* Day accordion */}
-      <div className="divide-y divide-gray-100 bg-white">
-        {itinerary.days.map((day, idx) => {
+      <div className="divide-y divide-zen-black/5">
+        {itinerary.days.map((day) => {
           const isOpen = openDay === day.day
+          const paddedDay = String(day.day).padStart(2, '0')
+
           return (
-            <div key={`${idx}-${day.day}`}>
+            <div key={day.day}>
               {/* Day header — clickable toggle */}
               <button
-                className="w-full text-left px-5 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                className="w-full text-left px-6 py-4 flex items-center gap-4 hover:bg-briefing-cream/50 transition-colors"
                 onClick={() => setOpenDay(isOpen ? null : day.day)}
               >
-                <div className="flex items-center gap-3">
-                  <span
-                    className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold flex-shrink-0"
-                    style={{ backgroundColor: '#1a2744', color: '#c9a84c' }}
-                  >
-                    {day.day}
-                  </span>
-                  <span className="font-medium text-sm" style={{ color: '#1a2744' }}>
-                    {day.location}
-                  </span>
-                </div>
-                <span className="text-xs" style={{ color: '#c9a84c' }}>
-                  {isOpen ? '▲' : '▼'}
+                {/* Number badge */}
+                <span
+                  className={[
+                    'inline-flex items-center justify-center w-11 h-11 rounded-xl font-black text-lg flex-shrink-0 transition-colors',
+                    isOpen
+                      ? 'bg-basel-brick text-white'
+                      : 'bg-zen-black/5 text-zen-black/40',
+                  ].join(' ')}
+                >
+                  {paddedDay}
                 </span>
+
+                {/* Location + subtitle */}
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-lg text-zen-black leading-tight truncate">
+                    {day.location}
+                  </p>
+                  <p className="text-xs text-zen-black/40 font-medium mt-0.5 flex items-center gap-1">
+                    <MapPin size={10} strokeWidth={2.5} />
+                    Day {day.day}
+                    {day.activities.length > 0 && ` · ${day.activities.length} กิจกรรม`}
+                  </p>
+                </div>
+
+                {/* Chevron */}
+                <ChevronDown
+                  size={18}
+                  className={[
+                    'flex-shrink-0 transition-all duration-200',
+                    isOpen
+                      ? 'rotate-180 text-basel-brick'
+                      : 'rotate-0 text-zen-black/20',
+                  ].join(' ')}
+                />
               </button>
 
-              {/* Day detail */}
+              {/* Expanded panel */}
               {isOpen && (
-                <div className="px-5 pb-4 pt-1 bg-gray-50">
-                  {/* Activities */}
-                  <div className="mb-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#c9a84c' }}>
-                      กิจกรรม
-                    </p>
-                    <ul className="space-y-2">
+                <div className="px-6 pb-6 pt-2 space-y-6 border-t border-zen-black/5 bg-briefing-cream/30">
+                  {/* Activities timeline */}
+                  {day.activities.length > 0 && (
+                    <div className="space-y-5">
                       {day.activities.map((act, idx) => (
-                        <li key={idx} className="flex gap-3 text-sm">
-                          <span
-                            className="flex-shrink-0 font-mono text-xs pt-0.5"
-                            style={{ color: '#1a2744', minWidth: '3.5rem' }}
-                          >
+                        <div key={idx} className="relative pl-7 border-l-[3px] border-basel-brick">
+                          {/* Dot */}
+                          <span className="absolute -left-[6px] top-0.5 w-2.5 h-2.5 rounded-full bg-basel-brick" />
+                          <p className="text-[10px] font-bold text-basel-brick uppercase tracking-widest flex items-center gap-1">
+                            <Clock size={10} strokeWidth={2.5} />
                             {act.time}
-                          </span>
-                          <div>
-                            <span className="font-medium" style={{ color: '#1a2744' }}>
-                              {act.name}
-                            </span>
-                            {act.notes && (
-                              <p className="text-xs text-gray-500 mt-0.5">{act.notes}</p>
-                            )}
-                          </div>
-                        </li>
+                          </p>
+                          <p className="font-bold text-base text-zen-black mt-1">
+                            {act.name}
+                          </p>
+                          {act.notes && (
+                            <p className="text-sm text-zen-black/60 mt-1.5 leading-relaxed">
+                              {act.notes}
+                            </p>
+                          )}
+                        </div>
                       ))}
-                    </ul>
-                  </div>
+                    </div>
+                  )}
 
                   {/* Accommodation */}
-                  <div className="mb-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: '#c9a84c' }}>
-                      ที่พัก
-                    </p>
-                    <p className="text-sm" style={{ color: '#374151' }}>{day.accommodation}</p>
-                  </div>
+                  {day.accommodation && (
+                    <div className="flex items-start gap-2">
+                      <Hotel size={14} className="text-basel-brick flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+                      <div>
+                        <p className="text-[10px] font-bold text-basel-brick uppercase tracking-widest mb-1">
+                          ที่พัก
+                        </p>
+                        <p className="text-sm text-zen-black leading-relaxed">
+                          {day.accommodation}
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Transport */}
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: '#c9a84c' }}>
-                      การเดินทาง
-                    </p>
-                    <p className="text-sm" style={{ color: '#374151' }}>{day.transport}</p>
-                  </div>
+                  {day.transport && (
+                    <div className="flex items-start gap-2">
+                      <Train size={14} className="text-basel-brick flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+                      <div>
+                        <p className="text-[10px] font-bold text-basel-brick uppercase tracking-widest mb-1">
+                          การเดินทาง
+                        </p>
+                        <p className="text-sm text-zen-black leading-relaxed">
+                          {day.transport}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -130,14 +196,13 @@ export default function ItineraryCard({
       </div>
 
       {/* Confirm button */}
-      <div className="px-5 py-4" style={{ backgroundColor: '#f9fafb', borderTop: '1px solid #e5e7eb' }}>
+      <div className="px-6 py-4 bg-white border-t border-zen-black/10">
         <button
           onClick={onConfirm}
           disabled={confirmLoading}
-          className="w-full py-3 rounded-lg font-semibold text-sm transition-opacity disabled:opacity-60"
-          style={{ backgroundColor: '#1a2744', color: '#c9a84c' }}
+          className="w-full py-4 bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all disabled:opacity-50"
         >
-          {confirmLoading ? 'กำลังบันทึก...' : 'ยืนยันและบันทึกแผนการเดินทาง'}
+          {confirmLoading ? 'กำลังบันทึก...' : 'Confirm & Sync Itinerary'}
         </button>
       </div>
     </div>

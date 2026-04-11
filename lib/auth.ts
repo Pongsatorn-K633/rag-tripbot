@@ -17,10 +17,12 @@ declare module 'next-auth' {
       name?: string | null
       image?: string | null
       role: UserRole
+      isOnboarded: boolean
     }
   }
   interface User {
     role?: UserRole
+    isOnboarded?: boolean
   }
 }
 
@@ -28,6 +30,7 @@ declare module 'next-auth/jwt' {
   interface JWT {
     id?: string
     role?: UserRole
+    isOnboarded?: boolean
   }
 }
 
@@ -158,7 +161,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             id: token.id,
             name: token.name,
             email: token.email,
+            image: token.image,
             role: token.role,
+            isOnboarded: token.isOnboarded,
           }
         : {}
       return defaultEncode({ token: stripped, secret, salt, maxAge })
@@ -170,25 +175,31 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id as string
+        token.image = user.image ?? null
         token.role = (user as { role?: UserRole }).role ?? 'USER'
+        token.isOnboarded = (user as { isOnboarded?: boolean }).isOnboarded ?? false
         return token
       }
 
-      if (!token.role && token.email) {
+      if ((!token.role || !token.image) && token.email) {
         const dbUser = await prisma.user.findUnique({
           where: { email: token.email as string },
-          select: { id: true, role: true },
+          select: { id: true, image: true, role: true, isOnboarded: true },
         })
         if (dbUser) {
           token.id = dbUser.id
+          token.image = dbUser.image
           token.role = dbUser.role
+          token.isOnboarded = dbUser.isOnboarded
         }
       }
 
       if (trigger === 'update' && session) {
-        const s = session as { name?: string; role?: UserRole }
+        const s = session as { name?: string; image?: string; role?: UserRole; isOnboarded?: boolean }
         if (s.name) token.name = s.name
+        if (s.image !== undefined) token.image = s.image
         if (s.role) token.role = s.role
+        if (typeof s.isOnboarded === 'boolean') token.isOnboarded = s.isOnboarded
       }
 
       return token
@@ -197,17 +208,33 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.id = (token.id as string) ?? (token.sub as string)
+        session.user.image = (token.image as string) ?? null
         session.user.role = (token.role as UserRole) ?? 'USER'
+        session.user.isOnboarded = (token.isOnboarded as boolean) ?? false
       }
       return session
     },
   },
   events: {
     async createUser({ user }) {
+      const updates: Record<string, unknown> = {}
+
+      // Bootstrap superadmin for whitelisted emails
       if (user.email && SUPERADMIN_EMAILS.includes(user.email.toLowerCase())) {
+        updates.role = 'SUPERADMIN'
+      }
+
+      // Google OAuth users already have a name from their profile — auto-mark
+      // them as onboarded so they skip the /onboarding page. Magic link users
+      // have no name → they'll be redirected to /onboarding to set one.
+      if (user.name) {
+        updates.isOnboarded = true
+      }
+
+      if (Object.keys(updates).length > 0) {
         await prisma.user.update({
           where: { id: user.id },
-          data: { role: 'SUPERADMIN' },
+          data: updates,
         })
       }
     },

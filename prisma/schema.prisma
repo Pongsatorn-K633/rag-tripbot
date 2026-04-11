@@ -22,6 +22,7 @@ model User {
   name          String?
   image         String?
   role          UserRole  @default(USER)
+  isOnboarded   Boolean   @default(false)
 
   trips     Trip[]
   templates Template[] @relation("TemplateAuthor")

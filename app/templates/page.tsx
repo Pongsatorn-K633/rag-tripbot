@@ -282,7 +282,7 @@ export default function TemplatesPage() {
                                     src={imgSrc}
                                     alt={tpl.title}
                                     fill
-                                    className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                                    className="object-cover transition-all duration-500 group-hover:scale-105"
                                     sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                                   />
                                   <div className="absolute bottom-0 left-0 w-full p-3 bg-gradient-to-t from-zen-black/80 to-transparent">
@@ -381,7 +381,7 @@ export default function TemplatesPage() {
                     src={imgSrc}
                     alt={tpl.title}
                     fill
-                    className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                    className="object-cover transition-all duration-700 group-hover:scale-105"
                     sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
                   />
                   <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-zen-black/80 to-transparent">

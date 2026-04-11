@@ -49,12 +49,12 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className="border-t border-zen-black/10 pt-10 space-y-3">
+        {/* <section className="border-t border-zen-black/10 pt-10 space-y-3">
           <h2 className="text-2xl font-headline font-bold text-zen-black">Stack</h2>
           <p className="text-sm text-zen-black/70">
             Next.js · Prisma · Neon PostgreSQL + pgvector · BGE-M3 · Gemini 2.5 Flash · LINE Messaging API
           </p>
-        </section>
+        </section> */}
 
         <p className="text-[9px] font-bold uppercase tracking-widest text-zen-black/30 pt-8">
           dopamichi · zen edition v.01

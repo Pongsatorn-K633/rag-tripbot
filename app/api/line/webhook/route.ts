@@ -49,7 +49,17 @@ async function handleEvent(event: webhook.Event) {
   if (sourceType === 'group') {
     const { triggered, cleanText } = checkTrigger(text, mentionedBot ?? false)
     if (!triggered) return
-    questionText = cleanText || text
+    // If the user typed ONLY the trigger word with no question (e.g. just
+    // "doma" or "โดมะ"), reply with a friendly greeting instead of sending
+    // an empty string to Gemini (which would trigger the enrichment path).
+    if (!cleanText) {
+      await replyToLine(
+        replyToken,
+        'ว่าไงครับ! 👋 ถามคำถามเกี่ยวกับทริปได้เลยนะครับ\nตัวอย่าง: doma พรุ่งนี้ต้องไปถึงสนามบินกี่โมง'
+      )
+      return
+    }
+    questionText = cleanText
   }
 
   await handleQuestion(lineId, replyToken, questionText)
