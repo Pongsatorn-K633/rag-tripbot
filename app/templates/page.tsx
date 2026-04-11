@@ -7,7 +7,7 @@ import { ArrowRight, Heart, ChevronDown } from 'lucide-react'
 import { useSession, signIn } from 'next-auth/react'
 import { type Itinerary } from '@/app/components/TemplateCard'
 import ItineraryCard from '@/app/components/ItineraryCard'
-import ActivationBanner from '@/app/components/ActivationBanner'
+import Link from 'next/link'
 import { resolveCoverImage } from '@/lib/cover-image'
 
 const SEASON_MONTHS: Record<string, string> = {
@@ -166,10 +166,6 @@ export default function TemplatesPage() {
       // Mark as saved in the heart state too
       setSavedTemplateIds((prev) => new Set(prev).add(selectedTemplate.id))
 
-      // Show the canonical template share code (not a fresh per-user code).
-      // This is the same code displayed in the admin dashboard, so distributing
-      // the template is consistent across everyone.
-      setShareCode(selectedTemplate.shareCode)
       setSaveState('done')
     } catch (err) {
       console.error('Save error:', err)
@@ -457,16 +453,33 @@ export default function TemplatesPage() {
               </div>
 
               <div className="px-4 py-4">
-                {saveState === 'done' && shareCode ? (
-                  <>
-                    <ActivationBanner shareCode={shareCode} />
-                    <button
-                      onClick={handleClose}
-                      className="mt-4 w-full py-4 border border-zen-black/20 font-headline font-bold text-sm uppercase tracking-widest text-zen-black/60 hover:bg-zen-black hover:text-briefing-cream transition-all"
-                    >
-                      เลือกแพ็คเกจอื่น
-                    </button>
-                  </>
+                {saveState === 'done' ? (
+                  <div className="text-center py-8 space-y-4">
+                    <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
+                      <span className="text-green-600 text-2xl">✓</span>
+                    </div>
+                    <h3 className="font-headline font-black text-xl text-zen-black">บันทึกแล้ว!</h3>
+                    <p className="text-sm text-zen-black/60">
+                      แผนถูกเพิ่มในหน้า Go! แล้ว เมื่อพร้อมเดินทางสร้างรหัส LINE ได้ที่นั่น
+                    </p>
+                    <p className="text-xs text-zen-black/40">
+                      Trip saved! Generate your LINE code in the Go! page when you&apos;re ready to travel.
+                    </p>
+                    <div className="flex gap-3 pt-2">
+                      <Link
+                        href="/go"
+                        className="flex-1 py-3 bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all text-center"
+                      >
+                        Go to my trips
+                      </Link>
+                      <button
+                        onClick={handleClose}
+                        className="flex-1 py-3 border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-briefing-cream transition-all"
+                      >
+                        เลือกแพ็คเกจอื่น
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <>
                     <div className="mb-4 px-1">

@@ -35,7 +35,7 @@ interface Message {
 
 interface SavedTrip {
   tripId: string
-  shareCode: string
+  shareCode: string | null
 }
 
 // ── Itinerary day renderer (dopamichi style) ─────────────────────────────────
@@ -226,25 +226,8 @@ export default function ChatPage() {
         return
       }
 
-      const tripId: string = saveData.trip.id
-      const primaryCity = latestItinerary.days?.[0]?.location ?? 'JPN'
-
-      const activateRes = await fetch('/api/activate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tripId, primaryCity }),
-      })
-      const activateData = await activateRes.json()
-
-      if (!activateRes.ok) {
-        setMessages((prev) => [
-          ...prev,
-          { role: 'bot', content: 'บันทึกแผนแล้วค่ะ แต่ไม่สามารถสร้างรหัส LINE ได้' },
-        ])
-        return
-      }
-
-      setSavedTrip({ tripId, shareCode: activateData.shareCode })
+      // Trip saved without shareCode — user generates it in /go when ready
+      setSavedTrip({ tripId: saveData.trip.id, shareCode: null })
     } catch {
       setMessages((prev) => [
         ...prev,

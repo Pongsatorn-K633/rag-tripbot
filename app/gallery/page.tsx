@@ -7,7 +7,6 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'motion/react'
 import { useSession, signIn } from 'next-auth/react'
 import ItineraryCard from '@/app/components/ItineraryCard'
-import ActivationBanner from '@/app/components/ActivationBanner'
 import CoverUpload from '@/app/components/CoverUpload'
 import { IMG } from '@/lib/images'
 import { resolveCoverImage } from '@/lib/cover-image'
@@ -50,7 +49,6 @@ export default function GalleryPage() {
   const [isDragging, setIsDragging] = useState(false)
   const [uploadedItinerary, setUploadedItinerary] = useState<Itinerary | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
-  const [uploadShareCode, setUploadShareCode] = useState<string | null>(null)
   const [uploadStartDate, setUploadStartDate] = useState('')
   const [uploadCoverImage, setUploadCoverImage] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -173,34 +171,9 @@ export default function GalleryPage() {
         }),
       })
       if (!saveRes.ok) throw new Error('บันทึกไม่สำเร็จ')
-      const { trip } = await saveRes.json()
 
-      const primaryCity = uploadedItinerary.days[0]?.location ?? 'JPN'
-      const activateRes = await fetch('/api/activate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tripId: trip.id, primaryCity }),
-      })
-      if (!activateRes.ok) throw new Error('สร้างรหัสไม่สำเร็จ')
-      const { shareCode } = await activateRes.json()
-
-      setUploadShareCode(shareCode)
+      // Trip saved without shareCode — user generates it in /go when ready
       setUploadState('done')
-
-      // Refresh saved trips list — include the cover image so the new card
-      // renders with the user's uploaded image immediately, no page refresh.
-      setSavedTrips((prev) => [
-        {
-          id: trip.id,
-          title: trip.title,
-          createdAt: trip.createdAt,
-          itinerary: uploadedItinerary,
-          source: 'upload',
-          coverImage: uploadCoverImage,
-          startDate: uploadStartDate || null,
-        },
-        ...prev,
-      ])
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'เกิดข้อผิดพลาด'
       setUploadError(message)
@@ -210,7 +183,6 @@ export default function GalleryPage() {
 
   function handleReUpload() {
     setUploadedItinerary(null)
-    setUploadShareCode(null)
     setUploadError(null)
     setUploadStartDate('')
     setUploadCoverImage(null)
@@ -381,16 +353,33 @@ export default function GalleryPage() {
                     ตรวจสอบแผนการเดินทางที่ AI สกัดออกมา หากถูกต้องให้กดยืนยันและบันทึก
                   </div>
                 )}
-                {uploadState === 'done' && uploadShareCode ? (
-                  <>
-                    <ActivationBanner shareCode={uploadShareCode} />
-                    <button
-                      onClick={handleReUpload}
-                      className="mt-4 w-full py-3 font-bold text-sm border border-zen-black/20 text-zen-black/60 hover:bg-zen-black hover:text-briefing-cream transition-all font-headline uppercase tracking-widest"
-                    >
-                      อัปโหลดไฟล์อื่น
-                    </button>
-                  </>
+                {uploadState === 'done' ? (
+                  <div className="text-center py-8 space-y-4">
+                    <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
+                      <span className="text-green-600 text-2xl">✓</span>
+                    </div>
+                    <h3 className="font-headline font-black text-xl text-zen-black">บันทึกแล้ว!</h3>
+                    <p className="text-sm text-zen-black/60">
+                      แผนถูกเพิ่มในหน้า Go! แล้ว เมื่อพร้อมเดินทางสร้างรหัส LINE ได้ที่นั่น
+                    </p>
+                    <p className="text-xs text-zen-black/40">
+                      Trip saved! Generate your LINE code in Go! when ready.
+                    </p>
+                    <div className="flex gap-3 pt-2">
+                      <Link
+                        href="/go"
+                        className="flex-1 py-3 bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all text-center"
+                      >
+                        Go to my trips
+                      </Link>
+                      <button
+                        onClick={handleReUpload}
+                        className="flex-1 py-3 border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-briefing-cream transition-all"
+                      >
+                        อัปโหลดไฟล์อื่น
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <>
                     <div className="mb-4">

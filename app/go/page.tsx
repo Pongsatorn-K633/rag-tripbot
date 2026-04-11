@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Trash2, ArrowRight, Shield, ChevronDown, MapPin, Hotel, Train, Clock, Banknote, Timer, Plane } from 'lucide-react'
+import { Trash2, ArrowRight, Shield, ChevronDown, MapPin, Hotel, Train, Clock, Banknote, Timer, Plane, Zap, Copy } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useSession, signIn } from 'next-auth/react'
 import { IMG } from '@/lib/images'
@@ -40,6 +40,30 @@ export default function GoPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [viewingTripId, setViewingTripId] = useState<string | null>(null)
+  const [generatingCode, setGeneratingCode] = useState<string | null>(null)
+
+  async function handleGenerateCode(tripId: string, e: React.MouseEvent) {
+    e.stopPropagation() // don't open the view modal
+    setGeneratingCode(tripId)
+    try {
+      const trip = trips.find((t) => t.id === tripId)
+      const primaryCity = (trip?.itinerary as Itinerary | null)?.days?.[0]?.location ?? 'JPN'
+      const res = await fetch('/api/activate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tripId, primaryCity }),
+      })
+      if (!res.ok) throw new Error('Generate failed')
+      const { shareCode } = await res.json()
+      setTrips((prev) =>
+        prev.map((t) => (t.id === tripId ? { ...t, shareCode } : t))
+      )
+    } catch {
+      alert('ไม่สามารถสร้างรหัสได้ กรุณาลองใหม่')
+    } finally {
+      setGeneratingCode(null)
+    }
+  }
 
   useEffect(() => {
     if (status === 'loading') return
@@ -189,11 +213,35 @@ export default function GoPage() {
                       <p className="text-zen-black/60 text-sm font-sans leading-relaxed mb-1">
                         {itin?.season ?? ''}{itin?.season && tripTotalDays ? ' · ' : ''}{tripTotalDays ? `${tripTotalDays} วัน` : ''}
                       </p>
-                      {(itin?.shareCode || trip.shareCode) && (
-                        <p className="text-[10px] font-black uppercase tracking-widest text-basel-brick font-headline mb-2">
-                          Code: {itin?.shareCode ?? trip.shareCode}
-                        </p>
+                      {/* Share code: show code if exists, or generate button */}
+                      {trip.shareCode ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigator.clipboard.writeText(`/activate ${trip.shareCode}`)
+                          }}
+                          className="w-full mb-3 flex items-center justify-between gap-2 px-3 py-2 bg-zen-black text-white hover:bg-basel-brick transition-colors group/code"
+                        >
+                          <div className="flex flex-col items-start leading-tight">
+                            <span className="text-[7px] font-black uppercase tracking-[0.3em] text-white/50">LINE Code</span>
+                            <span className="font-mono text-sm font-bold">{trip.shareCode}</span>
+                          </div>
+                          <Copy size={12} className="text-white/60 group-hover/code:text-white" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => handleGenerateCode(trip.id, e)}
+                          disabled={generatingCode === trip.id}
+                          className="w-full mb-3 flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-basel-brick/40 text-basel-brick text-[10px] font-black uppercase tracking-widest hover:bg-basel-brick hover:text-white hover:border-basel-brick transition-all disabled:opacity-50"
+                        >
+                          {generatingCode === trip.id ? (
+                            <><div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" /> Generating...</>
+                          ) : (
+                            <><Zap size={12} strokeWidth={2.5} /> Generate LINE code</>
+                          )}
+                        </button>
                       )}
+
                       <p className="text-zen-black/30 text-xs font-sans mb-4">
                         {new Date(trip.createdAt).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
                       </p>
