@@ -38,6 +38,9 @@ Thumbs.db
 .next/
 out/
 
+# TypeScript incremental build info
+*.tsbuildinfo
+
 # Node.js
 node_modules/
 npm-debug.log*
