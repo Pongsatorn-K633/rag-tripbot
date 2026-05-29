@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { ArrowLeft, Plus, Edit2, Trash2, TrendingUp, Users, FileText, BookOpen, X, Eye, EyeOff, Check, AlertCircle, Copy, Sparkles } from 'lucide-react'
 import CoverUpload from '@/app/components/CoverUpload'
 import { resolveCoverImage } from '@/lib/cover-image'
+import type { DateRange, TripAvailability } from '@/lib/itinerary-types'
+import { formatRanges } from '@/lib/availability'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,6 +30,7 @@ interface TemplateRow {
   coverImage: string | null
   totalDays: number
   season: string | null
+  availability: TripAvailability | null
   published: boolean
   createdAt: string
   createdBy: { id: string; email: string | null; name: string | null }
@@ -611,6 +614,8 @@ function TemplateFormModal({
   const [coverImage, setCoverImage] = useState<string | null>(template?.coverImage ?? null)
   const [itineraryJson, setItineraryJson] = useState('')
   const [published, setPublished] = useState(template?.published ?? true)
+  const [available, setAvailable] = useState<DateRange[]>(template?.availability?.available ?? [])
+  const [recommended, setRecommended] = useState<DateRange[]>(template?.availability?.recommended ?? [])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -658,6 +663,11 @@ function TemplateFormModal({
           coverImage: coverImage || null,
           itinerary,
           published,
+          // null = always available; the API validates the MM-DD ranges.
+          availability:
+            available.length === 0 && recommended.length === 0
+              ? null
+              : { available, recommended },
         }),
       })
       if (!res.ok) {
@@ -750,6 +760,32 @@ function TemplateFormModal({
         <Field label="Cover Image">
           <CoverPicker value={coverImage} onChange={setCoverImage} />
         </Field>
+
+        {/* Seasonal availability — drives the /pre-planned date filter */}
+        <div className="border border-zen-black/15 p-4 space-y-4 bg-white/40">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-basel-brick">
+              Travel availability
+            </p>
+            <p className="text-[10px] text-zen-black/50 mt-1 leading-relaxed">
+              Dates are year-agnostic. Leave <strong>Available</strong> empty = open all year.
+              A trip is hidden on /pre-planned when the user&apos;s whole trip span can&apos;t fit
+              inside an available window (e.g. a Kamikochi trip in winter).
+            </p>
+          </div>
+          <RangeEditor
+            label="Available (open) windows"
+            hint="When nothing inside is closed"
+            ranges={available}
+            onChange={setAvailable}
+          />
+          <RangeEditor
+            label="Recommended windows"
+            hint="Best time to go — gets a ✨ badge + sorts to top"
+            ranges={recommended}
+            onChange={setRecommended}
+          />
+        </div>
 
         <Field label="Itinerary JSON">
           <textarea
@@ -880,7 +916,7 @@ function PromoteModal({
             onChange={(e) => setPublished(e.target.value === 'yes')}
             className="input"
           >
-            <option value="yes">Yes — live on /templates</option>
+            <option value="yes">Yes — live on /pre-planned</option>
             <option value="no">No — save as draft</option>
           </select>
         </Field>
@@ -1165,6 +1201,96 @@ function CoverPicker({
         label="Upload from device"
         onUploaded={handleUploaded}
       />
+    </div>
+  )
+}
+
+// ── Availability range editor ───────────────────────────────────────────────
+// Stores year-agnostic "MM-DD" ranges. The <input type="date"> uses a fixed
+// leap year (2024) for the picker; only the month-day is persisted.
+
+function mmddToInput(mmdd: string): string {
+  return `2024-${mmdd}`
+}
+function inputToMMDD(value: string): string {
+  return value.slice(5) // "YYYY-MM-DD" → "MM-DD"
+}
+
+function RangeEditor({
+  label,
+  hint,
+  ranges,
+  onChange,
+}: {
+  label: string
+  hint: string
+  ranges: DateRange[]
+  onChange: (r: DateRange[]) => void
+}) {
+  function update(i: number, key: 'from' | 'to', value: string) {
+    if (!value) return
+    onChange(ranges.map((r, idx) => (idx === i ? { ...r, [key]: inputToMMDD(value) } : r)))
+  }
+  function add() {
+    onChange([...ranges, { from: '01-01', to: '12-31' }])
+  }
+  function remove(i: number) {
+    onChange(ranges.filter((_, idx) => idx !== i))
+  }
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between mb-2">
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zen-black/70">
+          {label}
+        </span>
+        <span className="text-[9px] text-zen-black/40">{hint}</span>
+      </div>
+
+      {ranges.length === 0 ? (
+        <p className="text-[10px] text-zen-black/40 italic mb-2">
+          {label.startsWith('Available') ? 'ตลอดทั้งปี · open all year' : 'ไม่ได้ระบุ · none set'}
+        </p>
+      ) : (
+        <div className="space-y-2 mb-2">
+          {ranges.map((r, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input
+                type="date"
+                value={mmddToInput(r.from)}
+                onChange={(e) => update(i, 'from', e.target.value)}
+                className="flex-1 border border-zen-black/20 px-2 py-1.5 text-xs bg-transparent text-zen-black focus:outline-none focus:border-basel-brick"
+              />
+              <span className="text-zen-black/40 text-xs">→</span>
+              <input
+                type="date"
+                value={mmddToInput(r.to)}
+                onChange={(e) => update(i, 'to', e.target.value)}
+                className="flex-1 border border-zen-black/20 px-2 py-1.5 text-xs bg-transparent text-zen-black focus:outline-none focus:border-basel-brick"
+              />
+              <button
+                type="button"
+                onClick={() => remove(i)}
+                className="p-1.5 text-zen-black/40 hover:text-red-600 transition-colors flex-shrink-0"
+                aria-label="Remove range"
+              >
+                <Trash2 size={13} strokeWidth={2.5} />
+              </button>
+            </div>
+          ))}
+          <p className="text-[10px] text-zen-black/50">
+            ดูตัวอย่าง: <span className="font-medium">{formatRanges(ranges, 'th')}</span>
+          </p>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={add}
+        className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-basel-brick hover:text-zen-black transition-colors"
+      >
+        <Plus size={12} strokeWidth={3} /> Add window
+      </button>
     </div>
   )
 }

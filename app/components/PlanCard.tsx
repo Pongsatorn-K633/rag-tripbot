@@ -1,0 +1,128 @@
+'use client'
+
+import Image from 'next/image'
+import { motion } from 'motion/react'
+import { ArrowRight, Heart, Sparkles } from 'lucide-react'
+import { resolveCoverImage } from '@/lib/cover-image'
+import { formatRanges } from '@/lib/availability'
+import type { TripAvailability } from '@/lib/itinerary-types'
+import { type Itinerary } from '@/app/components/TemplateCard'
+
+const SEASON_MONTHS: Record<string, string> = {
+  Winter: 'Dec–Feb',
+  Spring: 'Mar–May',
+  Summer: 'Jun–Aug',
+  Autumn: 'Sep–Nov',
+}
+
+/** The shape both /pre-planned and /saved fetch from GET /api/templates. */
+export interface PlanTemplate {
+  id: string
+  title: string
+  description: string | null
+  itinerary: Itinerary
+  coverImage: string | null
+  totalDays: number
+  season: string | null
+  availability: TripAvailability | null
+  shareCode: string | null
+  createdAt: string
+}
+
+export default function PlanCard({
+  tpl,
+  recommended = false,
+  dimmed = false,
+  isSaved,
+  isPending,
+  onOpen,
+  onHeart,
+}: {
+  tpl: PlanTemplate
+  recommended?: boolean
+  dimmed?: boolean
+  isSaved: boolean
+  isPending: boolean
+  onOpen: () => void
+  onHeart: (e: React.MouseEvent) => void
+}) {
+  const imgSrc = resolveCoverImage(tpl.coverImage, tpl.id)
+  const rec = tpl.availability?.recommended ?? []
+  const avail = tpl.availability?.available ?? []
+
+  return (
+    <motion.div
+      whileHover={{ y: dimmed ? 0 : -10 }}
+      className={`group flex flex-col bg-white p-4 rounded-xl shadow-sm hover:shadow-2xl transition-all duration-300 cursor-pointer relative ${
+        dimmed ? 'opacity-55 hover:opacity-90' : ''
+      }`}
+      onClick={onOpen}
+    >
+      {recommended && (
+        <div className="absolute top-6 left-6 z-20 bg-basel-brick text-white px-3 py-1.5 text-[9px] font-black uppercase tracking-widest font-headline flex items-center gap-1.5 shadow-md">
+          <Sparkles size={11} strokeWidth={3} /> เหมาะกับวันที่คุณเลือก
+        </div>
+      )}
+
+      <button
+        onClick={onHeart}
+        disabled={isPending}
+        aria-label={isSaved ? 'Unsave' : 'Save'}
+        className="absolute top-6 right-6 z-20 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform disabled:opacity-60"
+      >
+        <motion.div
+          key={isSaved ? 'saved' : 'unsaved'}
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+        >
+          <Heart size={18} fill={isSaved ? '#B43325' : 'none'} stroke={isSaved ? '#B43325' : '#231a0e'} strokeWidth={2.5} />
+        </motion.div>
+      </button>
+
+      <div className="relative aspect-[4/5] overflow-hidden mb-6 bg-briefing-cream rounded-lg">
+        <Image
+          src={imgSrc}
+          alt={tpl.title}
+          fill
+          className="object-cover transition-all duration-700 group-hover:scale-105"
+          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+        />
+        <div className="absolute bottom-0 left-0 w-full p-4 sm:p-6 bg-gradient-to-t from-zen-black/80 to-transparent">
+          <div className="flex flex-col gap-1.5">
+            <span className="bg-basel-brick text-briefing-cream px-3 py-1 text-[10px] font-black uppercase tracking-widest font-headline self-start">
+              {tpl.totalDays} DAYS
+            </span>
+            {tpl.season && (
+              <span className="bg-white/20 text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest font-headline backdrop-blur-sm self-start">
+                {tpl.season}{SEASON_MONTHS[tpl.season] ? ` · ${SEASON_MONTHS[tpl.season]}` : ''}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+      <h3 className="text-2xl font-headline font-bold text-zen-black mb-2">{tpl.title}</h3>
+      {tpl.description && (
+        <p className="text-zen-black/60 text-sm font-sans leading-relaxed mb-4">{tpl.description}</p>
+      )}
+
+      {/* Travel periods */}
+      <div className="mb-4 space-y-1">
+        {rec.length > 0 && (
+          <p className="text-[11px] text-basel-brick font-bold">
+            <span className="uppercase tracking-widest text-[9px] text-basel-brick/60 mr-1">แนะนำ</span>
+            {formatRanges(rec, 'th')}
+          </p>
+        )}
+        <p className="text-[11px] text-zen-black/50">
+          <span className="uppercase tracking-widest text-[9px] text-zen-black/40 mr-1">เปิดให้เที่ยว</span>
+          {formatRanges(avail, 'th')}
+        </p>
+      </div>
+
+      <button className="mt-auto text-basel-brick font-black text-xs uppercase tracking-widest flex items-center gap-2 group-hover:translate-x-2 transition-transform font-headline">
+        PREVIEW <ArrowRight size={14} />
+      </button>
+    </motion.div>
+  )
+}

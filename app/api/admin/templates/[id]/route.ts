@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { requireAdmin } from '@/lib/authz'
+import { parseAvailabilityInput } from '@/lib/availability'
 
 /**
  * PATCH /api/admin/templates/:id
@@ -21,6 +23,21 @@ export async function PATCH(
   const { id } = await params
   const body = await req.json()
 
+  // availability: only touch it if the key is present. A normalized null means
+  // "always available" → store DB NULL; an object stores the validated ranges.
+  let availability: Prisma.InputJsonValue | typeof Prisma.DbNull | undefined
+  if ('availability' in body) {
+    try {
+      const parsed = parseAvailabilityInput(body.availability)
+      availability = parsed ? (parsed as unknown as Prisma.InputJsonValue) : Prisma.DbNull
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : 'Invalid availability' },
+        { status: 400 }
+      )
+    }
+  }
+
   const template = await prisma.template.update({
     where: { id },
     data: {
@@ -30,6 +47,7 @@ export async function PATCH(
       coverImage: body.coverImage ?? undefined,
       totalDays: body.totalDays ?? undefined,
       season: body.season ?? undefined,
+      availability,
       published: typeof body.published === 'boolean' ? body.published : undefined,
     },
   })

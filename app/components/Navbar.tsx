@@ -4,14 +4,14 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { User, LogOut, Menu, X, Settings, ChevronDown, Shield } from 'lucide-react'
+import { User, LogOut, Menu, X, Settings, ChevronDown, Shield, Heart } from 'lucide-react'
 import { useSession, signIn, signOut } from 'next-auth/react'
 import { IMG } from '@/lib/images'
 
 const TABS = [
   { id: 'home', label: 'Home', href: '/' },
   { id: 'go', label: 'Go!', href: '/go' },
-  { id: 'templates', label: 'Templates', href: '/templates' },
+  { id: 'pre-planned', label: 'Pre-planned', href: '/pre-planned' },
   { id: 'gallery', label: 'Doc-to-Trip', href: '/gallery' },
   // AI Chat is under maintenance — disabled in nav, /chat redirects to /maintenance
   { id: 'chat', label: 'AI Chat', href: '/chat', disabled: true },
@@ -223,6 +223,15 @@ function NavUserMenu() {
             {/* Menu items */}
             <div className="py-1">
               <Link
+                href="/saved"
+                onClick={() => setDropdownOpen(false)}
+                className="flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-zen-black/70 hover:bg-briefing-cream hover:text-zen-black transition-colors"
+              >
+                <Heart size={14} strokeWidth={2} />
+                แพลนที่คุณชอบ · You saved
+              </Link>
+
+              <Link
                 href="/settings"
                 onClick={() => setDropdownOpen(false)}
                 className="flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-zen-black/70 hover:bg-briefing-cream hover:text-zen-black transition-colors"
@@ -307,6 +316,15 @@ function MobileUserMenu({ onClose }: { onClose: () => void }) {
           </p>
         </div>
       </div>
+
+      <Link
+        href="/saved"
+        onClick={onClose}
+        className="flex items-center justify-center gap-2 w-full py-3 text-center border-2 border-basel-brick/40 text-basel-brick font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-basel-brick hover:text-white transition-all"
+      >
+        <Heart size={14} strokeWidth={2.5} />
+        แพลนที่คุณชอบ · Saved
+      </Link>
 
       <Link
         href="/settings"

@@ -18,6 +18,15 @@ const nextConfig: NextConfig = {
         destination: '/maintenance',
         permanent: false,
       },
+      // ── RENAME: Templates → Pre-planned ─────────────────────────────────
+      // The gallery moved from /templates to /pre-planned. Keep old links,
+      // bookmarks, and shared URLs working. (API routes under /api/templates
+      // are unchanged — this only affects the user-facing page.)
+      {
+        source: '/templates',
+        destination: '/pre-planned',
+        permanent: true,
+      },
     ]
   },
 }

@@ -61,6 +61,7 @@ model Template {
   coverImage  String?
   totalDays   Int
   season      String?
+  availability Json?   // TripAvailability (lib/itinerary-types.ts): day-precise available + recommended MM-DD ranges. null = always available. Drives the /pre-planned date filter.
   shareCode   String?  @unique // canonical LINE activation code; mirrored onto a hidden system-owned Trip for LINE webhook lookup
   published   Boolean  @default(true)
   createdById String

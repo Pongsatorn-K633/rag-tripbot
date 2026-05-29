@@ -26,6 +26,8 @@ Target stack: Next.js · Prisma · Neon (PostgreSQL + pgvector) · BGE-M3 · Gem
 | `agents/rag-agent.md` | RAG Agent | Embedder, retriever, block assembler, LLM prompt pipeline |
 | `agents/web-agent.md` | Web Agent | Next.js UI, API routes (chat, trips, activate), itinerary flow |
 | `agents/line-agent.md` | LINE Agent | Webhook handler, /activate command, context injection pipeline, LIFF itinerary view |
+| `agents/auth-admin-agent.md` | Auth/Admin Agent | NextAuth, RBAC, middleware guards, admin dashboard, user management, share-code + cover/profile pipelines |
+| `agents/security-agent.md` | Security Agent | Cross-cutting security audit + fixes (webhook, authz, upload, secrets, PII). Owns no directory — reads/audits all, writes fixes only |
 
 ---
 
@@ -165,6 +167,27 @@ for the full implementation guide and `eaaefbc` / `5b7d73e` for the final commit
 - **Profile picture pipeline:** `ProfilePictureUpload` component uses `react-easy-crop` for circular crop → canvas → 512×512 JPEG blob → uploaded to Cloudinary via separate `NEXT_PUBLIC_CLOUDINARY_PROFILE_PRESET` preset (folder: `dopamichi/profiles`)
 - **Theme system:** CSS variables in `globals.css` swap via `.dark` class on `<html>`. `ThemeProvider` context in `app/components/ThemeProvider.tsx` manages state + localStorage persistence. Light default, dark opt-in via `/settings`
 - **Onboarding:** New magic-link users (`isOnboarded: false`) are redirected to `/onboarding` by middleware. Google OAuth users are auto-marked onboarded (they already have a name). Form: display name + profile picture upload. Completes via `PATCH /api/auth/onboarding` + `session.update()`
+
+### Phase 6 — Testing + QA (PLANNED, not started)
+
+> **Why this is a separate phase, not work for an existing agent:** the project currently has
+> **no automated test suite** (`package.json` scripts are `dev / build / start / lint / db:*`
+> only — no Vitest/Jest/Playwright). Until a suite exists there is nothing for a QA agent to
+> own, so day-to-day quality is handled by the built-in skills:
+> - `/code-review` — correctness + reuse/simplification/efficiency pass
+> - `/security-review` + `agents/security-agent.md` — security threat model
+> - `/verify` and `/run` — confirm a feature works in the real app
+> - the orchestrator (this file) — architectural contract + boundary enforcement
+
+When testing is introduced, this phase adds:
+- [ ] Unit tests for `lib/` (Vitest) — RAG assembler/retriever, share-code, authz, cover-image, injector
+- [ ] E2E tests (Playwright) — auth/onboarding flow, trips save + activate, LINE webhook (signed payloads), admin guardrails
+- [ ] CI gate (GitHub Actions) — run `lint` + tests on PR
+- [ ] **Then** create a **Test/QA Agent** (`agents/qa-agent.md`) to own `tests/`, coverage, the CI gate, and the "definition of done" — and add it to the Subagent Roster.
+
+> **Decision (2026-05-29):** No standalone QA agent today — it would duplicate `/code-review`.
+> Revisit and scaffold the Test/QA Agent the moment a test framework lands (the trigger that
+> flips this decision).
 
 ---
 

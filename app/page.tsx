@@ -81,14 +81,14 @@ export default function Home() {
               </div>
             </Link>
 
-            {/* Option B: Templates */}
+            {/* Option B: Pre-planned */}
             <Link
-              href="/templates"
+              href="/pre-planned"
               className="group p-12 border-b md:border-b-0 md:border-r border-zen-black hover:bg-basel-brick hover:text-briefing-cream transition-all duration-300 cursor-pointer"
             >
               <BookOpen className="w-10 h-10 mb-8" strokeWidth={1.5} />
-              <h3 className="text-3xl font-headline font-bold mb-6">เลือกแพ็คเกจสำเร็จรูป</h3>
-              <p className="mb-10 text-lg opacity-80">รวมแผนเที่ยวสุดฮิตที่คัดสรรมาแล้วจากกูรู พร้อมไปได้ทันที ปรับเปลี่ยนเล็กน้อยก็สมบูรณ์แบบ</p>
+              <h3 className="text-3xl font-headline font-bold mb-6">แพลนพร้อมเที่ยว</h3>
+              <p className="mb-10 text-lg opacity-80">รวมแผนเที่ยวสุดฮิตที่คัดสรรมาแล้วจากกูรู เลือกวันเดินทางแล้วเจอเฉพาะแพลนที่เที่ยวได้จริง ไม่เจอสถานที่ปิด</p>
               <div className="flex items-center font-bold uppercase tracking-widest text-sm">
                 <span>View Catalog</span>
                 <ArrowRight className="ml-2 w-4 h-4" />

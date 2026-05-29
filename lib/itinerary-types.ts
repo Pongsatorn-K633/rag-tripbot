@@ -81,6 +81,30 @@ export interface Day {
   transportNotes?: string
 }
 
+// ── Availability ──────────────────────────────────────────────────────────────
+// Seasonal availability for a pre-planned trip. Day-precise but YEAR-AGNOSTIC:
+// dates are stored as "MM-DD" strings so a window applies to every year.
+// Drives the /pre-planned date filter (see lib/availability.ts).
+
+/**
+ * A year-agnostic date range, inclusive on both ends, as "MM-DD" strings.
+ * If `to` is calendar-earlier than `from`, the range WRAPS the new year —
+ * e.g. snow season { from: "12-01", to: "02-28" } means Dec 1 → Feb 28.
+ */
+export interface DateRange {
+  from: string // "MM-DD", e.g. "04-27"
+  to: string // "MM-DD", e.g. "11-15"
+}
+
+export interface TripAvailability {
+  /** When nothing inside the trip is closed. Empty array = always available. */
+  available: DateRange[]
+  /** The best time(s) to go — can be multiple (e.g. spring + autumn). */
+  recommended: DateRange[]
+  /** Optional human note shown on the card (bilingual encouraged). */
+  note?: string
+}
+
 // ── Itinerary ───────────────────────────────────────────────────────────────
 
 export interface Itinerary {

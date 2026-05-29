@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { requireAdmin } from '@/lib/authz'
 import { generateShareCodeForTemplate, getSystemUserId } from '@/lib/share-code'
+import { parseAvailabilityInput } from '@/lib/availability'
 
 /**
  * GET /api/admin/templates
@@ -68,6 +70,16 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  let availability
+  try {
+    availability = parseAvailabilityInput(body.availability)
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Invalid availability' },
+      { status: 400 }
+    )
+  }
+
   const template = await prisma.template.create({
     data: {
       title,
@@ -76,6 +88,9 @@ export async function POST(req: NextRequest) {
       coverImage: coverImage ?? null,
       totalDays,
       season: season ?? null,
+      availability: availability
+        ? (availability as unknown as Prisma.InputJsonValue)
+        : undefined,
       published,
       createdById: session.user.id,
     },
