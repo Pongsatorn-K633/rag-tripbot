@@ -1,7 +1,8 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { useEffect, useState, useSyncExternalStore, Suspense } from 'react'
+import { useEffect, useState, Suspense } from 'react'
+import { useLiffTheme, setLiffTheme, type LiffTheme } from '@/app/liff/theme'
 import Image from 'next/image'
 import {
   ChevronDown, Sun, Moon, Clock, Hotel, Train, Banknote, Timer,
@@ -17,7 +18,7 @@ import ChoiceCarousel from '@/app/components/ChoiceCarousel'
 // Dark is the original look (default, kept because it's lovely); light matches
 // the website palette (briefing-cream / zen-black / basel-brick accent shared).
 
-type Theme = 'dark' | 'light'
+type Theme = LiffTheme
 
 const THEME = {
   dark: {
@@ -50,29 +51,6 @@ const THEME = {
   },
 } as const
 
-// Theme is read from localStorage via useSyncExternalStore so SSR and the first
-// client paint both use the server snapshot ('dark') — no hydration mismatch and
-// no setState-in-effect. Toggling writes localStorage + notifies subscribers.
-function subscribeTheme(cb: () => void) {
-  window.addEventListener('liff-theme-change', cb)
-  window.addEventListener('storage', cb)
-  return () => {
-    window.removeEventListener('liff-theme-change', cb)
-    window.removeEventListener('storage', cb)
-  }
-}
-function readTheme(): Theme {
-  // Light is the default; dark is opt-in (persisted when the user toggles).
-  return localStorage.getItem('liff-theme') === 'dark' ? 'dark' : 'light'
-}
-function serverTheme(): Theme {
-  return 'light'
-}
-function setStoredTheme(next: Theme) {
-  localStorage.setItem('liff-theme', next)
-  window.dispatchEvent(new Event('liff-theme-change'))
-}
-
 function ItineraryContent() {
   const searchParams = useSearchParams()
   // LIFF wraps query params in liff.state — parse it to extract shareCode
@@ -91,10 +69,10 @@ function ItineraryContent() {
     shareCode ? null : 'ไม่พบรหัสแผนการเดินทาง',
   )
   const [openDay, setOpenDay] = useState<number | null>(1)
-  const theme = useSyncExternalStore(subscribeTheme, readTheme, serverTheme)
+  const theme = useLiffTheme()
 
   function toggleTheme() {
-    setStoredTheme(theme === 'dark' ? 'light' : 'dark')
+    setLiffTheme(theme === 'dark' ? 'light' : 'dark')
   }
 
   const t = THEME[theme]

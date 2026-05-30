@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import useEmblaCarousel from 'embla-carousel-react'
-import { Star, Banknote, Timer } from 'lucide-react'
+import { Star, Banknote, Timer, Check } from 'lucide-react'
 import type { Choice } from '@/lib/itinerary-types'
 import CategoryIcon from '@/app/components/CategoryIcon'
 
@@ -57,7 +57,7 @@ export default function ChoiceCarousel({
     containScroll: 'trimSnaps',
     dragFree: false,
   })
-  const [activeIndex, setActiveIndex] = useState(0)
+  const [activeIndex, setActiveIndex] = useState(choice.selected ?? 0)
 
   const onSelect = useCallback(() => {
     if (!emblaApi) return
@@ -69,6 +69,11 @@ export default function ChoiceCarousel({
     emblaApi.on('select', onSelect)
     return () => { emblaApi.off('select', onSelect) }
   }, [emblaApi, onSelect])
+
+  // Open on the user's picked option (when customizing their copy).
+  useEffect(() => {
+    if (emblaApi && choice.selected != null) emblaApi.scrollTo(choice.selected)
+  }, [emblaApi, choice.selected])
 
   function scrollTo(idx: number) {
     emblaApi?.scrollTo(idx)
@@ -95,8 +100,15 @@ export default function ChoiceCarousel({
           {choice.options.map((opt, idx) => (
             <div
               key={idx}
-              className={`flex-[0_0_85%] min-w-0 border rounded-lg px-4 py-3 ${v.card}`}
+              className={`flex-[0_0_85%] min-w-0 border rounded-lg px-4 py-3 ${
+                choice.selected === idx ? 'border-basel-brick' : v.card
+              }`}
             >
+              {choice.selected === idx && (
+                <span className="inline-flex items-center gap-1 mb-1.5 bg-basel-brick text-white text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded">
+                  <Check size={9} strokeWidth={3} /> เลือกแล้ว
+                </span>
+              )}
               <div className="flex items-center gap-2 flex-wrap mb-1.5">
                 {opt.category && <CategoryIcon category={opt.category} size={14} className={v.catIcon} />}
                 <span className={`font-bold text-sm ${v.name}`}>{opt.name}</span>

@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { requireAdmin } from '@/lib/authz'
 import { parseAvailabilityInput } from '@/lib/availability'
+import { syncBridgeTrip } from '@/lib/share-code'
 
 /**
  * PATCH /api/admin/templates/:id
@@ -51,6 +52,16 @@ export async function PATCH(
       published: typeof body.published === 'boolean' ? body.published : undefined,
     },
   })
+
+  // Keep the LINE/LIFF bridge trip's content in sync with the edited template
+  // so /activate and the pre-planned cards never show stale itineraries.
+  if (body.itinerary !== undefined || body.title !== undefined || body.coverImage !== undefined) {
+    try {
+      await syncBridgeTrip(id)
+    } catch (err) {
+      console.error('[admin/templates] bridge sync failed:', err)
+    }
+  }
 
   return NextResponse.json({ template })
 }

@@ -107,6 +107,32 @@ export async function generateShareCodeForTemplate(
 }
 
 /**
+ * Keep the system-owned bridge Trip in sync with its template's content.
+ *
+ * The LINE bot and the LIFF itinerary view read the bridge Trip by `shareCode`,
+ * so when an admin edits a template's itinerary/title/cover the bridge must be
+ * updated too — otherwise `/activate` and the "ดูแผนเต็ม" / pre-planned cards
+ * show stale content. Call this after any template content edit. No-op if the
+ * template has no shareCode / bridge yet.
+ *
+ * Returns the number of bridge rows updated (0 or 1).
+ */
+export async function syncBridgeTrip(templateId: string): Promise<number> {
+  const template = await prisma.template.findUnique({ where: { id: templateId } })
+  if (!template?.shareCode) return 0
+
+  const { count } = await prisma.trip.updateMany({
+    where: { shareCode: template.shareCode, source: 'template' },
+    data: {
+      itinerary: template.itinerary as object,
+      title: template.title,
+      coverImage: template.coverImage,
+    },
+  })
+  return count
+}
+
+/**
  * Fetch the system user's id (cached per request). Throws if the system user
  * doesn't exist — that should never happen in a healthy deployment since
  * prisma/seed-auth.ts always creates it first.

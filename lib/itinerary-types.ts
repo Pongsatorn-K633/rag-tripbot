@@ -58,6 +58,8 @@ export interface Choice {
   priority?: ActivityPriority
   /** Category for the whole group */
   category?: ActivityCategory
+  /** Index into `options` the user picked when customizing their copy (non-destructive). */
+  selected?: number
 }
 
 // ── Day ─────────────────────────────────────────────────────────────────────

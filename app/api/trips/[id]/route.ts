@@ -4,6 +4,59 @@ import { auth } from '@/lib/auth'
 import { isAdminRole } from '@/lib/authz'
 import { pushToLine } from '@/lib/line/client'
 import { getTripLockInfo } from '@/lib/trip-lock'
+import { updateTripItinerary, TripEditError } from '@/lib/trips/edit'
+
+/**
+ * GET /api/trips/:id
+ * Fetch a single trip for the owner (or an admin) — used by the web edit page.
+ */
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const { id } = await params
+  const trip = await prisma.trip.findUnique({ where: { id } })
+  if (!trip) return NextResponse.json({ error: 'Trip not found' }, { status: 404 })
+  if (trip.userId !== session.user.id && !isAdminRole(session.user.role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  return NextResponse.json({ trip })
+}
+
+/**
+ * PATCH /api/trips/:id
+ * Light edits (itinerary / startDate / title) by the trip owner. Web surface of
+ * the shared edit core (lib/trips/edit.ts) — the LIFF route reuses the same core.
+ */
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const { id } = await params
+  const body = await req.json()
+
+  try {
+    const trip = await updateTripItinerary(id, session.user.id, {
+      itinerary: body.itinerary,
+      startDate: body.startDate,
+      title: body.title,
+    })
+    return NextResponse.json({ trip })
+  } catch (err) {
+    if (err instanceof TripEditError) {
+      return NextResponse.json({ error: err.message }, { status: err.status })
+    }
+    throw err
+  }
+}
 
 /**
  * DELETE /api/trips/:id

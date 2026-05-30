@@ -72,8 +72,9 @@ GEMINI_API_KEY=your_gemini_api_key                   # From Google AI Studio
 # ── LINE Bot ─────────────────────────────────────────────────────────────────
 LINE_CHANNEL_SECRET=your_channel_secret              # From LINE Developers Console
 LINE_CHANNEL_ACCESS_TOKEN=your_channel_access_token  # From LINE Developers Console
-LIFF_ID=your_liff_id                                 # From LINE Developers Console (LIFF tab)
+LIFF_ID=your_liff_id                                 # From LINE Developers Console (LIFF tab) — itinerary view
 LINE_BOT_USER_ID=your_bot_user_id                    # Bot's own userId (for self-mention filtering)
+LIFF_PREPLANNED_URL=https://liff.line.me/<id>        # Optional — add-friend welcome button → pre-planned trips (see below)
 
 # ── Auth (NextAuth v5) ───────────────────────────────────────────────────────
 AUTH_URL="http://localhost:3000"                     # Site URL (production domain in prod)
@@ -314,6 +315,24 @@ Endpoint URL if you must test the full in-LINE button→LIFF chain — and rever
 > Webhook signatures are validated against `LINE_CHANNEL_SECRET` ([app/api/line/webhook/route.ts:14](app/api/line/webhook/route.ts#L14)),
 > so make sure your local `.env` has the same `LINE_CHANNEL_SECRET` / `LINE_CHANNEL_ACCESS_TOKEN`
 > as the channel you point the webhook at — otherwise every event is rejected with 403.
+
+#### Pre-planned trips LIFF (add-friend welcome)
+
+When a user **adds the bot as a friend**, the `follow` webhook event replies with a branded
+welcome card whose button opens the **pre-planned trips browser** — the LINE version of
+`/pre-planned`, served at **`/liff/pre-planned`** (website light palette; tapping a trip opens
+its full itinerary at `/liff/itinerary?shareCode=…`).
+
+The button URL comes from the **`LIFF_PREPLANNED_URL`** env var. To make it a proper full-screen
+LIFF (recommended):
+
+1. In the LINE console → **LIFF → Add**, create a second LIFF app (size **Full**) with
+   **Endpoint URL** = `https://dopamichi.com/liff/pre-planned`.
+2. Copy its `https://liff.line.me/<id>` URL into `LIFF_PREPLANNED_URL` in `.env` (and Vercel).
+
+If `LIFF_PREPLANNED_URL` is unset, the welcome falls back to
+`https://dopamichi.com/liff/pre-planned` (opens in the in-app browser — still works, just not
+full-screen LIFF). Preview locally at `http://localhost:3000/liff/pre-planned`.
 
 ## API Endpoints
 

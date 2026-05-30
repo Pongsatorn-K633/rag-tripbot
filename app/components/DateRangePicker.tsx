@@ -16,14 +16,23 @@ function fmt(d?: Date): string {
  * (incomplete range) so the second click cleanly sets the end. Themed to the
  * basel-brick / cream palette via CSS variables on the wrapper.
  */
+const TRIGGER_VARIANT = {
+  light: { btn: 'bg-briefing-cream border-zen-black/20', value: 'text-zen-black', placeholder: 'text-zen-black/40', chevron: 'text-zen-black/40' },
+  dark: { btn: 'bg-white/5 border-white/15', value: 'text-briefing-cream', placeholder: 'text-briefing-cream/40', chevron: 'text-briefing-cream/40' },
+} as const
+
 export default function DateRangePicker({
   value,
   onChange,
+  variant = 'light',
 }: {
   value: DateRange | undefined
   onChange: (range: DateRange | undefined) => void
+  /** Trigger button theme. The calendar popover stays light for readability. */
+  variant?: 'light' | 'dark'
 }) {
   const [open, setOpen] = useState(false)
+  const tv = TRIGGER_VARIANT[variant]
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -49,15 +58,15 @@ export default function DateRangePicker({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between gap-3 bg-briefing-cream border border-zen-black/20 px-4 py-3 text-sm font-medium hover:border-basel-brick transition-colors"
+        className={`w-full flex items-center justify-between gap-3 border px-4 py-3 text-sm font-medium hover:border-basel-brick transition-colors ${tv.btn}`}
       >
         <span className="flex items-center gap-2.5">
           <CalendarDays size={16} className="text-basel-brick" strokeWidth={2.5} />
-          <span className={value?.from ? 'text-zen-black' : 'text-zen-black/40'}>{label}</span>
+          <span className={value?.from ? tv.value : tv.placeholder}>{label}</span>
         </span>
         <ChevronDown
           size={16}
-          className={`text-zen-black/40 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          className={`${tv.chevron} transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
         />
       </button>
 

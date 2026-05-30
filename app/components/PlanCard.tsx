@@ -29,31 +29,41 @@ export interface PlanTemplate {
   createdAt: string
 }
 
+const CARD_VARIANT = {
+  light: { card: 'bg-white', title: 'text-zen-black', desc: 'text-zen-black/60', avail: 'text-zen-black/50', availLabel: 'text-zen-black/40' },
+  dark: { card: 'bg-[#0A0A0A] border border-white/10', title: 'text-briefing-cream', desc: 'text-briefing-cream/60', avail: 'text-briefing-cream/50', availLabel: 'text-briefing-cream/40' },
+} as const
+
 export default function PlanCard({
   tpl,
   recommended = false,
   dimmed = false,
-  isSaved,
-  isPending,
+  isSaved = false,
+  isPending = false,
+  variant = 'light',
   onOpen,
   onHeart,
 }: {
   tpl: PlanTemplate
   recommended?: boolean
   dimmed?: boolean
-  isSaved: boolean
-  isPending: boolean
+  isSaved?: boolean
+  isPending?: boolean
+  /** 'light' (website, default) or 'dark' (LIFF dark mode). */
+  variant?: 'light' | 'dark'
   onOpen: () => void
-  onHeart: (e: React.MouseEvent) => void
+  /** Omit to hide the heart button (e.g. in the LINE LIFF browse, no web login). */
+  onHeart?: (e: React.MouseEvent) => void
 }) {
   const imgSrc = resolveCoverImage(tpl.coverImage, tpl.id)
   const rec = tpl.availability?.recommended ?? []
   const avail = tpl.availability?.available ?? []
+  const c = CARD_VARIANT[variant]
 
   return (
     <motion.div
       whileHover={{ y: dimmed ? 0 : -10 }}
-      className={`group flex flex-col bg-white p-4 rounded-xl shadow-sm hover:shadow-2xl transition-all duration-300 cursor-pointer relative ${
+      className={`group flex flex-col ${c.card} p-4 rounded-xl shadow-sm hover:shadow-2xl transition-all duration-300 cursor-pointer relative ${
         dimmed ? 'opacity-55 hover:opacity-90' : ''
       }`}
       onClick={onOpen}
@@ -64,21 +74,23 @@ export default function PlanCard({
         </div>
       )}
 
-      <button
-        onClick={onHeart}
-        disabled={isPending}
-        aria-label={isSaved ? 'Unsave' : 'Save'}
-        className="absolute top-6 right-6 z-20 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform disabled:opacity-60"
-      >
-        <motion.div
-          key={isSaved ? 'saved' : 'unsaved'}
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+      {onHeart && (
+        <button
+          onClick={onHeart}
+          disabled={isPending}
+          aria-label={isSaved ? 'Unsave' : 'Save'}
+          className="absolute top-6 right-6 z-20 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform disabled:opacity-60"
         >
-          <Heart size={18} fill={isSaved ? '#B43325' : 'none'} stroke={isSaved ? '#B43325' : '#231a0e'} strokeWidth={2.5} />
-        </motion.div>
-      </button>
+          <motion.div
+            key={isSaved ? 'saved' : 'unsaved'}
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+          >
+            <Heart size={18} fill={isSaved ? '#B43325' : 'none'} stroke={isSaved ? '#B43325' : '#231a0e'} strokeWidth={2.5} />
+          </motion.div>
+        </button>
+      )}
 
       <div className="relative aspect-[4/5] overflow-hidden mb-6 bg-briefing-cream rounded-lg">
         <Image
@@ -101,9 +113,9 @@ export default function PlanCard({
           </div>
         </div>
       </div>
-      <h3 className="text-2xl font-headline font-bold text-zen-black mb-2">{tpl.title}</h3>
+      <h3 className={`text-2xl font-headline font-bold mb-2 ${c.title}`}>{tpl.title}</h3>
       {tpl.description && (
-        <p className="text-zen-black/60 text-sm font-sans leading-relaxed mb-4">{tpl.description}</p>
+        <p className={`text-sm font-sans leading-relaxed mb-4 ${c.desc}`}>{tpl.description}</p>
       )}
 
       {/* Travel periods */}
@@ -114,8 +126,8 @@ export default function PlanCard({
             {formatRanges(rec, 'th')}
           </p>
         )}
-        <p className="text-[11px] text-zen-black/50">
-          <span className="uppercase tracking-widest text-[9px] text-zen-black/40 mr-1">เปิดให้เที่ยว</span>
+        <p className={`text-[11px] ${c.avail}`}>
+          <span className={`uppercase tracking-widest text-[9px] mr-1 ${c.availLabel}`}>เปิดให้เที่ยว</span>
           {formatRanges(avail, 'th')}
         </p>
       </div>

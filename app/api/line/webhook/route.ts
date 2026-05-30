@@ -23,6 +23,14 @@ export async function POST(req: NextRequest) {
 }
 
 async function handleEvent(event: webhook.Event) {
+  // First time a user adds the bot as a friend — greet them with a button that
+  // opens the "แพลนพร้อมเที่ยว" (pre-planned trips) LIFF browser.
+  if (event.type === 'follow') {
+    const replyToken = (event as webhook.FollowEvent).replyToken
+    if (replyToken) await sendFollowWelcome(replyToken)
+    return
+  }
+
   // Send a welcome message whenever the bot is added to a group or room.
   if (event.type === 'join') {
     const replyToken = (event as webhook.JoinEvent).replyToken
@@ -63,6 +71,52 @@ async function handleEvent(event: webhook.Event) {
   }
 
   await handleQuestion(lineId, replyToken, questionText)
+}
+
+/**
+ * Add-friend welcome — a branded (website light palette) Flex card with a button
+ * that opens the pre-planned trips LIFF browser. The URL is configurable via
+ * LIFF_PREPLANNED_URL (a liff.line.me/<ID> URL for a dedicated LIFF app);
+ * otherwise it falls back to the production web LIFF page.
+ */
+async function sendFollowWelcome(replyToken: string) {
+  const prePlannedUrl =
+    process.env.LIFF_PREPLANNED_URL ?? 'https://dopamichi.com/liff/pre-planned'
+
+  await replyFlexMessage(replyToken, 'ยินดีต้อนรับสู่ Dopamichi · ดูแพลนพร้อมเที่ยว', {
+    type: 'bubble',
+    size: 'mega',
+    body: {
+      type: 'box',
+      layout: 'vertical',
+      backgroundColor: '#F8F7F4',
+      paddingAll: '20px',
+      spacing: 'none',
+      contents: [
+        { type: 'text', text: 'Dopamichi • Pre-planned trip 🎒⛩️', color: '#B43325', size: 'xs', weight: 'bold' }
+      ],
+    },
+    footer: {
+      type: 'box',
+      layout: 'vertical',
+      backgroundColor: '#F8F7F4',
+      paddingAll: '16px',
+      paddingTop: 'none',
+      contents: [
+        {
+          type: 'button',
+          action: { type: 'uri', label: 'ดูแพลนพร้อมเที่ยว', uri: prePlannedUrl },
+          style: 'primary',
+          color: '#B43325',
+          height: 'sm',
+        },
+      ],
+    },
+    styles: {
+      body: { backgroundColor: '#F8F7F4' },
+      footer: { backgroundColor: '#F8F7F4' },
+    },
+  })
 }
 
 const GROUP_WELCOME_MESSAGE =

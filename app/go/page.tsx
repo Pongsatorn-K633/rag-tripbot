@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Trash2, ArrowRight, Shield, ChevronDown, MapPin, Hotel, Train, Clock, Banknote, Timer, Plane, Zap, Copy } from 'lucide-react'
+import { Trash2, ArrowRight, Shield, ChevronDown, MapPin, Hotel, Train, Clock, Banknote, Timer, Plane, Zap, Copy, Pencil } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useSession, signIn } from 'next-auth/react'
 import { IMG } from '@/lib/images'
@@ -182,6 +182,16 @@ export default function GoPage() {
                       className="group flex flex-col bg-white p-4 rounded-xl shadow-sm hover:shadow-2xl transition-all duration-300 relative cursor-pointer"
                       onClick={() => setViewingTripId(trip.id)}
                     >
+                      {!trip.locked && (
+                        <Link
+                          href={`/trips/${trip.id}/edit`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute top-6 left-6 z-10 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 bg-white/80 rounded-full hover:bg-basel-brick hover:text-white text-zen-black/40"
+                          aria-label="แก้ไขแผน"
+                        >
+                          <Pencil size={14} />
+                        </Link>
+                      )}
                       {!trip.locked && (
                         <button
                           onClick={(e) => { e.stopPropagation(); setDeleteConfirm(trip.id) }}

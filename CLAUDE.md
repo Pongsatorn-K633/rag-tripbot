@@ -189,6 +189,22 @@ When testing is introduced, this phase adds:
 > Revisit and scaffold the Test/QA Agent the moment a test framework lands (the trigger that
 > flips this decision).
 
+### Phase 7 — Duplicate & Edit (web + LIFF, aligned) — IN PROGRESS
+
+User-facing feature: duplicate a pre-planned trip into a personal editable copy (+ activation
+code) and make light edits (pick choices, set start date, reorder/remove activities, add notes),
+on **both** the website and the LINE LIFF — from one shared core. Full spec + resumable steps in
+**`docs/duplicate-edit-feature.md`**.
+
+- [x] **Phase A** — shared edit core (`lib/trips/edit.ts`) + `GET`/`PATCH /api/trips/[id]`
+- [x] **Phase B** — shared `app/components/ItineraryEditor.tsx` + `app/trips/[id]/edit` + `/go` ✏️ button + `Choice.selected`
+- [ ] **Phase C** — LIFF identity (`User.lineUserId`, `@line/liff`, `lib/line/liff-auth.ts`),
+  `lib/trips/duplicate.ts`, `/api/liff/duplicate` + `/api/liff/trip`, `/liff/edit` reusing the editor
+- [ ] **Phase D** — hardening (rate-limit duplicate, "my LINE trips", security review)
+
+> **Decision (2026-05-30):** Web duplicate+edit shipped first (browser-verifiable, no LINE
+> identity needed). Phase C/D (LIFF) deferred — resume from `docs/duplicate-edit-feature.md`.
+
 ---
 
 ## Architectural Rules (Enforce These Always)
