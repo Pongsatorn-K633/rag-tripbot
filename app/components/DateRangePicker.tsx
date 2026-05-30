@@ -81,6 +81,7 @@ export default function DateRangePicker({
               min={1}
               selected={value}
               onSelect={onChange}
+              defaultMonth={value?.from ?? today}
               numberOfMonths={1}
               disabled={{ before: today }}
               showOutsideDays

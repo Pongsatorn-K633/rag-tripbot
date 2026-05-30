@@ -10,7 +10,8 @@ import { IMG } from '@/lib/images'
  * Itinerary preview card for the website (confirm + save flow). The hero photo +
  * day-by-day body are rendered by the shared <ItineraryView> — the SAME component
  * the LINE LIFF page uses — so the two look identical. This file only adds the
- * website chrome: the Confirm button.
+ * website chrome: the Confirm button. The activation code is NOT shown here — it
+ * is minted per-user with real travel dates and revealed only in My Trip.
  */
 
 interface ItineraryCardProps {
@@ -18,8 +19,6 @@ interface ItineraryCardProps {
   onConfirm: () => void
   confirmLoading?: boolean
   coverImage?: string | null
-  /** Curated activation code of the pre-planned trip — usable as-is in LINE. */
-  shareCode?: string | null
 }
 
 export default function ItineraryCard({
@@ -27,7 +26,6 @@ export default function ItineraryCard({
   onConfirm,
   confirmLoading = false,
   coverImage = null,
-  shareCode = null,
 }: ItineraryCardProps) {
   const totalDays = itinerary.totalDays ?? itinerary.days.length
   const heroImage = coverImage ? resolveCoverImage(coverImage, itinerary.title ?? 'trip') : IMG.liffHero
@@ -42,25 +40,8 @@ export default function ItineraryCard({
         hero={{ image: heroImage, title: itinerary.title ?? 'แผนการเดินทาง', subtitle }}
       />
 
-      {/* Curated code (use as-is in LINE) + Duplicate-or-Edit (make your own copy) */}
+      {/* Duplicate-or-Edit — next step asks for travel dates before saving */}
       <div className="pt-5 mt-5 border-t border-zen-black/10 space-y-3">
-        {shareCode && (
-          <button
-            onClick={() => navigator.clipboard.writeText(`/activate ${shareCode}`)}
-            className="w-full flex items-center justify-between gap-2 px-4 py-3 rounded-lg bg-zen-black text-white hover:bg-basel-brick transition-colors"
-            title="คัดลอกคำสั่ง /activate"
-          >
-            <div className="flex flex-col items-start leading-tight">
-              <span className="text-[8px] font-black uppercase tracking-[0.3em] text-white/50">
-                ใช้แผนนี้เลยบน LINE · Use as-is
-              </span>
-              <span className="font-mono text-lg font-bold">{shareCode}</span>
-            </div>
-            <span className="text-[9px] border border-white/30 px-2 py-1 font-bold uppercase flex items-center gap-1">
-              <Copy size={11} strokeWidth={2.5} /> Copy
-            </span>
-          </button>
-        )}
         <button
           onClick={onConfirm}
           disabled={confirmLoading}
@@ -77,8 +58,8 @@ export default function ItineraryCard({
           )}
         </button>
         <p className="text-[13px] text-zen-black/50 text-center leading-relaxed">
-          แก้ไขทริปเพิ่มเติมได้ที่ My Trip หลังกดปุ่มนี้นะครับ :) <br />
-          Further edits can be made in My Trip. :)
+          เลือกวันเดินทางในขั้นถัดไป แล้วแก้ไขเพิ่มเติมได้ที่ My Trip :) <br />
+          Pick your dates next, then fine-tune in My Trip. :)
         </p>
       </div>
     </div>

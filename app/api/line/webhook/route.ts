@@ -5,6 +5,7 @@ import { parseEvent } from '@/lib/line/parser'
 import { checkTrigger } from '@/lib/line/trigger'
 import { replyToLine, pushToLine, replyFlexMessage } from '@/lib/line/client'
 import { answerWithContext, answerWithEnrichedContext, saveChatHistory, formatItinerary, type ChatMessage } from '@/lib/line/injector'
+import { activateRateLimit, checkLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
   const signature = req.headers.get('x-line-signature') ?? ''
@@ -136,6 +137,17 @@ async function handleActivate(
 
   if (!shareCode) {
     await replyToLine(replyToken, 'กรุณาระบุรหัสเปิดใช้งาน เช่น: /activate TKY-492')
+    return
+  }
+
+  // Throttle per LINE user so the short code space can't be brute-forced by
+  // spraying `/activate` guesses at the bot.
+  const { success } = await checkLimit(activateRateLimit, lineId)
+  if (!success) {
+    await replyToLine(
+      replyToken,
+      'มีการลองเปิดใช้งานบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่อีกครั้งนะครับ 🙏'
+    )
     return
   }
 

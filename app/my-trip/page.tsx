@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Trash2, ArrowRight, Shield, Plane, Zap, Copy, Pencil } from 'lucide-react'
+import { Trash2, ArrowRight, Shield, Plane, Zap, Copy, Pencil, Check } from 'lucide-react'
 import ItineraryView from '@/app/components/ItineraryView'
 import { motion, AnimatePresence } from 'motion/react'
 import { useSession, signIn } from 'next-auth/react'
@@ -39,6 +39,15 @@ export default function GoPage() {
   const [deleting, setDeleting] = useState(false)
   const [viewingTripId, setViewingTripId] = useState<string | null>(null)
   const [generatingCode, setGeneratingCode] = useState<string | null>(null)
+  const [copiedCode, setCopiedCode] = useState<string | null>(null)
+
+  // Copy "/activate <code>" to the clipboard and flash a "copied" indicator.
+  function copyCode(code: string, e?: React.MouseEvent) {
+    e?.stopPropagation() // don't open/close the view modal
+    navigator.clipboard.writeText(`/activate ${code}`)
+    setCopiedCode(code)
+    setTimeout(() => setCopiedCode((c) => (c === code ? null : c)), 1800)
+  }
 
   async function handleGenerateCode(tripId: string, e: React.MouseEvent) {
     e.stopPropagation() // don't open the view modal
@@ -224,19 +233,14 @@ export default function GoPage() {
                       </p>
                       {/* Share code: show code if exists, or generate button */}
                       {trip.shareCode ? (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            navigator.clipboard.writeText(`/activate ${trip.shareCode}`)
-                          }}
-                          className="w-full mb-3 flex items-center justify-between gap-2 px-3 py-2 bg-zen-black text-white hover:bg-basel-brick transition-colors group/code"
-                        >
-                          <div className="flex flex-col items-start leading-tight">
-                            <span className="text-[7px] font-black uppercase tracking-[0.3em] text-white/50">LINE Code</span>
-                            <span className="font-mono text-sm font-bold">{trip.shareCode}</span>
-                          </div>
-                          <Copy size={12} className="text-white/60 group-hover/code:text-white" />
-                        </button>
+                        <div className="mb-3">
+                          <CodeCopyButton
+                            code={trip.shareCode}
+                            copied={copiedCode === trip.shareCode}
+                            onCopy={(e) => copyCode(trip.shareCode!, e)}
+                            size="chip"
+                          />
+                        </div>
                       ) : (
                         <button
                           onClick={(e) => handleGenerateCode(trip.id, e)}
@@ -291,7 +295,7 @@ export default function GoPage() {
           return (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-4 sm:py-10 px-2 sm:px-4" style={{ backgroundColor: 'rgba(35,26,14,0.75)' }} onClick={(e) => { if (e.target === e.currentTarget) setViewingTripId(null) }}>
               <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="w-full max-w-lg bg-briefing-cream border border-zen-black/10 shadow-2xl overflow-hidden rounded-xl">
-                <div className="px-4 sm:px-6 py-3 flex items-center justify-end border-b border-zen-black/10">
+                <div className="px-4 sm:px-6 pt-3 flex items-center justify-end">
                   <button onClick={() => setViewingTripId(null)} className="text-zen-black/40 hover:text-zen-black text-2xl leading-none transition-colors" aria-label="ปิด">&times;</button>
                 </div>
                 {itin && itin.days && itin.days.length > 0 && (
@@ -309,17 +313,12 @@ export default function GoPage() {
                 )}
                 <div className="px-4 sm:px-6 py-4 border-t border-zen-black/10 space-y-3">
                   {(itin?.shareCode || trip.shareCode) && (
-                    <button
-                      onClick={() => navigator.clipboard.writeText(`/activate ${itin?.shareCode ?? trip.shareCode}`)}
-                      className="w-full flex items-center justify-between gap-2 px-4 py-3 rounded-lg bg-zen-black text-white hover:bg-basel-brick transition-colors"
-                      title="คัดลอกคำสั่ง /activate"
-                    >
-                      <div className="flex flex-col items-start leading-tight">
-                        <span className="text-[8px] font-black uppercase tracking-[0.3em] text-white/50">LINE Share Code</span>
-                        <span className="font-mono text-lg font-bold">{itin?.shareCode ?? trip.shareCode}</span>
-                      </div>
-                      <span className="text-[9px] border border-white/30 px-2 py-1 font-bold uppercase">Copy</span>
-                    </button>
+                    <CodeCopyButton
+                      code={(itin?.shareCode ?? trip.shareCode)!}
+                      copied={copiedCode === (itin?.shareCode ?? trip.shareCode)}
+                      onCopy={() => copyCode((itin?.shareCode ?? trip.shareCode)!)}
+                      size="bar"
+                    />
                   )}
                   <button onClick={() => setViewingTripId(null)} className="w-full py-3 rounded-lg border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-briefing-cream transition-all">Close</button>
                 </div>
@@ -329,6 +328,74 @@ export default function GoPage() {
         })()}
       </AnimatePresence>
     </main>
+  )
+}
+
+// ── Copy-to-clipboard button ────────────────────────────────────────────────
+// Shows the share code with a copy affordance; on copy the whole button swaps to
+// a centered "คัดลอก /activate <code> แล้ว" confirmation (so the user sees the
+// exact command on their clipboard), then reverts after ~1.8s. `chip` = compact
+// card variant, `bar` = roomier view-modal variant.
+function CodeCopyButton({
+  code,
+  copied,
+  onCopy,
+  size,
+}: {
+  code: string
+  copied: boolean
+  onCopy: (e?: React.MouseEvent) => void
+  size: 'chip' | 'bar'
+}) {
+  const bar = size === 'bar'
+  return (
+    <button
+      onClick={onCopy}
+      title="คัดลอกคำสั่ง /activate"
+      className={`w-full flex items-center justify-between gap-2 bg-zen-black text-white hover:bg-basel-brick transition-colors group/code ${
+        bar ? 'px-4 py-3 rounded-lg' : 'px-3 py-2'
+      }`}
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        {copied ? (
+          <motion.span
+            key="copied"
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 22 }}
+            className={`w-full flex items-center justify-center gap-1.5 font-bold text-emerald-300 whitespace-nowrap ${
+              bar ? 'text-sm' : 'text-[10px]'
+            }`}
+          >
+            <Check size={bar ? 15 : 12} strokeWidth={3} />
+            คัดลอก <span className="font-mono">/activate {code}</span> แล้ว
+          </motion.span>
+        ) : (
+          <motion.span
+            key="idle"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="w-full flex items-center justify-between gap-2"
+          >
+            <span className="flex flex-col items-start leading-tight">
+              <span className={`font-black uppercase tracking-[0.3em] text-white/50 ${bar ? 'text-[8px]' : 'text-[7px]'}`}>
+                {bar ? 'LINE Share Code' : 'LINE Code'}
+              </span>
+              <span className={`font-mono font-bold ${bar ? 'text-lg' : 'text-sm'}`}>{code}</span>
+            </span>
+            {bar ? (
+              <span className="text-[9px] border border-white/30 px-2 py-1 font-bold uppercase flex items-center gap-1">
+                <Copy size={11} /> Copy
+              </span>
+            ) : (
+              <Copy size={12} className="text-white/60 group-hover/code:text-white" />
+            )}
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </button>
   )
 }
 

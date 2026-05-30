@@ -156,35 +156,31 @@ export async function GET(req: NextRequest) {
 
 ### Step 3 — `/api/activate/route.ts`
 
-Generate a human-readable share code and attach it to a trip.
+Generate a human-readable share code and attach it to a trip. **Do NOT roll your
+own generator** — share codes are bearer read-tokens, so they must be high-entropy
+and crypto-random. Mint through the single source of truth `generateUniqueShareCode`
+in `lib/share-code.ts` (crypto-random `PREFIX-XXXX`, unambiguous alphabet, unique
+across Trip + Template). Owner-only; idempotent if a code already exists.
 
 ```typescript
 // app/api/activate/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-
-function generateCode(city: string): string {
-  const prefix = city.slice(0, 3).toUpperCase()
-  const number = Math.floor(100 + Math.random() * 900)
-  return `${prefix}-${number}`
-}
+import { auth } from '@/lib/auth'
+import { generateUniqueShareCode } from '@/lib/share-code'
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const { tripId, primaryCity } = await req.json()
+  const trip = await prisma.trip.findUnique({ where: { id: tripId } })
+  if (!trip) return NextResponse.json({ error: 'Trip not found' }, { status: 404 })
+  if (trip.userId !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (trip.shareCode) return NextResponse.json({ shareCode: trip.shareCode }) // idempotent
 
-  let shareCode = generateCode(primaryCity ?? 'JPN')
-  // Ensure uniqueness
-  let exists = await prisma.trip.findUnique({ where: { shareCode } })
-  while (exists) {
-    shareCode = generateCode(primaryCity ?? 'JPN')
-    exists = await prisma.trip.findUnique({ where: { shareCode } })
-  }
-
-  const updated = await prisma.trip.update({
-    where: { id: tripId },
-    data: { shareCode },
-  })
-
+  const shareCode = await generateUniqueShareCode(primaryCity ?? 'JPN')
+  const updated = await prisma.trip.update({ where: { id: tripId }, data: { shareCode } })
   return NextResponse.json({ shareCode: updated.shareCode })
 }
 ```

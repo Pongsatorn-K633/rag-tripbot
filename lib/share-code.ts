@@ -1,3 +1,4 @@
+import { randomInt } from 'crypto'
 import { prisma } from './db'
 
 /**
@@ -23,10 +24,40 @@ import { prisma } from './db'
  * template is created, promoted, or seeded.
  */
 
-function randomCode(city: string): string {
+// Unambiguous uppercase alphabet for hand-typed codes: A–Z and 2–9 minus the
+// look-alikes I, L, O, 0, 1. 31 symbols ⇒ 31^4 ≈ 920k codes per city prefix,
+// so blind guessing is hopeless (vs. the old PREFIX-NNN = 900 per prefix).
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+const CODE_SUFFIX_LEN = 4
+
+/**
+ * Mint a single share code like `KYO-7F3K`. Crypto-random (not Math.random) —
+ * share codes are bearer read-tokens for an itinerary, so the suffix must be
+ * unpredictable, not just unique. Single source of truth for the format; both
+ * template promotion and per-user `/api/activate` mint through here.
+ */
+export function randomShareCode(city: string): string {
   const prefix = city.slice(0, 3).toUpperCase() || 'JPN'
-  const number = Math.floor(100 + Math.random() * 900)
-  return `${prefix}-${number}`
+  let suffix = ''
+  for (let i = 0; i < CODE_SUFFIX_LEN; i++) {
+    suffix += CODE_ALPHABET[randomInt(CODE_ALPHABET.length)]
+  }
+  return `${prefix}-${suffix}`
+}
+
+/**
+ * Mint a share code guaranteed unique across BOTH Trip.shareCode and
+ * Template.shareCode (they share one unique namespace). Retries on collision.
+ */
+export async function generateUniqueShareCode(primaryCity: string): Promise<string> {
+  let code = randomShareCode(primaryCity)
+  while (
+    (await prisma.trip.findUnique({ where: { shareCode: code } })) ||
+    (await prisma.template.findUnique({ where: { shareCode: code } }))
+  ) {
+    code = randomShareCode(primaryCity)
+  }
+  return code
 }
 
 interface ItineraryShape {
@@ -76,13 +107,7 @@ export async function generateShareCodeForTemplate(
   const itinerary = template.itinerary as ItineraryShape
   const primaryCity = itinerary?.days?.[0]?.location ?? 'JPN'
 
-  let shareCode = randomCode(primaryCity)
-  while (
-    (await prisma.trip.findUnique({ where: { shareCode } })) ||
-    (await prisma.template.findUnique({ where: { shareCode } }))
-  ) {
-    shareCode = randomCode(primaryCity)
-  }
+  const shareCode = await generateUniqueShareCode(primaryCity)
 
   // Create the bridge trip + update the template in one transaction
   await prisma.$transaction([

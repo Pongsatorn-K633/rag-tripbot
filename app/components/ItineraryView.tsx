@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import {
-  ChevronDown, MapPin, AlertTriangle, Star, Hotel, Train, Clock, Banknote, Timer, Circle,
+  ChevronDown, MapPin, AlertTriangle, Star, Hotel, Train, Clock, Banknote, Timer, Circle, CalendarCheck,
 } from 'lucide-react'
 import type { Itinerary, Day, Activity, ActivityPriority } from '@/lib/itinerary-types'
 import { PRIORITY_LABEL } from '@/lib/itinerary-types'
@@ -59,9 +59,7 @@ export default function ItineraryView({
   onClose?: () => void
 }) {
   const t = VIEW[variant]
-  const [openDay, setOpenDay] = useState<number | null>(itinerary.days[0]?.day ?? null)
-  const totalDays = itinerary.totalDays ?? itinerary.days.length
-  const currentOpenDay = openDay ?? itinerary.days[0]?.day ?? 1
+  const [openDay, setOpenDay] = useState<number | null>(null) // all days collapsed by default
 
   return (
     <div>
@@ -91,11 +89,8 @@ export default function ItineraryView({
       )}
 
       {showJourneyHeader && (
-        <div className="flex items-baseline justify-between mb-6">
+        <div className="mb-6">
           <h2 className={`font-headline text-2xl font-extrabold ${t.text}`}>The Journey</h2>
-          <span className="text-xs font-bold text-basel-brick uppercase tracking-widest">
-            Day {currentOpenDay} / {totalDays}
-          </span>
         </div>
       )}
 
@@ -139,6 +134,11 @@ function DayCard({ day, isOpen, onToggle, t, variant }: { day: Day; isOpen: bool
             <span className={`text-xs font-medium flex items-center gap-1 ${t.textFaint}`}>
               <MapPin size={11} strokeWidth={2.5} /> Day {day.day} · {day.activities.length} กิจกรรม
             </span>
+            {day.free && (
+              <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest flex items-center gap-0.5">
+                <CalendarCheck size={10} strokeWidth={2.5} /> วันอิสระ
+              </span>
+            )}
             {mandatoryCount > 0 && (
               <span className="text-[10px] text-basel-brick font-medium flex items-center gap-0.5">
                 <AlertTriangle size={10} strokeWidth={2.5} /> {mandatoryCount} must-do
@@ -162,6 +162,14 @@ function DayCard({ day, isOpen, onToggle, t, variant }: { day: Day; isOpen: bool
 
       {isOpen && (
         <div className={`px-6 pb-8 pt-2 space-y-8 border-t ${t.divider}`}>
+          {day.free && day.activities.length === 0 && (!day.choices || day.choices.length === 0) && (
+            <div className={`flex items-center gap-2.5 text-sm rounded-lg px-4 py-3 ${
+              variant === 'dark' ? 'bg-white/5 text-briefing-cream/60' : 'bg-emerald-50 text-emerald-900'
+            }`}>
+              <CalendarCheck size={16} className="text-emerald-600 flex-shrink-0" strokeWidth={2.5} />
+              <span>วันอิสระ — ยังไม่มีแผน เพิ่มกิจกรรมเองได้ที่ My Trip</span>
+            </div>
+          )}
           {day.activities.length > 0 && (
             <div className="space-y-6">
               {day.activities.map((act, idx) => (

@@ -67,6 +67,8 @@ export interface Choice {
 export interface Day {
   day: number
   location: string
+  /** Appended "free day" — trip window is longer than the plan; user fills it in. */
+  free?: boolean
   activities: Activity[]
   /** Pick-one-of-N alternatives for this day (restaurants, attractions, etc.) */
   choices?: Choice[]

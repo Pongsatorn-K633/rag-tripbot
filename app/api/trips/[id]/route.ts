@@ -114,10 +114,13 @@ export async function DELETE(
     })
   }
 
-  // Notify any LINE chats bound to this trip before we nuke it.
+  // Notify any LINE chats bound to this trip before we nuke it. Name the trip
+  // (code + title) so the user knows exactly which plan was removed.
   const contexts = await prisma.lineContext.findMany({ where: { tripId: id } })
+  const codePart = trip.shareCode ? `${trip.shareCode} · ` : ''
   const NOTIFY_MSG =
-    'แผนการเดินทางของคุณถูกลบจากระบบแล้ว 🗑️\nโปรด /activate รหัสใหม่เมื่อต้องการใช้งานอีกครั้ง'
+    `แผนการเดินทางของคุณ ${codePart}"${trip.title}" ถูกลบจากระบบแล้ว 🗑️\n` +
+    'โปรด /activate รหัสใหม่เมื่อต้องการใช้งานอีกครั้ง'
   await Promise.allSettled(
     contexts.map((ctx) => pushToLine(ctx.lineId, NOTIFY_MSG).catch(() => null))
   )

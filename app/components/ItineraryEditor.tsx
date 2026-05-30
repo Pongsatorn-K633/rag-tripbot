@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import {
-  ChevronDown, ChevronUp, Trash2, Clock, CalendarDays, Check, Star, Save,
+  ChevronDown, ChevronUp, Trash2, Clock, CalendarDays, Check, Star, Save, CalendarCheck,
 } from 'lucide-react'
 import type { Itinerary, Day, Choice } from '@/lib/itinerary-types'
 import CategoryIcon from '@/app/components/CategoryIcon'
@@ -115,6 +115,12 @@ export default function ItineraryEditor({
 
             {isOpen && (
               <div className={`border-t px-4 py-4 space-y-5 ${t.divider}`}>
+                {day.free && day.activities.length === 0 && (!day.choices || day.choices.length === 0) && (
+                  <div className="flex items-center gap-2 text-xs bg-emerald-50 text-emerald-900 rounded-lg px-3 py-2.5">
+                    <CalendarCheck size={14} className="text-emerald-600 flex-shrink-0" strokeWidth={2.5} />
+                    <span>วันอิสระ — วางแผนวันนี้ได้ตามใจ</span>
+                  </div>
+                )}
                 {/* Activities */}
                 {day.activities.length > 0 && (
                   <div className="space-y-3">

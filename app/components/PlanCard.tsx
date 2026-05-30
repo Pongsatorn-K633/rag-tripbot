@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { motion } from 'motion/react'
-import { ArrowRight, Heart, Sparkles } from 'lucide-react'
+import { ArrowRight, Heart, Sparkles, CalendarCheck } from 'lucide-react'
 import { resolveCoverImage } from '@/lib/cover-image'
 import { formatRanges } from '@/lib/availability'
 import type { TripAvailability } from '@/lib/itinerary-types'
@@ -37,6 +37,7 @@ const CARD_VARIANT = {
 export default function PlanCard({
   tpl,
   recommended = false,
+  perfectFit = false,
   dimmed = false,
   isSaved = false,
   isPending = false,
@@ -46,6 +47,8 @@ export default function PlanCard({
 }: {
   tpl: PlanTemplate
   recommended?: boolean
+  /** The user's picked window length equals this trip's length — fills their dates exactly. */
+  perfectFit?: boolean
   dimmed?: boolean
   isSaved?: boolean
   isPending?: boolean
@@ -68,11 +71,16 @@ export default function PlanCard({
       }`}
       onClick={onOpen}
     >
-      {recommended && (
+      {/* Perfect-fit takes priority over the recommended badge — only one shows. */}
+      {perfectFit ? (
+        <div className="absolute top-6 left-6 z-20 bg-emerald-600 text-white px-3 py-1.5 text-[9px] font-black uppercase tracking-widest font-headline flex items-center gap-1.5 shadow-md">
+          <CalendarCheck size={11} strokeWidth={3} /> พอดีกับจำนวนวัน
+        </div>
+      ) : recommended ? (
         <div className="absolute top-6 left-6 z-20 bg-basel-brick text-white px-3 py-1.5 text-[9px] font-black uppercase tracking-widest font-headline flex items-center gap-1.5 shadow-md">
           <Sparkles size={11} strokeWidth={3} /> เหมาะกับวันที่คุณเลือก
         </div>
-      )}
+      ) : null}
 
       {onHeart && (
         <button

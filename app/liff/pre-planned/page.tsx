@@ -12,7 +12,7 @@ import { useLiffTheme, setLiffTheme } from '@/app/liff/theme'
 import PlanCard, { type PlanTemplate } from '@/app/components/PlanCard'
 import DateRangePicker from '@/app/components/DateRangePicker'
 
-type EvaluatedPlan = { tpl: PlanTemplate; recommended: boolean }
+type EvaluatedPlan = { tpl: PlanTemplate; recommended: boolean; perfectFit: boolean }
 
 const FLEX_CHIPS = [
   { value: 0, label: 'ตรงเป๊ะ', sub: 'Exact' },
@@ -44,6 +44,13 @@ function addDaysDate(date: Date, n: number): Date {
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate())
   d.setDate(d.getDate() + n)
   return d
+}
+
+// Inclusive day count between two dates (17→20 Oct = 4 days), midnight-normalized.
+function dayCount(from: Date, to: Date): number {
+  const a = new Date(from.getFullYear(), from.getMonth(), from.getDate()).getTime()
+  const b = new Date(to.getFullYear(), to.getMonth(), to.getDate()).getTime()
+  return Math.round((b - a) / 86_400_000) + 1
 }
 
 /**
@@ -83,11 +90,16 @@ export default function LiffPrePlannedPage() {
   const windowValid = !!startD
   const effStart = useMemo(() => (startD ? addDaysDate(startD, -flex) : null), [startD, flex])
   const effEnd = useMemo(() => (endD ? addDaysDate(endD, flex) : null), [endD, flex])
+  // "Perfect fit" compares the RAW picked window (not flex-widened) against trip length.
+  const pickedDays = useMemo(
+    () => (startD && endD ? dayCount(startD, endD) : null),
+    [startD, endD]
+  )
 
   const { matched, hidden } = useMemo(() => {
     if (!windowValid || !effStart || !effEnd) {
       return {
-        matched: templates.map((tpl) => ({ tpl, recommended: false })) as EvaluatedPlan[],
+        matched: templates.map((tpl) => ({ tpl, recommended: false, perfectFit: false })) as EvaluatedPlan[],
         hidden: [] as PlanTemplate[],
       }
     }
@@ -95,12 +107,17 @@ export default function LiffPrePlannedPage() {
     const hiddenList: PlanTemplate[] = []
     for (const tpl of templates) {
       const { matches, recommended } = evaluateTrip(tpl.availability, effStart, effEnd, tpl.totalDays)
-      if (matches) matchedList.push({ tpl, recommended })
+      if (matches) matchedList.push({ tpl, recommended, perfectFit: pickedDays === tpl.totalDays })
       else hiddenList.push(tpl)
     }
-    matchedList.sort((a, b) => Number(b.recommended) - Number(a.recommended))
+    // Perfect-fit first, then recommended, then the rest.
+    matchedList.sort(
+      (a, b) =>
+        Number(b.perfectFit) - Number(a.perfectFit) ||
+        Number(b.recommended) - Number(a.recommended)
+    )
     return { matched: matchedList, hidden: hiddenList }
-  }, [templates, windowValid, effStart, effEnd])
+  }, [templates, windowValid, effStart, effEnd, pickedDays])
 
   function openTrip(tpl: PlanTemplate) {
     if (tpl.shareCode) router.push(`/liff/itinerary?shareCode=${encodeURIComponent(tpl.shareCode)}`)
@@ -214,8 +231,8 @@ export default function LiffPrePlannedPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {matched.map(({ tpl, recommended }) => (
-              <PlanCard key={tpl.id} tpl={tpl} recommended={recommended} variant={theme} onOpen={() => openTrip(tpl)} />
+            {matched.map(({ tpl, recommended, perfectFit }) => (
+              <PlanCard key={tpl.id} tpl={tpl} recommended={recommended} perfectFit={perfectFit} variant={theme} onOpen={() => openTrip(tpl)} />
             ))}
           </div>
         )}

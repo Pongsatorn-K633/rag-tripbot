@@ -10,7 +10,7 @@ import PlanCard, { type PlanTemplate } from '@/app/components/PlanCard'
 import PlanPreviewModal from '@/app/components/PlanPreviewModal'
 import DateRangePicker from '@/app/components/DateRangePicker'
 
-type EvaluatedPlan = { tpl: PlanTemplate; recommended: boolean }
+type EvaluatedPlan = { tpl: PlanTemplate; recommended: boolean; perfectFit: boolean }
 
 // ± flex widens the picked window by N days on EACH side, e.g. 17–25 Oct + ±3
 // searches 14–28 Oct. Default ตรงเป๊ะ (0).
@@ -25,6 +25,13 @@ function addDaysDate(date: Date, n: number): Date {
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate())
   d.setDate(d.getDate() + n)
   return d
+}
+
+// Inclusive day count between two dates (17→20 Oct = 4 days), midnight-normalized.
+function dayCount(from: Date, to: Date): number {
+  const a = new Date(from.getFullYear(), from.getMonth(), from.getDate()).getTime()
+  const b = new Date(to.getFullYear(), to.getMonth(), to.getDate()).getTime()
+  return Math.round((b - a) / 86_400_000) + 1
 }
 
 function toISODate(d: Date): string {
@@ -69,11 +76,17 @@ export default function PrePlannedPage() {
   const windowValid = !!startD
   const effStart = useMemo(() => (startD ? addDaysDate(startD, -flex) : null), [startD, flex])
   const effEnd = useMemo(() => (endD ? addDaysDate(endD, flex) : null), [endD, flex])
+  // "Perfect fit" compares the RAW picked window (not flex-widened) against trip
+  // length: same number of days = this plan fills the user's dates exactly.
+  const pickedDays = useMemo(
+    () => (startD && endD ? dayCount(startD, endD) : null),
+    [startD, endD]
+  )
 
   const { matched, hidden } = useMemo(() => {
     if (!windowValid || !effStart || !effEnd) {
       return {
-        matched: templates.map((t) => ({ tpl: t, recommended: false })) as EvaluatedPlan[],
+        matched: templates.map((t) => ({ tpl: t, recommended: false, perfectFit: false })) as EvaluatedPlan[],
         hidden: [] as PlanTemplate[],
       }
     }
@@ -81,12 +94,17 @@ export default function PrePlannedPage() {
     const hiddenList: PlanTemplate[] = []
     for (const tpl of templates) {
       const { matches, recommended } = evaluateTrip(tpl.availability, effStart, effEnd, tpl.totalDays)
-      if (matches) matchedList.push({ tpl, recommended })
+      if (matches) matchedList.push({ tpl, recommended, perfectFit: pickedDays === tpl.totalDays })
       else hiddenList.push(tpl)
     }
-    matchedList.sort((a, b) => Number(b.recommended) - Number(a.recommended))
+    // Perfect-fit first, then recommended, then the rest.
+    matchedList.sort(
+      (a, b) =>
+        Number(b.perfectFit) - Number(a.perfectFit) ||
+        Number(b.recommended) - Number(a.recommended)
+    )
     return { matched: matchedList, hidden: hiddenList }
-  }, [templates, windowValid, effStart, effEnd])
+  }, [templates, windowValid, effStart, effEnd, pickedDays])
 
   function clearDates() {
     setRange(undefined)
@@ -97,75 +115,73 @@ export default function PrePlannedPage() {
 
   return (
     <main className="pt-32 pb-24 px-6 max-w-7xl mx-auto">
-      {/* Hero header */}
-      <header className="mb-10">
-        <h1 className="text-4xl md:text-5xl lg:text-7xl font-headline font-extrabold tracking-tighter text-basel-brick mb-6">
-          แพลนพร้อมเที่ยว
-        </h1>
-        <p className="text-zen-black/70 text-lg max-w-2xl leading-relaxed font-sans">
-          เลือกช่วงวันเดินทางเพื่อกรองเฉพาะแพลนที่เที่ยวได้จริงในช่วงนั้น — ไม่เจอสถานที่ปิด
-        </p>
-        <p className="text-zen-black/40 text-sm mt-1 font-sans">
-          Pick your travel window to see only trips that are actually open then — or browse all below
-        </p>
-      </header>
+      {/* Hero title (right) + compact filter card (left), side by side on desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 lg:items-center mb-16">
+        {/* ── LEFT: compact date filter card (matches the LINE LIFF panel) ─────── */}
+        <div className="bg-white border border-zen-black/10 shadow-sm p-5 sm:p-6 order-2 lg:order-1">
+          <div className="flex items-center justify-between gap-3 mb-5">
+            <h2 className="font-headline font-black text-sm text-zen-black uppercase tracking-[0.15em]">
+              กรองตามวันเดินทาง · Filter by dates
+            </h2>
+            {filterActive && (
+              <button
+                onClick={clearDates}
+                className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-zen-black/40 hover:text-basel-brick transition-colors"
+              >
+                <X size={13} strokeWidth={3} /> ล้าง · Clear
+              </button>
+            )}
+          </div>
 
-      {/* ── OPTIONAL DATE FILTER ─────────────────────────────────────────────── */}
-      <div className="bg-white border border-zen-black/10 shadow-sm p-5 sm:p-6 mb-12">
-        <div className="flex items-center justify-between gap-3 mb-4">
-          <h2 className="font-headline font-black text-sm text-zen-black uppercase tracking-[0.15em]">
-            กรองตามวันเดินทาง · Filter by dates
-          </h2>
-          {filterActive && (
-            <button
-              onClick={clearDates}
-              className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-zen-black/40 hover:text-basel-brick transition-colors"
-            >
-              <X size={13} strokeWidth={3} /> ล้าง · Clear
-            </button>
+          <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-basel-brick mb-2">
+            ช่วงวันเดินทาง · Travel window
+          </label>
+          <DateRangePicker value={range} onChange={setRange} />
+
+          <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-basel-brick mb-2 mt-5">
+            ยืดหยุ่น · Flexibility
+          </label>
+          <div className="flex gap-2">
+            {FLEX_CHIPS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setFlex(opt.value)}
+                title={opt.sub}
+                className={`px-2 py-3 border text-center transition-all flex-1 ${
+                  flex === opt.value
+                    ? 'border-basel-brick bg-basel-brick text-white'
+                    : 'border-zen-black/20 text-zen-black hover:border-basel-brick'
+                }`}
+              >
+                <span className="block font-headline font-black text-xs tracking-tight whitespace-nowrap">
+                  {opt.label}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {filterActive && flex > 0 && effStart && effEnd && (
+            <p className="text-[11px] text-zen-black/40 mt-3">
+              ค้นหาในช่วง (รวมยืดหยุ่น ±{flex} วัน):{' '}
+              {effStart.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })} –{' '}
+              {effEnd.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </p>
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-4 lg:items-start">
-          <div>
-            <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-basel-brick mb-2">
-              ช่วงวันเดินทาง · Travel window
-            </label>
-            <DateRangePicker value={range} onChange={setRange} />
-          </div>
-          <div>
-            <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-basel-brick mb-2">
-              ยืดหยุ่น · Flexibility
-            </label>
-            <div className="flex gap-2">
-              {FLEX_CHIPS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setFlex(opt.value)}
-                  title={opt.sub}
-                  className={`px-3 py-3 border text-center transition-all flex-1 lg:flex-none ${
-                    flex === opt.value
-                      ? 'border-basel-brick bg-basel-brick text-white'
-                      : 'border-zen-black/20 text-zen-black hover:border-basel-brick'
-                  }`}
-                >
-                  <span className="block font-headline font-black text-xs tracking-tight whitespace-nowrap">
-                    {opt.label}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {filterActive && flex > 0 && effStart && effEnd && (
-          <p className="text-[11px] text-zen-black/40 mt-3">
-            ค้นหาในช่วง (รวมยืดหยุ่น ±{flex} วัน):{' '}
-            {effStart.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })} –{' '}
-            {effEnd.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}
+        {/* ── RIGHT: title + intro ────────────────────────────────────────────── */}
+        <header className="order-1 lg:order-2">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-headline font-extrabold tracking-tighter text-basel-brick mb-6">
+            แพลนพร้อมเที่ยว
+          </h1>
+          <p className="text-zen-black/70 text-lg max-w-xl leading-relaxed font-sans">
+            ใส่วันเดินทาง เพื่อดูทริปที่ไปได้ชัวร์ในช่วงนั้น — หรือเลื่อนดูทริปได้เลย!
           </p>
-        )}
+          <p className="text-zen-black/40 text-sm mt-2 font-sans">
+            Set your dates to see trips available during that time—or browse the full list below!
+          </p>
+        </header>
       </div>
 
       {/* Section header */}
@@ -206,11 +222,12 @@ export default function PrePlannedPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-          {matched.map(({ tpl, recommended }) => (
+          {matched.map(({ tpl, recommended, perfectFit }) => (
             <PlanCard
               key={tpl.id}
               tpl={tpl}
               recommended={recommended}
+              perfectFit={perfectFit}
               isSaved={savedIds.has(tpl.id)}
               isPending={pending.has(tpl.id)}
               onOpen={() => setSelectedId(tpl.id)}
@@ -261,6 +278,7 @@ export default function PrePlannedPage() {
       <PlanPreviewModal
         template={selectedTemplate}
         defaultStartDate={startD ? toISODate(startD) : ''}
+        defaultEndDate={endD ? toISODate(endD) : ''}
         callbackUrl="/pre-planned"
         onClose={() => setSelectedId(null)}
       />

@@ -51,6 +51,35 @@ export const apiRateLimit = redis
   : null
 
 /**
+ * `activateRateLimit` — 8 requests per 10 minutes per LINE user. Gates the
+ * `/activate <code>` command so a malicious user can't brute-force the short
+ * share-code space by spraying guesses at the bot. Legit users activate rarely.
+ */
+export const activateRateLimit = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(8, '10 m'),
+      analytics: true,
+      prefix: 'dopamichi:activate',
+    })
+  : null
+
+/**
+ * `codeLookupRateLimit` — 30 requests per minute per IP. Gates the public
+ * `GET /api/trips/by-code` read path (the LIFF itinerary view) so the share
+ * code can't be enumerated over plain HTTP without a LINE account. Generous
+ * enough for shared carrier/NAT IPs, far too tight to sweep the code space.
+ */
+export const codeLookupRateLimit = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(30, '1 m'),
+      analytics: true,
+      prefix: 'dopamichi:code-lookup',
+    })
+  : null
+
+/**
  * Helper that checks a rate limiter and returns a typed result. Use in API
  * routes like:
  *
@@ -68,7 +97,15 @@ export async function checkLimit(
     }
     return { success: true, remaining: Infinity, reset: 0, limit: Infinity }
   }
-  return limiter.limit(identifier)
+  try {
+    return await limiter.limit(identifier)
+  } catch (err) {
+    // Upstash configured but unreachable (deleted DB / DNS / outage). FAIL OPEN —
+    // a throttle backend being down must never take down the feature it guards.
+    // Throttling is a best-effort safeguard, not an auth gate. Logged for visibility.
+    console.error('[rate-limit] limiter unreachable — allowing request (fail-open):', err)
+    return { success: true, remaining: Infinity, reset: 0, limit: Infinity }
+  }
 }
 
 /**
