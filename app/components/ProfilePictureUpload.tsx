@@ -186,7 +186,7 @@ export default function ProfilePictureUpload({
       {/* Crop modal */}
       {rawImage && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-zen-black/80 px-4">
-          <div className="w-full max-w-md bg-white overflow-hidden shadow-2xl">
+          <div className="w-full max-w-md bg-white overflow-hidden shadow-2xl rounded-xl">
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-zen-black/10">
               <h3 className="font-headline font-black text-lg text-zen-black">

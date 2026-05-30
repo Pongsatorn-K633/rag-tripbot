@@ -55,6 +55,20 @@ export default function PlanPreviewModal({
         }),
       })
       if (!res.ok) throw new Error('Failed to save template')
+      const { trip } = await res.json()
+
+      // Auto-generate a fresh activation code so it's ready to redeem in My Trip
+      // (not shown here — the user gets it on the My Trip page).
+      try {
+        const primaryCity = template.itinerary?.days?.[0]?.location ?? 'JPN'
+        await fetch('/api/activate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tripId: trip.id, primaryCity }),
+        })
+      } catch {
+        // Non-fatal — the user can still generate the code in My Trip.
+      }
       setSaveState('done')
     } catch (err) {
       console.error('Save error:', err)
@@ -86,31 +100,34 @@ export default function PlanPreviewModal({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 40, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-lg bg-briefing-cream border border-zen-black/10 shadow-2xl overflow-hidden"
+            className="w-full max-w-lg bg-briefing-cream border border-zen-black/10 shadow-2xl overflow-hidden rounded-xl"
           >
-            <div className="px-4 pt-6 pb-4">
+            {/* Top-bar close (same as the My Trip view) */}
+            {saveState !== 'saving' && (
+              <div className="px-4 sm:px-6 py-3 flex items-center justify-end border-b border-zen-black/10">
+                <button onClick={handleClose} className="text-zen-black/40 hover:text-zen-black text-2xl leading-none transition-colors" aria-label="ปิด">&times;</button>
+              </div>
+            )}
+            <div className="px-4 sm:px-6 py-5">
               {saveState === 'done' ? (
                 <div className="text-center py-8 space-y-4">
                   <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
                     <span className="text-green-600 text-2xl">✓</span>
                   </div>
-                  <h3 className="font-headline font-black text-xl text-zen-black">บันทึกแล้ว!</h3>
+                  <h3 className="font-headline font-black text-xl text-zen-black">คัดลอกเรียบร้อย!</h3>
                   <p className="text-sm text-zen-black/60">
-                    แผนถูกเพิ่มในหน้า Go! แล้ว เมื่อพร้อมเดินทางสร้างรหัส LINE ได้ที่นั่น
-                  </p>
-                  <p className="text-xs text-zen-black/40">
-                    Trip saved! Generate your LINE code in the Go! page when you&apos;re ready to travel.
+                    เพิ่มทริปของคุณในหน้า My Trip แล้ว — แก้ไขได้อิสระ และรับรหัส LINE ได้ที่นั่นเลย
                   </p>
                   <div className="flex gap-3 pt-2">
                     <Link
-                      href="/go"
-                      className="flex-1 py-3 bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all text-center"
+                      href="/my-trip"
+                      className="flex-1 py-3 rounded-lg bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all text-center"
                     >
-                      Go to my trips
+                      Go to My Trip
                     </Link>
                     <button
                       onClick={handleClose}
-                      className="flex-1 py-3 border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-briefing-cream transition-all"
+                      className="flex-1 py-3 rounded-lg border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-briefing-cream transition-all"
                     >
                       เลือกแพลนอื่น
                     </button>
@@ -122,7 +139,7 @@ export default function PlanPreviewModal({
                   onConfirm={handleConfirm}
                   confirmLoading={saveState === 'saving'}
                   coverImage={template.coverImage}
-                  onClose={handleClose}
+                  shareCode={template.shareCode}
                 />
               )}
             </div>

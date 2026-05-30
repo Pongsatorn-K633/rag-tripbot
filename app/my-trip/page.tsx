@@ -113,13 +113,13 @@ export default function GoPage() {
       {/* Hero */}
       <header className="mb-20">
         <h1 className="text-4xl md:text-5xl lg:text-7xl font-headline font-extrabold tracking-tighter text-basel-brick mb-6">
-          Go!
+          My Trip
         </h1>
         <p className="text-zen-black/70 text-lg max-w-3xl leading-relaxed font-sans">
-          แผนการเดินทางที่พร้อมออกเดินทาง ใช้ share code เพื่อ activate บน LINE แล้วออกไปเที่ยวได้เลย
+          ทริปของคุณ — แก้ไขได้อิสระ และใช้ share code เพื่อ activate บน LINE แล้วออกไปเที่ยวได้เลย
         </p>
         <p className="text-zen-black/40 text-sm mt-1 font-sans">
-          Your trips, ready to travel. Activate on LINE and go!
+          Your trips — edit freely, then activate on LINE and go!
         </p>
       </header>
 
@@ -130,7 +130,7 @@ export default function GoPage() {
           <p className="text-zen-black/60 text-lg mb-2 font-sans">สมัครสมาชิกเพื่อดูแผนการเดินทางของคุณ</p>
           <p className="text-zen-black/40 text-sm mb-6">Sign in to see your saved trips</p>
           <button
-            onClick={() => signIn(undefined, { callbackUrl: '/go' })}
+            onClick={() => signIn(undefined, { callbackUrl: '/my-trip' })}
             className="px-8 py-4 bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all"
           >
             Sign in
@@ -269,12 +269,12 @@ export default function GoPage() {
       {/* Delete confirmation dialog */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zen-black/50 px-4" onClick={(e) => { if (e.target === e.currentTarget) setDeleteConfirm(null) }}>
-          <div className="bg-briefing-cream p-8 max-w-sm w-full border border-zen-black/10 shadow-2xl">
+          <div className="bg-briefing-cream p-8 max-w-sm w-full border border-zen-black/10 shadow-2xl rounded-xl">
             <h3 className="font-headline font-black text-xl text-zen-black mb-3 tracking-tight">ยืนยันการลบ</h3>
             <p className="text-zen-black/60 text-sm font-sans mb-8 leading-relaxed">แผนการเดินทางนี้จะถูกลบถาวร และ LINE Bot จะได้รับแจ้งเตือนโดยอัตโนมัติ</p>
             <div className="flex gap-4">
-              <button onClick={() => setDeleteConfirm(null)} disabled={deleting} className="flex-1 py-3 border border-zen-black/20 font-bold text-sm font-headline uppercase tracking-widest hover:bg-zen-black hover:text-briefing-cream transition-all disabled:opacity-40">ยกเลิก</button>
-              <button onClick={() => handleDelete(deleteConfirm)} disabled={deleting} className="flex-1 py-3 bg-basel-brick text-white font-bold text-sm font-headline uppercase tracking-widest hover:bg-zen-black transition-all disabled:opacity-60 flex items-center justify-center gap-2">
+              <button onClick={() => setDeleteConfirm(null)} disabled={deleting} className="flex-1 py-3 rounded-lg border border-zen-black/20 font-bold text-sm font-headline uppercase tracking-widest hover:bg-zen-black hover:text-briefing-cream transition-all disabled:opacity-40">ยกเลิก</button>
+              <button onClick={() => handleDelete(deleteConfirm)} disabled={deleting} className="flex-1 py-3 rounded-lg bg-basel-brick text-white font-bold text-sm font-headline uppercase tracking-widest hover:bg-zen-black transition-all disabled:opacity-60 flex items-center justify-center gap-2">
                 {deleting ? (<><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />กำลังลบ...</>) : 'ลบ'}
               </button>
             </div>
@@ -290,19 +290,10 @@ export default function GoPage() {
           const itin = trip.itinerary as Itinerary | null
           return (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-4 sm:py-10 px-2 sm:px-4" style={{ backgroundColor: 'rgba(35,26,14,0.75)' }} onClick={(e) => { if (e.target === e.currentTarget) setViewingTripId(null) }}>
-              <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="w-full max-w-lg bg-briefing-cream border border-zen-black/10 shadow-2xl overflow-hidden">
+              <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="w-full max-w-lg bg-briefing-cream border border-zen-black/10 shadow-2xl overflow-hidden rounded-xl">
                 <div className="px-4 sm:px-6 py-3 flex items-center justify-end border-b border-zen-black/10">
                   <button onClick={() => setViewingTripId(null)} className="text-zen-black/40 hover:text-zen-black text-2xl leading-none transition-colors" aria-label="ปิด">&times;</button>
                 </div>
-                {(itin?.shareCode || trip.shareCode) && (
-                  <div className="px-4 sm:px-6 py-3 bg-zen-black flex items-center justify-between gap-2">
-                    <div>
-                      <span className="text-[8px] font-black uppercase tracking-[0.4em] text-white/50 block">LINE Share Code</span>
-                      <span className="font-mono text-lg font-bold text-white">{itin?.shareCode ?? trip.shareCode}</span>
-                    </div>
-                    <button onClick={() => navigator.clipboard.writeText(`/activate ${itin?.shareCode ?? trip.shareCode}`)} className="text-[9px] border border-white/30 text-white px-3 py-1.5 font-bold uppercase hover:bg-white hover:text-zen-black transition-all">Copy</button>
-                  </div>
-                )}
                 {itin && itin.days && itin.days.length > 0 && (
                   <div className="px-4 sm:px-6 py-5">
                     <ItineraryView
@@ -316,8 +307,21 @@ export default function GoPage() {
                     />
                   </div>
                 )}
-                <div className="px-4 sm:px-6 py-4 border-t border-zen-black/10">
-                  <button onClick={() => setViewingTripId(null)} className="w-full py-3 border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-briefing-cream transition-all">Close</button>
+                <div className="px-4 sm:px-6 py-4 border-t border-zen-black/10 space-y-3">
+                  {(itin?.shareCode || trip.shareCode) && (
+                    <button
+                      onClick={() => navigator.clipboard.writeText(`/activate ${itin?.shareCode ?? trip.shareCode}`)}
+                      className="w-full flex items-center justify-between gap-2 px-4 py-3 rounded-lg bg-zen-black text-white hover:bg-basel-brick transition-colors"
+                      title="คัดลอกคำสั่ง /activate"
+                    >
+                      <div className="flex flex-col items-start leading-tight">
+                        <span className="text-[8px] font-black uppercase tracking-[0.3em] text-white/50">LINE Share Code</span>
+                        <span className="font-mono text-lg font-bold">{itin?.shareCode ?? trip.shareCode}</span>
+                      </div>
+                      <span className="text-[9px] border border-white/30 px-2 py-1 font-bold uppercase">Copy</span>
+                    </button>
+                  )}
+                  <button onClick={() => setViewingTripId(null)} className="w-full py-3 rounded-lg border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-briefing-cream transition-all">Close</button>
                 </div>
               </motion.div>
             </motion.div>

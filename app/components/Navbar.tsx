@@ -10,7 +10,7 @@ import { IMG } from '@/lib/images'
 
 const TABS = [
   { id: 'home', label: 'Home', href: '/' },
-  { id: 'go', label: 'Go!', href: '/go' },
+  { id: 'my-trip', label: 'My Trip', href: '/my-trip' },
   { id: 'pre-planned', label: 'Pre-planned', href: '/pre-planned' },
   { id: 'gallery', label: 'Doc-to-Trip', href: '/gallery' },
   // AI Chat is under maintenance — disabled in nav, /chat redirects to /maintenance

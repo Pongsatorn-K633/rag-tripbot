@@ -1336,7 +1336,7 @@ function ModalShell({
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      <div className="w-full max-w-2xl bg-briefing-cream border border-zen-black/10 shadow-2xl p-8 my-auto">
+      <div className="w-full max-w-2xl bg-briefing-cream border border-zen-black/10 shadow-2xl p-8 my-auto rounded-xl">
         {children}
       </div>
     </div>

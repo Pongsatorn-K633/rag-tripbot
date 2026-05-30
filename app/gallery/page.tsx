@@ -360,17 +360,17 @@ export default function GalleryPage() {
                     </div>
                     <h3 className="font-headline font-black text-xl text-zen-black">บันทึกแล้ว!</h3>
                     <p className="text-sm text-zen-black/60">
-                      แผนถูกเพิ่มในหน้า Go! แล้ว เมื่อพร้อมเดินทางสร้างรหัส LINE ได้ที่นั่น
+                      แผนถูกเพิ่มในหน้า My Trip แล้ว เมื่อพร้อมเดินทางสร้างรหัส LINE ได้ที่นั่น
                     </p>
                     <p className="text-xs text-zen-black/40">
-                      Trip saved! Generate your LINE code in Go! when ready.
+                      Trip saved! Generate your LINE code in My Trip when ready.
                     </p>
                     <div className="flex gap-3 pt-2">
                       <Link
-                        href="/go"
+                        href="/my-trip"
                         className="flex-1 py-3 bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all text-center"
                       >
-                        Go to my trips
+                        Go to My Trip
                       </Link>
                       <button
                         onClick={handleReUpload}
@@ -430,13 +430,13 @@ export default function GalleryPage() {
       {/* After upload, point user to Go! page to manage their trips */}
       <section className="mb-24 text-center py-12 border-t border-zen-black/10">
         <p className="text-zen-black/50 text-sm font-sans mb-3">
-          แผนที่บันทึกแล้วอยู่ในหน้า Go! · Your saved trips are in the Go! page
+          แผนที่บันทึกแล้วอยู่ในหน้า My Trip · Your saved trips are in the My Trip page
         </p>
         <Link
-          href="/go"
+          href="/my-trip"
           className="inline-flex items-center gap-2 px-6 py-3 bg-zen-black text-briefing-cream font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-basel-brick transition-all"
         >
-          Go to my trips <ArrowRight size={14} />
+          Go to My Trip <ArrowRight size={14} />
         </Link>
       </section>
 
@@ -575,7 +575,7 @@ export default function GalleryPage() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-zen-black/50 px-4"
           onClick={(e) => { if (e.target === e.currentTarget) setDeleteConfirm(null) }}
         >
-          <div className="bg-briefing-cream p-8 max-w-sm w-full border border-zen-black/10 shadow-2xl">
+          <div className="bg-briefing-cream p-8 max-w-sm w-full border border-zen-black/10 shadow-2xl rounded-xl">
             <h3 className="font-headline font-black text-xl text-zen-black mb-3 tracking-tight">ยืนยันการลบ</h3>
             <p className="text-zen-black/60 text-sm font-sans mb-8 leading-relaxed">
               แผนการเดินทางนี้จะถูกลบถาวร และ LINE Bot จะได้รับแจ้งเตือนโดยอัตโนมัติ
@@ -584,14 +584,14 @@ export default function GalleryPage() {
               <button
                 onClick={() => setDeleteConfirm(null)}
                 disabled={deleting}
-                className="flex-1 py-3 border border-zen-black/20 font-bold text-sm font-headline uppercase tracking-widest hover:bg-zen-black hover:text-briefing-cream transition-all disabled:opacity-40"
+                className="flex-1 py-3 rounded-lg border border-zen-black/20 font-bold text-sm font-headline uppercase tracking-widest hover:bg-zen-black hover:text-briefing-cream transition-all disabled:opacity-40"
               >
                 ยกเลิก
               </button>
               <button
                 onClick={() => handleDelete(deleteConfirm)}
                 disabled={deleting}
-                className="flex-1 py-3 bg-basel-brick text-white font-bold text-sm font-headline uppercase tracking-widest hover:bg-zen-black transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+                className="flex-1 py-3 rounded-lg bg-basel-brick text-white font-bold text-sm font-headline uppercase tracking-widest hover:bg-zen-black transition-all disabled:opacity-60 flex items-center justify-center gap-2"
               >
                 {deleting ? (
                   <>
@@ -629,7 +629,7 @@ export default function GalleryPage() {
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 40, opacity: 0 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                className="w-full max-w-lg bg-briefing-cream border border-zen-black/10 shadow-2xl overflow-hidden"
+                className="w-full max-w-lg bg-briefing-cream border border-zen-black/10 shadow-2xl overflow-hidden rounded-xl"
               >
                 {/* Modal header */}
                 <div className="px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between border-b border-zen-black/10">

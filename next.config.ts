@@ -27,6 +27,12 @@ const nextConfig: NextConfig = {
         destination: '/pre-planned',
         permanent: true,
       },
+      // ── RENAME: Go! → My Trip ───────────────────────────────────────────
+      {
+        source: '/go',
+        destination: '/my-trip',
+        permanent: true,
+      },
     ]
   },
 }
