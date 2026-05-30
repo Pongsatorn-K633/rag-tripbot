@@ -3,15 +3,13 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Trash2, ArrowRight, Shield, ChevronDown, MapPin, Hotel, Train, Clock, Banknote, Timer, Plane, Zap, Copy, Pencil } from 'lucide-react'
+import { Trash2, ArrowRight, Shield, Plane, Zap, Copy, Pencil } from 'lucide-react'
+import ItineraryView from '@/app/components/ItineraryView'
 import { motion, AnimatePresence } from 'motion/react'
 import { useSession, signIn } from 'next-auth/react'
 import { IMG } from '@/lib/images'
 import { resolveCoverImage } from '@/lib/cover-image'
-import { PRIORITY_LABEL } from '@/lib/itinerary-types'
-import type { Itinerary, Activity, Day, Choice, ActivityPriority } from '@/lib/itinerary-types'
-import CategoryIcon from '@/app/components/CategoryIcon'
-import ChoiceCarousel from '@/app/components/ChoiceCarousel'
+import type { Itinerary } from '@/lib/itinerary-types'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -293,11 +291,7 @@ export default function GoPage() {
           return (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-4 sm:py-10 px-2 sm:px-4" style={{ backgroundColor: 'rgba(35,26,14,0.75)' }} onClick={(e) => { if (e.target === e.currentTarget) setViewingTripId(null) }}>
               <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="w-full max-w-lg bg-briefing-cream border border-zen-black/10 shadow-2xl overflow-hidden">
-                <div className="px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between border-b border-zen-black/10">
-                  <div className="min-w-0 flex-1 mr-3">
-                    <h2 className="font-headline font-black text-lg sm:text-xl tracking-tighter text-zen-black truncate">{trip.title}</h2>
-                    {trip.startDate && itin?.totalDays ? <p className="text-xs text-basel-brick font-bold mt-1">{formatDateRange(trip.startDate, itin.totalDays)}</p> : null}
-                  </div>
+                <div className="px-4 sm:px-6 py-3 flex items-center justify-end border-b border-zen-black/10">
                   <button onClick={() => setViewingTripId(null)} className="text-zen-black/40 hover:text-zen-black text-2xl leading-none transition-colors" aria-label="ปิด">&times;</button>
                 </div>
                 {(itin?.shareCode || trip.shareCode) && (
@@ -309,7 +303,19 @@ export default function GoPage() {
                     <button onClick={() => navigator.clipboard.writeText(`/activate ${itin?.shareCode ?? trip.shareCode}`)} className="text-[9px] border border-white/30 text-white px-3 py-1.5 font-bold uppercase hover:bg-white hover:text-zen-black transition-all">Copy</button>
                   </div>
                 )}
-                {itin && itin.days && itin.days.length > 0 && <GoTripAccordion itinerary={itin} />}
+                {itin && itin.days && itin.days.length > 0 && (
+                  <div className="px-4 sm:px-6 py-5">
+                    <ItineraryView
+                      itinerary={itin}
+                      variant="light"
+                      hero={{
+                        image: resolveCoverImage(trip.coverImage, trip.id),
+                        title: trip.title,
+                        subtitle: trip.startDate && itin.totalDays ? formatDateRange(trip.startDate, itin.totalDays) : `${itin.totalDays ?? itin.days.length} วัน`,
+                      }}
+                    />
+                  </div>
+                )}
                 <div className="px-4 sm:px-6 py-4 border-t border-zen-black/10">
                   <button onClick={() => setViewingTripId(null)} className="w-full py-3 border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-briefing-cream transition-all">Close</button>
                 </div>
@@ -322,93 +328,3 @@ export default function GoPage() {
   )
 }
 
-// ── Read-only itinerary accordion ───────────────────────────────────────────
-
-function GoTripAccordion({ itinerary }: { itinerary: Itinerary }) {
-  const [openDay, setOpenDay] = useState<number | null>(1)
-  const totalDays = itinerary.totalDays ?? itinerary.days.length
-  const currentOpenDay = openDay ?? 1
-
-  return (
-    <div>
-      <div className="flex items-baseline justify-between px-4 sm:px-6 py-4 border-b border-zen-black/5">
-        <h3 className="font-headline text-lg font-extrabold text-zen-black">The Journey</h3>
-        <span className="text-[10px] font-bold text-basel-brick uppercase tracking-widest">Day {currentOpenDay} / {totalDays}</span>
-      </div>
-      <div className="divide-y divide-zen-black/5">
-        {itinerary.days.map((day) => {
-          const isOpen = openDay === day.day
-          const paddedDay = String(day.day).padStart(2, '0')
-          const mandatoryCount = day.activities.filter((a) => a.priority === 'mandatory').length
-          return (
-            <div key={day.day}>
-              <button className="w-full text-left px-4 sm:px-6 py-4 flex items-center gap-3 sm:gap-4 hover:bg-briefing-cream/50 transition-colors" onClick={() => setOpenDay(isOpen ? null : day.day)}>
-                <span className={`inline-flex items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-xl font-black text-sm sm:text-lg flex-shrink-0 transition-colors ${isOpen ? 'bg-basel-brick text-white' : 'bg-zen-black/5 text-zen-black/40'}`}>{paddedDay}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-base sm:text-lg text-zen-black leading-tight truncate">{day.location}</p>
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
-                    <span className="text-[10px] sm:text-xs text-zen-black/40 font-medium flex items-center gap-1"><MapPin size={10} strokeWidth={2.5} /> Day {day.day} · {day.activities.length} กิจกรรม</span>
-                    {mandatoryCount > 0 && <span className="text-[10px] text-basel-brick font-medium">⚠ {mandatoryCount} must-do</span>}
-                    {(day.choices?.length ?? 0) > 0 && <span className="text-[10px] text-blue-600 font-medium">★ {day.choices!.length} choice{day.choices!.length > 1 ? 's' : ''}</span>}
-                  </div>
-                </div>
-                <ChevronDown size={18} className={`flex-shrink-0 transition-all duration-200 ${isOpen ? 'rotate-180 text-basel-brick' : 'rotate-0 text-zen-black/20'}`} />
-              </button>
-              {isOpen && (
-                <div className="px-4 sm:px-6 pb-6 pt-2 space-y-6 border-t border-zen-black/5 bg-briefing-cream/30">
-                  {day.activities.length > 0 && (
-                    <div className="space-y-5">
-                      {day.activities.map((act, idx) => {
-                        const p = act.priority ?? 'optional'
-                        const borderColor = p === 'mandatory' ? 'border-red-500' : p === 'recommended' ? 'border-amber-400' : 'border-basel-brick'
-                        const dotColor = p === 'mandatory' ? 'bg-red-500' : p === 'recommended' ? 'bg-amber-400' : 'bg-basel-brick'
-                        return (
-                          <div key={idx} className={`relative pl-7 border-l-[3px] ${borderColor}`}>
-                            <span className={`absolute -left-[6px] top-0.5 w-2.5 h-2.5 rounded-full ${dotColor}`} />
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <p className="text-[10px] font-bold text-basel-brick uppercase tracking-widest flex items-center gap-1"><Clock size={10} strokeWidth={2.5} /> {act.time}</p>
-                              {p === 'mandatory' && <span className="text-[8px] font-black uppercase tracking-widest bg-red-100 text-red-700 px-1.5 py-0.5 rounded">{PRIORITY_LABEL.mandatory}</span>}
-                              {p === 'recommended' && <span className="text-[8px] font-black uppercase tracking-widest bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">{PRIORITY_LABEL.recommended}</span>}
-                              {act.category && <CategoryIcon category={act.category} size={12} className="text-zen-black/50" />}
-                            </div>
-                            <p className="font-bold text-base text-zen-black mt-1">{act.name}</p>
-                            {act.notes && <p className="text-sm text-zen-black/60 mt-1.5 leading-relaxed">{act.notes}</p>}
-                            {(act.cost || act.duration) && (
-                              <div className="flex gap-3 mt-1.5">
-                                {act.cost && <span className="text-[10px] font-bold text-zen-black/50 flex items-center gap-0.5"><Banknote size={10} strokeWidth={2} /> {act.cost}</span>}
-                                {act.duration && <span className="text-[10px] font-bold text-zen-black/50 flex items-center gap-0.5"><Timer size={10} strokeWidth={2} /> {act.duration}</span>}
-                              </div>
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                  {day.choices && day.choices.length > 0 && (
-                    <div className="space-y-4">{day.choices.map((choice, idx) => <ChoiceCarousel key={idx} choice={choice} />)}</div>
-                  )}
-                  {day.accommodation && (
-                    <div className="flex items-start gap-2">
-                      <Hotel size={14} className="text-basel-brick flex-shrink-0 mt-0.5" strokeWidth={2.5} />
-                      <div><p className="text-[10px] font-bold text-basel-brick uppercase tracking-widest mb-1">ที่พัก</p><p className="text-sm text-zen-black leading-relaxed">{day.accommodation}</p></div>
-                    </div>
-                  )}
-                  {day.transport && (
-                    <div className="flex items-start gap-2">
-                      <Train size={14} className="text-basel-brick flex-shrink-0 mt-0.5" strokeWidth={2.5} />
-                      <div>
-                        <p className="text-[10px] font-bold text-basel-brick uppercase tracking-widest mb-1">การเดินทาง</p>
-                        <p className="text-sm text-zen-black leading-relaxed">{day.transport}</p>
-                        {day.transportNotes && <p className="text-xs text-zen-black/50 mt-1 italic">{day.transportNotes}</p>}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}

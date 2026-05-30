@@ -86,24 +86,9 @@ export default function PlanPreviewModal({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 40, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="w-full max-w-lg bg-briefing-cream border border-zen-black/10 shadow-2xl overflow-hidden"
+            className="relative w-full max-w-lg bg-briefing-cream border border-zen-black/10 shadow-2xl overflow-hidden"
           >
-            <div className="px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between border-b border-zen-black/10">
-              <h2 className="font-headline font-black text-lg sm:text-xl tracking-tighter text-zen-black">
-                ยืนยันแผนการเดินทาง
-              </h2>
-              {saveState !== 'saving' && (
-                <button
-                  onClick={handleClose}
-                  className="text-zen-black/40 hover:text-zen-black text-2xl leading-none transition-colors"
-                  aria-label="ปิด"
-                >
-                  &times;
-                </button>
-              )}
-            </div>
-
-            <div className="px-4 py-4">
+            <div className="px-4 pt-6 pb-4">
               {saveState === 'done' ? (
                 <div className="text-center py-8 space-y-4">
                   <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
@@ -136,6 +121,8 @@ export default function PlanPreviewModal({
                   itinerary={template.itinerary}
                   onConfirm={handleConfirm}
                   confirmLoading={saveState === 'saving'}
+                  coverImage={template.coverImage}
+                  onClose={handleClose}
                 />
               )}
             </div>
