@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Plus, Edit2, Trash2, TrendingUp, Users, FileText, BookOpen, X, Eye, EyeOff, Check, AlertCircle, Copy, Sparkles } from 'lucide-react'
+import { ArrowLeft, Plus, Edit2, Trash2, TrendingUp, Users, FileText, BookOpen, X, Eye, EyeOff, Check, AlertCircle, Copy, Sparkles, Boxes } from 'lucide-react'
 import CoverUpload from '@/app/components/CoverUpload'
 import { resolveCoverImage } from '@/lib/cover-image'
 import type { DateRange, TripAvailability } from '@/lib/itinerary-types'
@@ -53,17 +53,18 @@ export default function AdminDashboard({ currentUser }: { currentUser: CurrentUs
   const [tab, setTab] = useState<Tab>('trips')
   const [trips, setTrips] = useState<TripRow[]>([])
   const [templates, setTemplates] = useState<TemplateRow[]>([])
+  const [nodesCount, setNodesCount] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [createOpen, setCreateOpen] = useState(false)
   const [promoteTripId, setPromoteTripId] = useState<string | null>(null)
   const [editTemplate, setEditTemplate] = useState<TemplateRow | null>(null)
 
   async function loadAll() {
     setLoading(true)
     try {
-      const [tripsRes, templatesRes] = await Promise.all([
+      const [tripsRes, templatesRes, nodesRes] = await Promise.all([
         fetch('/api/admin/trips'),
         fetch('/api/admin/templates'),
+        fetch('/api/admin/nodes'),
       ])
       if (tripsRes.ok) {
         const data = await tripsRes.json()
@@ -72,6 +73,10 @@ export default function AdminDashboard({ currentUser }: { currentUser: CurrentUs
       if (templatesRes.ok) {
         const data = await templatesRes.json()
         setTemplates(data.templates ?? [])
+      }
+      if (nodesRes.ok) {
+        const data = await nodesRes.json()
+        setNodesCount((data.nodes ?? []).length)
       }
     } finally {
       setLoading(false)
@@ -189,11 +194,12 @@ export default function AdminDashboard({ currentUser }: { currentUser: CurrentUs
         </div>
 
         {/* Stats grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-0 mb-12 border border-zen-black">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-0 mb-12 border border-zen-black">
           <StatCard icon={FileText} label="Total Trips" value={stats.totalTrips} />
           <StatCard icon={Users} label="Unique Users" value={stats.uniqueUsers} />
-          <StatCard icon={BookOpen} label="Templates" value={stats.totalTemplates} />
-          <StatCard icon={TrendingUp} label="Published" value={stats.publishedTemplates} last />
+          <StatCard icon={BookOpen} label="Pre-planned" value={stats.totalTemplates} />
+          <StatCard icon={TrendingUp} label="Published" value={stats.publishedTemplates} />
+          <StatCard icon={Boxes} label="Library Nodes" value={nodesCount} last />
         </div>
 
         {/* Tabs */}
@@ -202,7 +208,7 @@ export default function AdminDashboard({ currentUser }: { currentUser: CurrentUs
             All Trips ({trips.length})
           </TabButton>
           <TabButton active={tab === 'templates'} onClick={() => setTab('templates')}>
-            Templates ({templates.length})
+            Pre-planned ({templates.length})
           </TabButton>
           <Link
             href="/admin/trip-builder"
@@ -240,23 +246,10 @@ export default function AdminDashboard({ currentUser }: { currentUser: CurrentUs
         ) : (
           <TemplatesGrid
             templates={templates}
-            onCreate={() => setCreateOpen(true)}
             onEdit={(tpl) => setEditTemplate(tpl)}
             onDelete={handleDeleteTemplate}
             onTogglePublished={handleTogglePublished}
             onCleanupCovers={handleCleanupCovers}
-          />
-        )}
-
-        {/* Create template modal */}
-        {createOpen && (
-          <TemplateFormModal
-            mode="create"
-            onClose={() => setCreateOpen(false)}
-            onSaved={() => {
-              setCreateOpen(false)
-              loadAll()
-            }}
           />
         )}
 
@@ -471,14 +464,12 @@ function SourceBadge({ source }: { source: string | null }) {
 
 function TemplatesGrid({
   templates,
-  onCreate,
   onEdit,
   onDelete,
   onTogglePublished,
   onCleanupCovers,
 }: {
   templates: TemplateRow[]
-  onCreate: () => void
   onEdit: (tpl: TemplateRow) => void
   onDelete: (id: string) => void
   onTogglePublished: (tpl: TemplateRow) => void
@@ -495,18 +486,19 @@ function TemplatesGrid({
           <Sparkles size={14} strokeWidth={3} />
           Clean stale covers
         </button>
-        <button
-          onClick={onCreate}
+        <Link
+          href="/admin/trip-builder"
           className="inline-flex items-center gap-2 px-5 py-3 bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all"
         >
           <Plus size={14} strokeWidth={3} />
-          New Template
-        </button>
+          Build New Trip
+        </Link>
       </div>
 
       {templates.length === 0 ? (
         <div className="border-2 border-dashed border-zen-black/10 p-16 text-center">
-          <p className="text-zen-black/40 font-sans text-lg">No templates yet.</p>
+          <p className="text-zen-black/40 font-sans text-lg mb-1">No pre-planned trips yet.</p>
+          <p className="text-zen-black/30 text-sm">Use <span className="text-basel-brick font-bold">Build New Trip</span> to create one.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -699,7 +691,7 @@ function TemplateFormModal({
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="flex items-center justify-between border-b border-zen-black/10 pb-4">
           <h2 className="font-headline font-black text-2xl italic text-zen-black">
-            {mode === 'create' ? 'New Template' : 'Edit Template'}
+            {mode === 'create' ? 'New Pre-planned Trip' : 'Edit Pre-planned Trip'}
           </h2>
           <button
             type="button"
