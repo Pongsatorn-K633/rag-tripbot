@@ -267,7 +267,7 @@ async function handleQuestion(lineId: string, replyToken: string, text: string) 
   const chatHistory = (context.chatHistory as ChatMessage[] | null) ?? []
 
   try {
-    const result = await answerWithContext(text, itinerary, chatHistory, context.trip.shareCode)
+    const result = await answerWithContext(text, itinerary, chatHistory, context.trip.shareCode, context.trip.startDate)
 
     // LIFF view — send Flex Message with button to open itinerary in LINE
     if (result.liffView) {

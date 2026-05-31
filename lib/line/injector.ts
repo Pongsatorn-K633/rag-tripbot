@@ -15,6 +15,61 @@ interface Itinerary {
   }[]
 }
 
+// ── Date context ─────────────────────────────────────────────────────────────
+// The itinerary is relative ("Day 1..N"). To answer "วันนี้ / พรุ่งนี้ / เหลือกี่วัน"
+// the model needs the calendar anchor: resolve each day to a real date from the
+// trip's startDate and tell it which day is "today" (in Japan time, where the
+// traveler is). Returns '' when there's no startDate (date questions then fall
+// back to "ไม่มีข้อมูล").
+
+const MONTH_TH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+
+function epochDay(y: number, m0: number, d: number): number {
+  return Math.floor(Date.UTC(y, m0, d) / 86_400_000)
+}
+function fmtThaiDate(eDay: number): string {
+  const d = new Date(eDay * 86_400_000)
+  return `${d.getUTCDate()} ${MONTH_TH[d.getUTCMonth()]} ${d.getUTCFullYear()}`
+}
+
+export function buildDateContext(
+  itinerary: Itinerary,
+  startDate: Date | string | null | undefined,
+  now: Date = new Date()
+): string {
+  if (!startDate) return ''
+  const s = new Date(startDate)
+  if (Number.isNaN(s.getTime())) return ''
+  // startDate is stored as a UTC-midnight date → read UTC components.
+  const startEpoch = epochDay(s.getUTCFullYear(), s.getUTCMonth(), s.getUTCDate())
+  // "Today" in Japan (JST = UTC+9), where the traveler physically is.
+  const jst = new Date(now.getTime() + 9 * 3_600_000)
+  const todayEpoch = epochDay(jst.getUTCFullYear(), jst.getUTCMonth(), jst.getUTCDate())
+
+  const days = itinerary.days ?? []
+  const totalDays = itinerary.totalDays ?? days.length
+  const dayIndex = todayEpoch - startEpoch + 1 // 1-based; <1 = before, >total = after
+
+  const lines: string[] = []
+  lines.push('ข้อมูลวันที่ (ใช้ตอบคำถามเกี่ยวกับ "วันนี้ / พรุ่งนี้ / เมื่อวาน / เหลืออีกกี่วัน" ให้แม่นยำ):')
+  lines.push(`- วันเริ่มเดินทาง: ${fmtThaiDate(startEpoch)}`)
+  lines.push(`- วันสุดท้าย: ${fmtThaiDate(startEpoch + Math.max(0, totalDays - 1))}`)
+  if (dayIndex < 1) {
+    lines.push(`- วันนี้ (เวลาญี่ปุ่น) ${fmtThaiDate(todayEpoch)} — ยังไม่เริ่มทริป อีก ${1 - dayIndex} วันจะออกเดินทาง`)
+  } else if (dayIndex > totalDays) {
+    lines.push(`- วันนี้ (เวลาญี่ปุ่น) ${fmtThaiDate(todayEpoch)} — ทริปจบไปแล้ว (สิ้นสุดเมื่อ ${dayIndex - totalDays} วันก่อน)`)
+  } else {
+    lines.push(`- วันนี้ (เวลาญี่ปุ่น) ${fmtThaiDate(todayEpoch)} = วันที่ ${dayIndex} ของทริป`)
+  }
+  lines.push('- ปฏิทินรายวัน:')
+  for (const d of days) {
+    const e = startEpoch + (d.day - 1)
+    const marker = d.day === dayIndex ? '  ← วันนี้' : ''
+    lines.push(`  วันที่ ${d.day} = ${fmtThaiDate(e)} (${d.location})${marker}`)
+  }
+  return lines.join('\n')
+}
+
 // Phrases that indicate the LLM couldn't answer from the itinerary alone
 const FALLBACK_PHRASES = [
   'ไม่มีข้อมูล', 'ไม่มีในแผน', 'ไม่ได้ระบุ', 'ไม่ปรากฏ',
@@ -86,7 +141,8 @@ export async function answerWithContext(
   userQuestion: string,
   itineraryJson: object,
   chatHistory: ChatMessage[] = [],
-  shareCode?: string | null
+  shareCode?: string | null,
+  startDate?: Date | string | null
 ): Promise<AnswerResult> {
   const itinerary = itineraryJson as Itinerary
 
@@ -97,7 +153,8 @@ export async function answerWithContext(
 
   // Gemini call: classify intent + answer in one shot
   const recentHistory = chatHistory.slice(-MAX_HISTORY)
-  const fastPrompt = buildContextPrompt(userQuestion, itineraryJson, '', recentHistory)
+  const dateContext = buildDateContext(itinerary, startDate)
+  const fastPrompt = buildContextPrompt(userQuestion, itineraryJson, '', recentHistory, dateContext)
   const fastAnswer = await generateText(fastPrompt, { maxOutputTokens: 4096 })
   const trimmed = fastAnswer.trim()
 
@@ -174,11 +231,13 @@ function buildContextPrompt(
   question: string,
   itinerary: object,
   extraContext: string,
-  chatHistory: ChatMessage[] = []
+  chatHistory: ChatMessage[] = [],
+  dateContext = ''
 ): string {
   const extraSection = extraContext
     ? `\n\nข้อมูลเพิ่มเติม (ใช้ตอบถ้าคำถามไม่เกี่ยวกับแผนโดยตรง):\n${extraContext}`
     : ''
+  const dateSection = dateContext ? `\n\n${dateContext}` : ''
 
   const historySection = chatHistory.length > 0
     ? '\n\nบทสนทนาก่อนหน้า:\n' + chatHistory.map((m) =>
@@ -199,9 +258,11 @@ function buildContextPrompt(
 กฎสำคัญ:
 - ตอบจากแผนการเดินทางและข้อมูลเพิ่มเติมที่ให้มาเท่านั้น
 - ห้ามแต่งเรื่องหรือเดาข้อมูลที่ไม่มีในแผนหรือข้อมูลเพิ่มเติม เช่น ชื่อร้านอาหาร ราคา อุณหภูมิ
+- ถ้ามี "ข้อมูลวันที่" ให้ใช้ตอบคำถามเกี่ยวกับ "วันนี้/พรุ่งนี้/เมื่อวาน/เหลือกี่วัน/คืนนี้นอนที่ไหน" โดยอ้างอิงว่าวันนี้คือวันที่เท่าไรของทริป แล้วดึงกิจกรรม/ที่พักของวันนั้นมาตอบ
 - ถ้าข้อมูลไม่มีในแผนและไม่มีข้อมูลเพิ่มเติม ให้ตอบว่า "ไม่มีข้อมูลในแผนของคุณ"
 - แต่ถ้ามีข้อมูลเพิ่มเติมให้แล้วยังตอบไม่ได้ ให้ตอบว่า "ขออภัยครับ ผมค้นหาข้อมูลเพิ่มเติมแล้ว แต่ไม่พบคำตอบที่ชัดเจนสำหรับคำถามนี้ครับ"
 - ใช้บทสนทนาก่อนหน้าเพื่อเข้าใจบริบท เช่น "แล้ววันถัดไปล่ะ" หมายถึงวันถัดจากที่เพิ่งพูดถึง
+${dateSection}
 
 แผนการเดินทาง:
 ${JSON.stringify(itinerary)}${extraSection}${historySection}
