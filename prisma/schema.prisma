@@ -138,3 +138,24 @@ model itinerary_blocks {
   tags       String[]                       @default([])
   created_at DateTime?                      @default(now()) @db.Timestamptz(6)
 }
+
+/// Node taxonomy (Phase N1 of the node/category redesign — see docs/node-architecture-spec.md).
+/// Reference data: a 3-level tree (root → category → subCategory) + emoji + optional transport
+/// filterGroup. `code` is the STABLE slug a future Node references. `destination` tags rows
+/// generic | JP (… TH/KR later) so the taxonomy is destination-agnostic, Japan-first.
+/// Seeded from docs/template-structure/dopamichi-categories.json via prisma/seed/seed-categories.ts.
+model Category {
+  id          String  @id @default(cuid())
+  code        String  @unique // "food.dine.ramen" — never change once a Node references it
+  root        String
+  category    String
+  subCategory String
+  emoji       String
+  filterGroup String? // transport only: public_transport | on_demand | private_transport
+  destination String  @default("generic") // generic | JP | TH | ...
+  description String?
+  sortOrder   Int     @default(0)
+
+  @@index([root])
+  @@index([destination])
+}
