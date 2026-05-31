@@ -1,0 +1,762 @@
+[
+  {
+    "code": "log.rail.jr",
+    "root": "Logistics",
+    "category": "Rail",
+    "subCategory": "JR (Local/Rapid)",
+    "emoji": "🚃",
+    "filterGroup": "public_transport",
+    "destination": "JP",
+    "description": "JR ในเมือง — Local/Rapid"
+  },
+  {
+    "code": "log.rail.shinkansen",
+    "root": "Logistics",
+    "category": "Rail",
+    "subCategory": "Shinkansen",
+    "emoji": "🚅",
+    "filterGroup": "public_transport",
+    "destination": "JP",
+    "description": "รถไฟหัวกระสุนระหว่างเมือง"
+  },
+  {
+    "code": "log.rail.metro",
+    "root": "Logistics",
+    "category": "Rail",
+    "subCategory": "Subway / Metro",
+    "emoji": "🚇",
+    "filterGroup": "public_transport",
+    "destination": "JP",
+    "description": "Tokyo Metro, Toei, Osaka Metro"
+  },
+  {
+    "code": "log.rail.private",
+    "root": "Logistics",
+    "category": "Rail",
+    "subCategory": "Private Railway",
+    "emoji": "🚆",
+    "filterGroup": "public_transport",
+    "destination": "JP",
+    "description": "Keio, Tokyu, Hankyu, Kintetsu…"
+  },
+  {
+    "code": "log.rail.ltdexp",
+    "root": "Logistics",
+    "category": "Rail",
+    "subCategory": "Limited Express",
+    "emoji": "🚄",
+    "filterGroup": "public_transport",
+    "destination": "JP",
+    "description": "Ltd. Express / Narita Express / Haruka"
+  },
+  {
+    "code": "log.rail.tram",
+    "root": "Logistics",
+    "category": "Rail",
+    "subCategory": "Tram / Streetcar",
+    "emoji": "🚋",
+    "filterGroup": "public_transport",
+    "destination": "JP",
+    "description": "เช่น Arashiyama, Hakodate"
+  },
+  {
+    "code": "log.road.citybus",
+    "root": "Logistics",
+    "category": "Road (Public)",
+    "subCategory": "City Bus",
+    "emoji": "🚌",
+    "filterGroup": "public_transport",
+    "destination": "generic",
+    "description": "รถเมล์ในเมือง"
+  },
+  {
+    "code": "log.road.highwaybus",
+    "root": "Logistics",
+    "category": "Road (Public)",
+    "subCategory": "Highway / Night Bus",
+    "emoji": "🚌",
+    "filterGroup": "public_transport",
+    "destination": "JP",
+    "description": "รถบัสระหว่างเมือง / กลางคืน"
+  },
+  {
+    "code": "log.road.airportbus",
+    "root": "Logistics",
+    "category": "Road (Public)",
+    "subCategory": "Airport Bus",
+    "emoji": "🚐",
+    "filterGroup": "public_transport",
+    "destination": "JP",
+    "description": "Airport Limousine"
+  },
+  {
+    "code": "log.hire.taxi",
+    "root": "Logistics",
+    "category": "Road (Hire)",
+    "subCategory": "Taxi",
+    "emoji": "🚕",
+    "filterGroup": "on_demand",
+    "destination": "generic",
+    "description": ""
+  },
+  {
+    "code": "log.hire.rideapp",
+    "root": "Logistics",
+    "category": "Road (Hire)",
+    "subCategory": "Ride App",
+    "emoji": "📱",
+    "filterGroup": "on_demand",
+    "destination": "generic",
+    "description": "GO, Uber (จำกัด)"
+  },
+  {
+    "code": "log.hire.rentalcar",
+    "root": "Logistics",
+    "category": "Road (Hire)",
+    "subCategory": "Rental Car",
+    "emoji": "🚗",
+    "filterGroup": "private_transport",
+    "destination": "generic",
+    "description": ""
+  },
+  {
+    "code": "log.air.domestic",
+    "root": "Logistics",
+    "category": "Air",
+    "subCategory": "Domestic Flight",
+    "emoji": "✈️",
+    "filterGroup": "public_transport",
+    "destination": "generic",
+    "description": "บินภายในประเทศ (Hokkaido/Okinawa)"
+  },
+  {
+    "code": "log.water.ferry",
+    "root": "Logistics",
+    "category": "Water",
+    "subCategory": "Ferry",
+    "emoji": "⛴️",
+    "filterGroup": "public_transport",
+    "destination": "generic",
+    "description": ""
+  },
+  {
+    "code": "log.water.cruise",
+    "root": "Logistics",
+    "category": "Water",
+    "subCategory": "Sightseeing Cruise",
+    "emoji": "🛥️",
+    "filterGroup": "public_transport",
+    "destination": "generic",
+    "description": ""
+  },
+  {
+    "code": "log.active.walk",
+    "root": "Logistics",
+    "category": "Active",
+    "subCategory": "Walking",
+    "emoji": "🚶",
+    "filterGroup": "public_transport",
+    "destination": "generic",
+    "description": "เส้นทางเดิน + ลิงก์นำทาง"
+  },
+  {
+    "code": "log.active.bike",
+    "root": "Logistics",
+    "category": "Active",
+    "subCategory": "Bicycle Rental",
+    "emoji": "🚲",
+    "filterGroup": "on_demand",
+    "destination": "generic",
+    "description": ""
+  },
+  {
+    "code": "live.stay.hotel",
+    "root": "Living",
+    "category": "Stay",
+    "subCategory": "Hotel",
+    "emoji": "🏨",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "Luxury / Boutique / Resort"
+  },
+  {
+    "code": "live.stay.business",
+    "root": "Living",
+    "category": "Stay",
+    "subCategory": "Business Hotel",
+    "emoji": "🏢",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "APA, Toyoko Inn…"
+  },
+  {
+    "code": "live.stay.ryokan",
+    "root": "Living",
+    "category": "Stay",
+    "subCategory": "Ryokan",
+    "emoji": "⛩️",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "เรียวกัง + ออนเซ็น/ไคเซกิ"
+  },
+  {
+    "code": "live.stay.capsule",
+    "root": "Living",
+    "category": "Stay",
+    "subCategory": "Capsule / Hostel",
+    "emoji": "🛏️",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "แคปซูล / โฮสเทล / เกสต์เฮาส์"
+  },
+  {
+    "code": "live.stay.rental",
+    "root": "Living",
+    "category": "Stay",
+    "subCategory": "Short-term Rental",
+    "emoji": "🏡",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "Airbnb / อพาร์ตเมนต์"
+  },
+  {
+    "code": "live.stay.unique",
+    "root": "Living",
+    "category": "Stay",
+    "subCategory": "Unique Stay",
+    "emoji": "⛺",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "Glamping / Minshuku / Temple Stay"
+  },
+  {
+    "code": "live.stay.transit",
+    "root": "Living",
+    "category": "Stay",
+    "subCategory": "Transit Stay",
+    "emoji": "🛋️",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "Airport lounge / day-use"
+  },
+  {
+    "code": "food.dine.restaurant",
+    "root": "Food & Beverage",
+    "category": "Dining",
+    "subCategory": "Restaurant",
+    "emoji": "🍽️",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "ทั่วไป / Casual / Fine"
+  },
+  {
+    "code": "food.dine.ramen",
+    "root": "Food & Beverage",
+    "category": "Dining",
+    "subCategory": "Ramen / Noodles",
+    "emoji": "🍜",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "ราเมน / โซบะ / อุด้ง"
+  },
+  {
+    "code": "food.dine.sushi",
+    "root": "Food & Beverage",
+    "category": "Dining",
+    "subCategory": "Sushi / Omakase",
+    "emoji": "🍣",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": ""
+  },
+  {
+    "code": "food.dine.yakiniku",
+    "root": "Food & Beverage",
+    "category": "Dining",
+    "subCategory": "Yakiniku / Teppan",
+    "emoji": "🥩",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "ปิ้งย่าง / เทปปันยากิ"
+  },
+  {
+    "code": "food.dine.izakaya",
+    "root": "Food & Beverage",
+    "category": "Dining",
+    "subCategory": "Izakaya",
+    "emoji": "🍶",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "ร้านเหล้า + กับแกล้ม"
+  },
+  {
+    "code": "food.dine.kaiseki",
+    "root": "Food & Beverage",
+    "category": "Dining",
+    "subCategory": "Kaiseki / Fine",
+    "emoji": "🍱",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "อาหารชั้นสูงตามฤดูกาล"
+  },
+  {
+    "code": "food.dine.depachika",
+    "root": "Food & Beverage",
+    "category": "Dining",
+    "subCategory": "Depachika / Hall",
+    "emoji": "🏬",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "ใต้ห้าง — อาหารพร้อมทาน"
+  },
+  {
+    "code": "food.dine.konbini",
+    "root": "Food & Beverage",
+    "category": "Dining",
+    "subCategory": "Convenience Store",
+    "emoji": "🏪",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "konbini — 7/Lawson/FamilyMart"
+  },
+  {
+    "code": "food.dine.street",
+    "root": "Food & Beverage",
+    "category": "Dining",
+    "subCategory": "Street Food",
+    "emoji": "🍢",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "แผงข้างทาง / ตลาดกลางคืน"
+  },
+  {
+    "code": "food.cafe.cafe",
+    "root": "Food & Beverage",
+    "category": "Cafe",
+    "subCategory": "Cafe",
+    "emoji": "☕",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": ""
+  },
+  {
+    "code": "food.cafe.kissaten",
+    "root": "Food & Beverage",
+    "category": "Cafe",
+    "subCategory": "Kissaten",
+    "emoji": "🍮",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "คาเฟ่เรโทรญี่ปุ่น"
+  },
+  {
+    "code": "food.cafe.sweets",
+    "root": "Food & Beverage",
+    "category": "Cafe",
+    "subCategory": "Sweets / Bakery",
+    "emoji": "🍰",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "ขนม / เบเกอรี / มัทฉะ"
+  },
+  {
+    "code": "food.bar.bar",
+    "root": "Food & Beverage",
+    "category": "Bar",
+    "subCategory": "Bar / Standing Bar",
+    "emoji": "🍸",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "บาร์ / รูฟท็อป / tachinomi"
+  },
+  {
+    "code": "exp.land.temple",
+    "root": "Experiences",
+    "category": "Landmark",
+    "subCategory": "Temple & Shrine",
+    "emoji": "⛩️",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "วัด / ศาลเจ้า"
+  },
+  {
+    "code": "exp.land.castle",
+    "root": "Experiences",
+    "category": "Landmark",
+    "subCategory": "Castle",
+    "emoji": "🏯",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": ""
+  },
+  {
+    "code": "exp.land.nature",
+    "root": "Experiences",
+    "category": "Landmark",
+    "subCategory": "Park & Nature",
+    "emoji": "🌳",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "สวน / ภูเขา / ชายหาด / เดินป่า"
+  },
+  {
+    "code": "exp.land.garden",
+    "root": "Experiences",
+    "category": "Landmark",
+    "subCategory": "Japanese Garden",
+    "emoji": "🍁",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": ""
+  },
+  {
+    "code": "exp.land.museum",
+    "root": "Experiences",
+    "category": "Landmark",
+    "subCategory": "Arts & Museums",
+    "emoji": "🎨",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": ""
+  },
+  {
+    "code": "exp.land.observation",
+    "root": "Experiences",
+    "category": "Landmark",
+    "subCategory": "Observation Deck",
+    "emoji": "🗼",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "จุดชมวิว / หอคอย"
+  },
+  {
+    "code": "exp.land.themepark",
+    "root": "Experiences",
+    "category": "Landmark",
+    "subCategory": "Theme Park",
+    "emoji": "🎢",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "Disney / USJ / สวนสนุก"
+  },
+  {
+    "code": "exp.act.onsen",
+    "root": "Experiences",
+    "category": "Activity",
+    "subCategory": "Onsen / Sento",
+    "emoji": "♨️",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "ออนเซ็น / เซ็นโต"
+  },
+  {
+    "code": "exp.act.seasonal",
+    "root": "Experiences",
+    "category": "Activity",
+    "subCategory": "Seasonal",
+    "emoji": "🌸",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "ซากุระ / ใบไม้แดง / หิมะ"
+  },
+  {
+    "code": "exp.act.ski",
+    "root": "Experiences",
+    "category": "Activity",
+    "subCategory": "Ski / Snow",
+    "emoji": "🎿",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": ""
+  },
+  {
+    "code": "exp.act.workshop",
+    "root": "Experiences",
+    "category": "Activity",
+    "subCategory": "Workshop",
+    "emoji": "🧶",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "ทำอาหาร / พิธีชงชา / คราฟต์"
+  },
+  {
+    "code": "exp.act.strolling",
+    "root": "Experiences",
+    "category": "Activity",
+    "subCategory": "Strolling",
+    "emoji": "🚶‍♂️",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "เดินเล่นชมเมือง"
+  },
+  {
+    "code": "exp.act.extreme",
+    "root": "Experiences",
+    "category": "Activity",
+    "subCategory": "Extreme Activity",
+    "emoji": "🏄",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": ""
+  },
+  {
+    "code": "exp.night.club",
+    "root": "Experiences",
+    "category": "Nightlife",
+    "subCategory": "Night Club",
+    "emoji": "💃",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": ""
+  },
+  {
+    "code": "exp.night.livehouse",
+    "root": "Experiences",
+    "category": "Nightlife",
+    "subCategory": "Live House",
+    "emoji": "🎤",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "ดนตรีสด"
+  },
+  {
+    "code": "exp.svc.beauty",
+    "root": "Experiences",
+    "category": "Service",
+    "subCategory": "Beauty",
+    "emoji": "💅",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "ทำเล็บ / ผม"
+  },
+  {
+    "code": "shop.dept",
+    "root": "Goods & Retail",
+    "category": "Shopping",
+    "subCategory": "Department Store",
+    "emoji": "🏬",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "Isetan, Takashimaya…"
+  },
+  {
+    "code": "shop.mall",
+    "root": "Goods & Retail",
+    "category": "Shopping",
+    "subCategory": "Shopping Mall",
+    "emoji": "🛍️",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": ""
+  },
+  {
+    "code": "shop.shotengai",
+    "root": "Goods & Retail",
+    "category": "Shopping",
+    "subCategory": "Shopping Street",
+    "emoji": "🏮",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "Shotengai / ถนนการค้า"
+  },
+  {
+    "code": "shop.market",
+    "root": "Goods & Retail",
+    "category": "Shopping",
+    "subCategory": "Local Market",
+    "emoji": "🐟",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "ตลาดสด เช่น Nishiki / Tsukiji"
+  },
+  {
+    "code": "shop.donki",
+    "root": "Goods & Retail",
+    "category": "Shopping",
+    "subCategory": "Discount / Drugstore",
+    "emoji": "💊",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "Don Quijote / ร้านยา"
+  },
+  {
+    "code": "shop.electronics",
+    "root": "Goods & Retail",
+    "category": "Shopping",
+    "subCategory": "Electronics",
+    "emoji": "📷",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "Akihabara / Yodobashi / BIC"
+  },
+  {
+    "code": "shop.anime",
+    "root": "Goods & Retail",
+    "category": "Shopping",
+    "subCategory": "Anime & Hobby",
+    "emoji": "🎮",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "ของอนิเมะ / มังงะ / ฟิกเกอร์"
+  },
+  {
+    "code": "shop.100yen",
+    "root": "Goods & Retail",
+    "category": "Shopping",
+    "subCategory": "100-Yen Shop",
+    "emoji": "🪙",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "Daiso / Seria"
+  },
+  {
+    "code": "shop.souvenir",
+    "root": "Goods & Retail",
+    "category": "Shopping",
+    "subCategory": "Souvenirs / Omiyage",
+    "emoji": "🎁",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "ของฝาก"
+  },
+  {
+    "code": "shop.specialty",
+    "root": "Goods & Retail",
+    "category": "Shopping",
+    "subCategory": "Specialty / Vintage",
+    "emoji": "👕",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "วินเทจ / มือสอง"
+  },
+  {
+    "code": "svc.locker",
+    "root": "Admin & Services",
+    "category": "Utility",
+    "subCategory": "Coin Locker / Luggage",
+    "emoji": "🛅",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "ตู้ล็อกเกอร์ / ฝากกระเป๋า"
+  },
+  {
+    "code": "svc.parking",
+    "root": "Admin & Services",
+    "category": "Utility",
+    "subCategory": "Parking",
+    "emoji": "🅿️",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": ""
+  },
+  {
+    "code": "svc.info",
+    "root": "Admin & Services",
+    "category": "Utility",
+    "subCategory": "Tourist Info",
+    "emoji": "ℹ️",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": ""
+  },
+  {
+    "code": "svc.rental",
+    "root": "Admin & Services",
+    "category": "Utility",
+    "subCategory": "Rental (Gear/Wifi)",
+    "emoji": "🎒",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "เช่าอุปกรณ์ / pocket wifi / กิโมโน"
+  },
+  {
+    "code": "svc.pass.jr",
+    "root": "Admin & Services",
+    "category": "Passes",
+    "subCategory": "JR Pass",
+    "emoji": "🎫",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "JR Pass / regional passes"
+  },
+  {
+    "code": "svc.pass.ic",
+    "root": "Admin & Services",
+    "category": "Passes",
+    "subCategory": "IC Card",
+    "emoji": "💳",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "Suica / Pasmo / ICOCA"
+  },
+  {
+    "code": "svc.pass.ticket",
+    "root": "Admin & Services",
+    "category": "Passes",
+    "subCategory": "Attraction Ticket",
+    "emoji": "🎟️",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "บัตรเข้าชม / จองล่วงหน้า"
+  },
+  {
+    "code": "emg.finance",
+    "root": "Emergency",
+    "category": "Emergency",
+    "subCategory": "Finance",
+    "emoji": "💰",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "ATM (7-Bank) / แลกเงิน"
+  },
+  {
+    "code": "emg.health",
+    "root": "Emergency",
+    "category": "Emergency",
+    "subCategory": "Health",
+    "emoji": "🏥",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "โรงพยาบาล / ร้านยา / คลินิก"
+  },
+  {
+    "code": "emg.comm",
+    "root": "Emergency",
+    "category": "Emergency",
+    "subCategory": "Communication",
+    "emoji": "📶",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "SIM / pocket wifi / ไปรษณีย์"
+  },
+  {
+    "code": "emg.docs",
+    "root": "Emergency",
+    "category": "Emergency",
+    "subCategory": "Documentation",
+    "emoji": "🛂",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "สถานทูต / วีซ่า"
+  },
+  {
+    "code": "emg.police",
+    "root": "Emergency",
+    "category": "Emergency",
+    "subCategory": "Police / Koban",
+    "emoji": "👮",
+    "filterGroup": "",
+    "destination": "JP",
+    "description": "ป้อมตำรวจ / Help desk"
+  },
+  {
+    "code": "emg.laundry",
+    "root": "Emergency",
+    "category": "Emergency",
+    "subCategory": "Laundry",
+    "emoji": "🧺",
+    "filterGroup": "",
+    "destination": "generic",
+    "description": "Coin laundry"
+  }
+]
