@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Plus, Edit2, Trash2, TrendingUp, Users, FileText, BookOpen, X, Eye, EyeOff, Check, AlertCircle, Copy, Sparkles, Boxes } from 'lucide-react'
-import CoverUpload from '@/app/components/CoverUpload'
-import RangeEditor from '@/app/components/RangeEditor'
+import { ArrowLeft, Plus, Edit2, Trash2, TrendingUp, Users, FileText, BookOpen, X, Eye, EyeOff, AlertCircle, Sparkles, Boxes } from 'lucide-react'
+import CoverPicker from '@/app/components/CoverPicker'
+import PlanPreviewModal from '@/app/components/PlanPreviewModal'
+import type { PlanTemplate } from '@/app/components/PlanCard'
 import { resolveCoverImage } from '@/lib/cover-image'
-import type { DateRange, TripAvailability } from '@/lib/itinerary-types'
+import type { TripAvailability } from '@/lib/itinerary-types'
 import { formatRanges } from '@/lib/availability'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -54,13 +55,13 @@ type Tab = 'trips' | 'templates'
 // ── Main component ───────────────────────────────────────────────────────────
 
 export default function AdminDashboard({ currentUser }: { currentUser: CurrentUser }) {
-  const [tab, setTab] = useState<Tab>('trips')
+  const [tab, setTab] = useState<Tab>('templates')
   const [trips, setTrips] = useState<TripRow[]>([])
   const [templates, setTemplates] = useState<TemplateRow[]>([])
   const [nodesCount, setNodesCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [promoteTripId, setPromoteTripId] = useState<string | null>(null)
-  const [editTemplate, setEditTemplate] = useState<TemplateRow | null>(null)
+  const [viewId, setViewId] = useState<string | null>(null)
 
   async function loadAll() {
     setLoading(true)
@@ -250,25 +251,20 @@ export default function AdminDashboard({ currentUser }: { currentUser: CurrentUs
         ) : (
           <TemplatesGrid
             templates={templates}
-            onEdit={(tpl) => setEditTemplate(tpl)}
+            onView={(id) => setViewId(id)}
             onDelete={handleDeleteTemplate}
             onTogglePublished={handleTogglePublished}
             onCleanupCovers={handleCleanupCovers}
           />
         )}
 
-        {/* Edit template modal */}
-        {editTemplate && (
-          <TemplateFormModal
-            mode="edit"
-            template={editTemplate}
-            onClose={() => setEditTemplate(null)}
-            onSaved={() => {
-              setEditTemplate(null)
-              loadAll()
-            }}
-          />
-        )}
+        {/* Preview modal — same component travelers use on /pre-planned */}
+        <PlanPreviewModal
+          template={(templates.find((t) => t.id === viewId) ?? null) as unknown as PlanTemplate | null}
+          callbackUrl="/admin/dashboard"
+          viewOnly
+          onClose={() => setViewId(null)}
+        />
 
         {/* Promote trip → template modal */}
         {promoteTripId && (
@@ -468,13 +464,13 @@ function SourceBadge({ source }: { source: string | null }) {
 
 function TemplatesGrid({
   templates,
-  onEdit,
+  onView,
   onDelete,
   onTogglePublished,
   onCleanupCovers,
 }: {
   templates: TemplateRow[]
-  onEdit: (tpl: TemplateRow) => void
+  onView: (id: string) => void
   onDelete: (id: string) => void
   onTogglePublished: (tpl: TemplateRow) => void
   onCleanupCovers: () => void
@@ -505,18 +501,18 @@ function TemplatesGrid({
           <p className="text-zen-black/30 text-sm">Use <span className="text-basel-brick font-bold">Build New Trip</span> to create one.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {templates.map((tpl) => {
-            const v2 = (tpl.itinerary as { version?: number } | null)?.version === 2
             const rec = tpl.availability?.recommended ?? []
             const avail = tpl.availability?.available ?? []
             return (
-            <div key={tpl.id} className="group bg-white border border-zen-black/10 rounded-xl p-4 flex flex-col hover:shadow-lg transition-all">
-              <div className="relative aspect-[16/10] overflow-hidden mb-4 rounded-lg bg-briefing-cream">
-                <Image alt={tpl.title} src={resolveCoverImage(tpl.coverImage, tpl.id)} fill className="object-cover" sizes="(max-width: 768px) 100vw, 33vw" />
-                <div className="absolute top-2 left-2 flex gap-1.5">
-                  <span className="text-[9px] font-black uppercase tracking-widest bg-zen-black/70 text-white px-2 py-0.5 rounded backdrop-blur-sm">{tpl.totalDays}D</span>
-                  <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded backdrop-blur-sm ${v2 ? 'bg-emerald-600 text-white' : 'bg-white/80 text-zen-black/60'}`}>{v2 ? 'v2' : 'v1'}</span>
+            <div key={tpl.id} onClick={() => onView(tpl.id)} title="ดูแพลน · Preview" className="group flex flex-col bg-white border border-zen-black/10 rounded-xl p-4 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer">
+              {/* Cover — 4:5 portrait, matching the public PlanCard the traveler sees */}
+              <div className="relative aspect-[4/5] overflow-hidden mb-4 rounded-lg bg-briefing-cream">
+                <Image alt={tpl.title} src={resolveCoverImage(tpl.coverImage, tpl.id)} fill className="object-cover transition-all duration-700 group-hover:scale-105" sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw" />
+                {/* DAYS badge over gradient — same treatment as PlanCard */}
+                <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-zen-black/80 to-transparent">
+                  <span className="bg-basel-brick text-briefing-cream px-3 py-1 text-[10px] font-black uppercase tracking-widest font-headline">{tpl.totalDays} DAYS</span>
                 </div>
                 {!tpl.published && (
                   <div className="absolute inset-0 bg-zen-black/60 flex items-center justify-center">
@@ -525,18 +521,18 @@ function TemplatesGrid({
                 )}
               </div>
 
-              <h3 className="font-headline font-bold text-lg text-zen-black leading-tight mb-1">{tpl.title}</h3>
-              {tpl.description && <p className="text-xs text-zen-black/55 leading-relaxed mb-3 line-clamp-2">{tpl.description}</p>}
+              <h3 className="text-2xl font-headline font-bold text-zen-black leading-tight mb-1">{tpl.title}</h3>
+              {tpl.description && <p className="text-sm text-zen-black/60 leading-relaxed mb-3 line-clamp-2">{tpl.description}</p>}
 
-              {/* Seasonal availability — drives the /pre-planned date filter */}
-              <div className="mb-3 space-y-0.5">
+              {/* Travel periods — same layout as PlanCard */}
+              <div className="mb-3 space-y-1">
                 {rec.length > 0 && (
-                  <p className="text-[10px] text-basel-brick font-bold flex items-center gap-1">
-                    <Sparkles size={10} strokeWidth={2.5} className="flex-shrink-0" /> {formatRanges(rec, 'th')}
+                  <p className="text-[11px] text-basel-brick font-bold">
+                    <span className="uppercase tracking-widest text-[9px] text-basel-brick/60 mr-1">แนะนำ</span>{formatRanges(rec, 'th')}
                   </p>
                 )}
-                <p className="text-[10px] text-zen-black/45">
-                  <span className="uppercase tracking-widest text-[8px] text-zen-black/35 mr-1">เปิด</span>{formatRanges(avail, 'th')}
+                <p className="text-[11px] text-zen-black/50">
+                  <span className="uppercase tracking-widest text-[9px] text-zen-black/40 mr-1">เปิดให้เที่ยว</span>{formatRanges(avail, 'th')}
                 </p>
               </div>
 
@@ -544,26 +540,20 @@ function TemplatesGrid({
                 <span>{tpl.season ?? '—'}</span><span>·</span><span>{tpl._count.savedAs} saves</span>
               </div>
 
-              {/* Canonical share code — click copies the full `/activate TKY-427` command. */}
+              {/* Template code — an identifier (view-only on LINE), NOT a personal
+                  /activate code, so it's shown as plain text, not a copy button. */}
               {tpl.shareCode && (
-                <button
-                  onClick={() => navigator.clipboard.writeText(`/activate ${tpl.shareCode}`)}
-                  title="Copy /activate command"
-                  className="w-full mb-3 flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-zen-black text-white hover:bg-basel-brick transition-colors group/code"
-                >
-                  <div className="flex flex-col items-start leading-tight">
-                    <span className="text-[8px] font-black uppercase tracking-widest text-white/50">Share code</span>
-                    <span className="font-mono text-sm font-bold">{tpl.shareCode}</span>
-                  </div>
-                  <Copy size={14} className="text-white/60 group-hover/code:text-white" />
-                </button>
+                <p className="mb-3 text-[11px] text-zen-black/50" title="Template code (view-only on LINE) — not a chatbot activation code">
+                  <span className="uppercase tracking-widest text-[9px] text-zen-black/40 mr-1">Code</span>
+                  <span className="font-mono font-bold text-zen-black/70">{tpl.shareCode}</span>
+                </p>
               )}
 
-              <div className="mt-auto pt-3 border-t border-zen-black/10 flex items-center justify-between gap-2">
+              <div className="mt-auto pt-3 border-t border-zen-black/10 flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
                 <span className="text-[9px] text-zen-black/40 truncate">{tpl.createdBy.email ?? 'system'}</span>
                 <div className="flex gap-1">
                   <button onClick={() => onTogglePublished(tpl)} title={tpl.published ? 'Unpublish' : 'Publish'} className="p-1.5 text-zen-black/60 hover:text-basel-brick transition-colors">{tpl.published ? <Eye size={14} /> : <EyeOff size={14} />}</button>
-                  <button onClick={() => onEdit(tpl)} title="Edit" className="p-1.5 text-zen-black/60 hover:text-basel-brick transition-colors"><Edit2 size={14} /></button>
+                  <Link href={`/admin/trip-builder/${tpl.id}`} title="Edit in builder" className="p-1.5 text-zen-black/60 hover:text-basel-brick transition-colors"><Edit2 size={14} /></Link>
                   <button onClick={() => onDelete(tpl.id)} title="Delete" className="p-1.5 text-zen-black/60 hover:text-red-600 transition-colors"><Trash2 size={14} /></button>
                 </div>
               </div>
@@ -573,232 +563,6 @@ function TemplatesGrid({
         </div>
       )}
     </div>
-  )
-}
-
-// ── Template form modal (create + edit share the same form) ─────────────────
-
-function TemplateFormModal({
-  mode,
-  template,
-  onClose,
-  onSaved,
-}: {
-  mode: 'create' | 'edit'
-  template?: TemplateRow
-  onClose: () => void
-  onSaved: () => void
-}) {
-  const [title, setTitle] = useState(template?.title ?? '')
-  const [description, setDescription] = useState(template?.description ?? '')
-  const [totalDays, setTotalDays] = useState(template?.totalDays?.toString() ?? '')
-  const [season, setSeason] = useState(template?.season ?? 'Winter')
-  const [coverImage, setCoverImage] = useState<string | null>(template?.coverImage ?? null)
-  const [itineraryJson, setItineraryJson] = useState('')
-  const [published, setPublished] = useState(template?.published ?? true)
-  const [available, setAvailable] = useState<DateRange[]>(template?.availability?.available ?? [])
-  const [recommended, setRecommended] = useState<DateRange[]>(template?.availability?.recommended ?? [])
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    // For edit mode, we need the full itinerary JSON. Since the admin list
-    // doesn't include it, fetch from the public endpoint.
-    if (mode === 'edit' && template) {
-      fetch('/api/templates')
-        .then((r) => r.json())
-        .then((data) => {
-          const full = data.templates?.find((t: { id: string }) => t.id === template.id)
-          if (full?.itinerary) {
-            setItineraryJson(JSON.stringify(full.itinerary, null, 2))
-          }
-        })
-        .catch(() => null)
-    }
-  }, [mode, template])
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError(null)
-
-    let itinerary
-    try {
-      itinerary = JSON.parse(itineraryJson)
-    } catch {
-      setError('Itinerary JSON is invalid. Please check the syntax.')
-      return
-    }
-
-    setSaving(true)
-    try {
-      const url =
-        mode === 'create' ? '/api/admin/templates' : `/api/admin/templates/${template?.id}`
-      const method = mode === 'create' ? 'POST' : 'PATCH'
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title,
-          description: description || null,
-          totalDays: parseInt(totalDays, 10),
-          season,
-          coverImage: coverImage || null,
-          itinerary,
-          published,
-          // null = always available; the API validates the MM-DD ranges.
-          availability:
-            available.length === 0 && recommended.length === 0
-              ? null
-              : { available, recommended },
-        }),
-      })
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body.error ?? 'Save failed')
-      }
-      onSaved()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Save failed')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <ModalShell onClose={onClose}>
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="flex items-center justify-between border-b border-zen-black/10 pb-4">
-          <h2 className="font-headline font-black text-2xl italic text-zen-black">
-            {mode === 'create' ? 'New Pre-planned Trip' : 'Edit Pre-planned Trip'}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-zen-black/40 hover:text-zen-black"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {error && (
-          <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-800 text-xs">
-            {error}
-          </div>
-        )}
-
-        <Field label="Title">
-          <input
-            required
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="input"
-          />
-        </Field>
-
-        <Field label="Description">
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={2}
-            className="input"
-          />
-        </Field>
-
-        <div className="grid grid-cols-3 gap-4">
-          <Field label="Total Days">
-            <input
-              required
-              type="number"
-              min="1"
-              value={totalDays}
-              onChange={(e) => setTotalDays(e.target.value)}
-              className="input"
-            />
-          </Field>
-          <Field label="Season">
-            <select
-              value={season}
-              onChange={(e) => setSeason(e.target.value)}
-              className="input"
-            >
-              <option value="Winter">Winter</option>
-              <option value="Spring">Spring</option>
-              <option value="Summer">Summer</option>
-              <option value="Autumn">Autumn</option>
-            </select>
-          </Field>
-          <Field label="Published">
-            <select
-              value={published ? 'yes' : 'no'}
-              onChange={(e) => setPublished(e.target.value === 'yes')}
-              className="input"
-            >
-              <option value="yes">Yes</option>
-              <option value="no">No</option>
-            </select>
-          </Field>
-        </div>
-
-        <Field label="Cover Image">
-          <CoverPicker value={coverImage} onChange={setCoverImage} />
-        </Field>
-
-        {/* Seasonal availability — drives the /pre-planned date filter */}
-        <div className="border border-zen-black/15 p-4 space-y-4 bg-white/40">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-basel-brick">
-              Travel availability
-            </p>
-            <p className="text-[10px] text-zen-black/50 mt-1 leading-relaxed">
-              Dates are year-agnostic. Leave <strong>Available</strong> empty = open all year.
-              A trip is hidden on /pre-planned when the user&apos;s whole trip span can&apos;t fit
-              inside an available window (e.g. a Kamikochi trip in winter).
-            </p>
-          </div>
-          <RangeEditor
-            label="Available (open) windows"
-            hint="When nothing inside is closed"
-            ranges={available}
-            onChange={setAvailable}
-          />
-          <RangeEditor
-            label="Recommended windows"
-            hint="Best time to go — gets a ✨ badge + sorts to top"
-            ranges={recommended}
-            onChange={setRecommended}
-          />
-        </div>
-
-        <Field label="Itinerary JSON">
-          <textarea
-            required
-            value={itineraryJson}
-            onChange={(e) => setItineraryJson(e.target.value)}
-            rows={12}
-            className="input font-mono text-xs"
-            placeholder='{"title":"...","totalDays":7,"season":"Winter","days":[...]}'
-          />
-        </Field>
-
-        <div className="flex gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={saving}
-            className="flex-1 py-3 border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-white transition-all disabled:opacity-40"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={saving}
-            className="flex-1 py-3 bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all disabled:opacity-40"
-          >
-            {saving ? 'Saving...' : mode === 'create' ? 'Create' : 'Save'}
-          </button>
-        </div>
-      </form>
-    </ModalShell>
   )
 }
 
@@ -963,227 +727,6 @@ function PromoteModal({
         </div>
       </form>
     </ModalShell>
-  )
-}
-
-interface CloudinaryAsset {
-  public_id: string
-  secure_url: string
-  width: number
-  height: number
-  format: string
-  created_at: string
-  bytes: number
-}
-
-/**
- * Cover image picker — used in the promote modal and the template form modal.
- *
- * Three ways to set a cover:
- *   1. Pick a preset IMG key (stock1-4) — brand defaults
- *   2. Pick any previously-uploaded image from the dopamichi/covers Cloudinary
- *      folder (library browser, loaded from /api/admin/cloudinary/covers)
- *   3. Upload a new file via Cloudinary's hosted widget (4:5 forced crop)
- *
- * The stored value is either:
- *   - a short IMG key (e.g. "stock1") when a preset is picked
- *   - a full Cloudinary secure_url when a library asset or custom upload is chosen
- * Resolved to a final URL by lib/cover-image.ts at render time.
- */
-function CoverPicker({
-  value,
-  onChange,
-}: {
-  value: string | null
-  onChange: (value: string | null) => void
-}) {
-  // Cloudinary library state
-  const [libraryAssets, setLibraryAssets] = useState<CloudinaryAsset[]>([])
-  const [libraryLoading, setLibraryLoading] = useState(true)
-  const [libraryError, setLibraryError] = useState<string | null>(null)
-
-  async function loadLibrary() {
-    setLibraryLoading(true)
-    setLibraryError(null)
-    try {
-      const res = await fetch('/api/admin/cloudinary/covers')
-      const data = await res.json()
-      if (!res.ok) {
-        setLibraryError(data.error ?? `HTTP ${res.status}`)
-        return
-      }
-      setLibraryAssets(data.assets ?? [])
-    } catch (err) {
-      setLibraryError(err instanceof Error ? err.message : 'Failed to load library')
-    } finally {
-      setLibraryLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    loadLibrary()
-  }, [])
-
-  // After a fresh upload Cloudinary's Admin API list takes ~1–2s to reflect
-  // the new asset, so we also receive the URL from CoverUpload and prepend
-  // it to the library optimistically.
-  function handleUploaded(url: string) {
-    setLibraryAssets((prev) => {
-      if (prev.some((a) => a.secure_url === url)) return prev
-      return [
-        {
-          public_id: url.split('/').slice(-2).join('/').replace(/\.[^.]+$/, ''),
-          secure_url: url,
-          width: 0,
-          height: 0,
-          format: '',
-          created_at: new Date().toISOString(),
-          bytes: 0,
-        },
-        ...prev,
-      ]
-    })
-    // Also trigger a real refresh so we get the full metadata eventually
-    setTimeout(loadLibrary, 2000)
-  }
-
-  async function handleDeleteAsset(asset: CloudinaryAsset, e: React.MouseEvent) {
-    e.stopPropagation()
-    if (!confirm(`Delete this image from Cloudinary and remove it from any template/trip using it?\n\n${asset.public_id}`)) return
-    try {
-      const res = await fetch('/api/admin/cloudinary/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          public_id: asset.public_id,
-          secure_url: asset.secure_url,
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Delete failed')
-      // Remove from local state
-      setLibraryAssets((prev) => prev.filter((a) => a.public_id !== asset.public_id))
-      // If the current value points at this asset, clear it
-      if (value === asset.secure_url) onChange(null)
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Delete failed')
-    }
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* Cloudinary library — browse dopamichi/covers folder */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-zen-black/60">
-            From Cloudinary library{libraryAssets.length > 0 ? ` (${libraryAssets.length})` : ''}
-          </p>
-          <button
-            type="button"
-            onClick={loadLibrary}
-            disabled={libraryLoading}
-            className="text-[9px] font-bold uppercase tracking-widest text-zen-black/40 hover:text-basel-brick disabled:opacity-40"
-          >
-            {libraryLoading ? 'Loading...' : 'Refresh'}
-          </button>
-        </div>
-
-        {libraryLoading ? (
-          <div className="grid grid-cols-4 gap-2">
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="aspect-square bg-zen-black/5 animate-pulse" />
-            ))}
-          </div>
-        ) : libraryError ? (
-          <div className="p-3 bg-red-50 border-l-4 border-red-600 flex items-start gap-2">
-            <AlertCircle size={14} className="text-red-600 flex-shrink-0 mt-0.5" />
-            <div className="space-y-1 flex-1">
-              <p className="text-[10px] font-black uppercase tracking-widest text-red-700">
-                Cloudinary list failed
-              </p>
-              <p className="text-[10px] text-red-700 font-mono break-all">{libraryError}</p>
-            </div>
-          </div>
-        ) : libraryAssets.length === 0 ? (
-          <div className="p-4 bg-briefing-cream border border-zen-black/10 space-y-2">
-            <p className="text-[10px] text-zen-black/60 italic leading-relaxed">
-              No assets found under <code className="font-mono bg-zen-black/5 px-1">dopamichi/covers</code>.
-            </p>
-            <p className="text-[10px] text-zen-black/40 leading-relaxed">
-              Upload your first cover below, or verify the upload preset has{' '}
-              <code className="font-mono bg-zen-black/5 px-1">Folder = dopamichi/covers</code> set
-              in the Cloudinary dashboard.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-4 gap-2 max-h-80 overflow-y-auto pr-1">
-            {libraryAssets.map((asset) => {
-              const isSelected = value === asset.secure_url
-              return (
-                <div
-                  key={asset.public_id}
-                  className={`relative aspect-square overflow-hidden border-2 transition-all group ${
-                    isSelected
-                      ? 'border-basel-brick scale-95'
-                      : 'border-transparent hover:border-zen-black/30'
-                  }`}
-                  title={asset.public_id}
-                >
-                  <button
-                    type="button"
-                    onClick={() => onChange(asset.secure_url)}
-                    className="absolute inset-0 w-full h-full"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={asset.secure_url}
-                      alt={asset.public_id}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                    {isSelected && (
-                      <div className="absolute inset-0 bg-basel-brick/30 flex items-center justify-center">
-                        <div className="w-6 h-6 bg-basel-brick rounded-full flex items-center justify-center">
-                          <Check size={14} className="text-white" strokeWidth={3} />
-                        </div>
-                      </div>
-                    )}
-                  </button>
-                  {/* Delete button — hover reveal */}
-                  <button
-                    type="button"
-                    onClick={(e) => handleDeleteAsset(asset, e)}
-                    className="absolute top-1 right-1 z-10 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-700"
-                    title={`Delete ${asset.public_id} from Cloudinary`}
-                    aria-label="Delete asset"
-                  >
-                    <Trash2 size={11} strokeWidth={2.5} />
-                  </button>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* OR separator */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 h-px bg-zen-black/10" />
-        <span className="text-[9px] font-black uppercase tracking-widest text-zen-black/40">
-          or upload from device
-        </span>
-        <div className="flex-1 h-px bg-zen-black/10" />
-      </div>
-
-      {/* Branded upload — direct unsigned POST, cropping happens at
-          render time via c_fill,g_auto,ar_4:5 transformations. */}
-      <CoverUpload
-        value={value}
-        onChange={onChange}
-        label="Upload from device"
-        onUploaded={handleUploaded}
-      />
-    </div>
   )
 }
 

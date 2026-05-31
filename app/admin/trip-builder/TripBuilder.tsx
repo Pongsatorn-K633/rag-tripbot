@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Trash2, Save, X, Clock, ChevronDown } from 'lucide-react'
-import type { DayV2, Slot, NodeSnap, ItineraryV2, ActivityPriority, DateRange } from '@/lib/itinerary-types'
+import type { DayV2, Slot, NodeSnap, ItineraryV2, ActivityPriority, DateRange, TripAvailability } from '@/lib/itinerary-types'
 import NodePicker from './NodePicker'
 import RangeEditor from '@/app/components/RangeEditor'
+import CoverPicker from '@/app/components/CoverPicker'
 import { seasonsForRanges } from '@/lib/availability'
 
 interface JpArea { code: string; name: string; nameTh: string | null; type: string; regionCode: string | null }
@@ -23,18 +24,33 @@ function newDay(day: number): DayV2 {
 }
 const single = (node: NodeSnap): Slot => ({ kind: 'single', node })
 
-/** Admin v2 trip builder — mix-and-match library nodes into day slots, save as a template. */
-export default function TripBuilder() {
-  const [title, setTitle] = useState('')
+export interface BuilderInitial {
+  id: string
+  title: string
+  description: string | null
+  coverImage: string | null
+  shareCode: string | null
+  published: boolean
+  season: string | null
+  availability: TripAvailability | null
+  days: DayV2[]
+}
+
+/** Admin v2 trip builder — mix-and-match library nodes into day slots, save as a template.
+ *  Pass `initial` to edit an existing template (PATCH) instead of creating one (POST). */
+export default function TripBuilder({ initial }: { initial?: BuilderInitial }) {
+  const isEdit = !!initial
+  const [title, setTitle] = useState(initial?.title ?? '')
   const [provinceCode, setProvinceCode] = useState('')
-  const [description, setDescription] = useState('')
-  const [available, setAvailable] = useState<DateRange[]>([])
-  const [recommended, setRecommended] = useState<DateRange[]>([])
+  const [description, setDescription] = useState(initial?.description ?? '')
+  const [coverImage, setCoverImage] = useState<string | null>(initial?.coverImage ?? null)
+  const [available, setAvailable] = useState<DateRange[]>(initial?.availability?.available ?? [])
+  const [recommended, setRecommended] = useState<DateRange[]>(initial?.availability?.recommended ?? [])
   // Season is derived from the availability windows (recommended first), not picked.
   const recSeasons = seasonsForRanges(recommended)
   const availSeasons = seasonsForRanges(available)
   const derivedSeason = recSeasons[0] ?? availSeasons[0] ?? null
-  const [days, setDays] = useState<DayV2[]>([newDay(1)])
+  const [days, setDays] = useState<DayV2[]>(initial?.days ?? [newDay(1)])
   const [areas, setAreas] = useState<JpArea[]>([])
   const [nextCode, setNextCode] = useState<string | null>(null)
   const [picker, setPicker] = useState<{ onPick: (n: NodeSnap) => void } | null>(null)
@@ -72,20 +88,25 @@ export default function TripBuilder() {
   async function save() {
     if (!title.trim()) { setError('กรุณาตั้งชื่อทริป'); return }
     if (days.some((d) => !d.location.trim())) { setError('กรุณากรอกเมืองให้ครบทุกวัน'); return }
-    if (!provinceCode.trim()) { setError('กรุณาเลือกจังหวัด/ภูมิภาค (ใช้ขึ้นต้นรหัสทริป)'); return }
-    // Only hard-block on mismatch when the list actually loaded — otherwise the
-    // server validates it (avoids being stuck if /api/admin/jp-areas hiccups).
-    if (areas.length > 0 && !pickedArea) { setError('รหัสจังหวัด/ภูมิภาคไม่ตรงกับรายการ — เลือกจากรายการที่มี'); return }
+    if (!isEdit) {
+      if (!provinceCode.trim()) { setError('กรุณาเลือกจังหวัด/ภูมิภาค (ใช้ขึ้นต้นรหัสทริป)'); return }
+      // Only hard-block on mismatch when the list actually loaded — otherwise the
+      // server validates it (avoids being stuck if /api/admin/jp-areas hiccups).
+      if (areas.length > 0 && !pickedArea) { setError('รหัสจังหวัด/ภูมิภาคไม่ตรงกับรายการ — เลือกจากรายการที่มี'); return }
+    }
     setSaving(true); setError('')
     const itinerary: ItineraryV2 = { version: 2, title: title.trim(), totalDays: days.length, season: derivedSeason || undefined, description: description || undefined, days }
+    const availability = available.length || recommended.length ? { available, recommended } : null
     try {
-      const res = await fetch('/api/admin/templates', {
-        method: 'POST',
+      // Edit → PATCH the existing template (keeps its shareCode + published state);
+      // Create → POST a new draft. Province only mints a code on create.
+      const res = await fetch(isEdit ? `/api/admin/templates/${initial!.id}` : '/api/admin/templates', {
+        method: isEdit ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: title.trim(), itinerary, totalDays: days.length, season: derivedSeason || undefined,
-          description: description || undefined, published: false, provinceCode: provinceCode.trim() || undefined,
-          availability: available.length || recommended.length ? { available, recommended } : null,
+          description: description || null, coverImage: coverImage || null, availability,
+          ...(isEdit ? {} : { published: false, provinceCode: provinceCode.trim() || undefined }),
         }),
       })
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? 'Save failed')
@@ -97,7 +118,7 @@ export default function TripBuilder() {
 
   function reset() {
     setSaved(false); setSaving(false); setTitle(''); setProvinceCode(''); setDescription('')
-    setAvailable([]); setRecommended([]); setDays([newDay(1)])
+    setCoverImage(null); setAvailable([]); setRecommended([]); setDays([newDay(1)])
   }
 
   const inp = 'px-3 py-2 text-sm border border-zen-black/20 rounded-lg focus:outline-none focus:border-basel-brick bg-white'
@@ -109,17 +130,21 @@ export default function TripBuilder() {
           <div className="w-14 h-14 mx-auto bg-emerald-100 rounded-full flex items-center justify-center mb-4">
             <Save size={22} className="text-emerald-600" strokeWidth={2.5} />
           </div>
-          <h2 className="font-headline font-black text-2xl italic text-zen-black mb-2">บันทึกแล้ว!</h2>
+          <h2 className="font-headline font-black text-2xl italic text-zen-black mb-2">{isEdit ? 'บันทึกการแก้ไขแล้ว!' : 'บันทึกแล้ว!'}</h2>
           <p className="text-sm text-zen-black/60 leading-relaxed mb-6">
-            ทริปถูกบันทึกเป็น <b>แบบร่าง (ยังไม่เผยแพร่)</b> — ดูและกด “เผยแพร่” ได้ที่ Dashboard แท็บ <b>Pre-planned</b>
+            {isEdit
+              ? <>อัปเดตแพลนเรียบร้อย — ดูได้ที่ Dashboard แท็บ <b>Pre-planned</b></>
+              : <>ทริปถูกบันทึกเป็น <b>แบบร่าง (ยังไม่เผยแพร่)</b> — ดูและกด “เผยแพร่” ได้ที่ Dashboard แท็บ <b>Pre-planned</b></>}
           </p>
           <div className="flex gap-3">
             <Link href="/admin/dashboard" className="flex-1 py-3 rounded-lg bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all">
               ไปที่ Dashboard
             </Link>
-            <button onClick={reset} className="flex-1 py-3 rounded-lg border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-white transition-all">
-              สร้างอีกอัน
-            </button>
+            {!isEdit && (
+              <button onClick={reset} className="flex-1 py-3 rounded-lg border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-white transition-all">
+                สร้างอีกอัน
+              </button>
+            )}
           </div>
         </div>
       </main>
@@ -131,9 +156,9 @@ export default function TripBuilder() {
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-between gap-4 mb-8 border-b border-zen-black/10 pb-6">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-basel-brick">Admin · Builder</p>
-            <h1 className="text-4xl md:text-5xl font-black font-headline tracking-tighter text-zen-black italic">Trip Builder</h1>
-            <p className="text-sm text-zen-black/50 mt-1">สร้างแพลนแบบ node/slot (v2)</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-basel-brick">Admin · {isEdit ? 'Editor' : 'Builder'}</p>
+            <h1 className="text-4xl md:text-5xl font-black font-headline tracking-tighter text-zen-black italic">{isEdit ? 'Edit Trip' : 'Trip Builder'}</h1>
+            <p className="text-sm text-zen-black/50 mt-1">{isEdit ? 'แก้ไขแพลนแบบ node/slot (v2)' : 'สร้างแพลนแบบ node/slot (v2)'}</p>
           </div>
           <Link href="/admin/dashboard" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zen-black/60 hover:text-basel-brick"><ArrowLeft size={14} strokeWidth={3} /> Dashboard</Link>
         </div>
@@ -141,18 +166,36 @@ export default function TripBuilder() {
         {/* Meta */}
         <div className="bg-white border border-zen-black/10 rounded-xl p-4 mb-6 space-y-3">
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="ชื่อทริป · Trip title *" className={`${inp} w-full font-bold`} />
-          <div className="grid grid-cols-[1fr_auto] gap-3">
-            <AreaPicker areas={areas} value={provinceCode} onChange={setProvinceCode} />
-            <div className="flex items-center text-sm text-zen-black/50 px-1">{days.length} วัน</div>
-          </div>
-          {provinceCode && (
-            <p className="text-[11px] -mt-1 px-1">
-              {pickedArea
-                ? <span className="text-emerald-700">✓ <span className="font-mono font-bold">{pickedArea.code}</span> — {pickedArea.name}{pickedArea.nameTh ? ` · ${pickedArea.nameTh}` : ''} · {AREA_TYPE_TH[pickedArea.type] ?? pickedArea.type} → โค้ดจะเป็น <span className="font-mono font-bold">{nextCode ?? `${pickedArea.code}-…`}</span></span>
-                : <span className="text-amber-600">รหัส “{provinceCode}” ไม่ตรงกับจังหวัด/ภูมิภาคในรายการ</span>}
-            </p>
+          {isEdit ? (
+            <div className="flex items-center gap-3 text-sm px-1">
+              <span className="text-[10px] font-black uppercase tracking-widest text-basel-brick">Share code</span>
+              {initial?.shareCode
+                ? <span className="font-mono font-bold bg-zen-black text-white px-2 py-0.5 rounded">{initial.shareCode}</span>
+                : <span className="text-zen-black/30">—</span>}
+              <span className="ml-auto text-zen-black/50">{days.length} วัน</span>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-[1fr_auto] gap-3">
+                <AreaPicker areas={areas} value={provinceCode} onChange={setProvinceCode} />
+                <div className="flex items-center text-sm text-zen-black/50 px-1">{days.length} วัน</div>
+              </div>
+              {provinceCode && (
+                <p className="text-[11px] -mt-1 px-1">
+                  {pickedArea
+                    ? <span className="text-emerald-700">✓ <span className="font-mono font-bold">{pickedArea.code}</span> — {pickedArea.name}{pickedArea.nameTh ? ` · ${pickedArea.nameTh}` : ''} · {AREA_TYPE_TH[pickedArea.type] ?? pickedArea.type} → โค้ดจะเป็น <span className="font-mono font-bold">{nextCode ?? `${pickedArea.code}-…`}</span></span>
+                    : <span className="text-amber-600">รหัส “{provinceCode}” ไม่ตรงกับจังหวัด/ภูมิภาคในรายการ</span>}
+                </p>
+              )}
+            </>
           )}
           <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="คำอธิบายสั้น ๆ · Description" className={`${inp} w-full`} />
+
+          {/* Cover image — same Cloudinary library + upload flow as the dashboard */}
+          <div className="pt-3 border-t border-zen-black/10">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-basel-brick mb-2">รูปปก · Cover image</p>
+            <CoverPicker value={coverImage} onChange={setCoverImage} />
+          </div>
         </div>
 
         {/* Availability — drives the /pre-planned date filter */}
@@ -198,8 +241,8 @@ export default function TripBuilder() {
                 </Section>
 
                 {/* Activities */}
-                <Section title="กิจกรรม · Activities" onAdd={() => pick((n) => updateDay(i, (x) => ({ ...x, activities: [...x.activities, { time: null, priority: 'optional', node: n }] })))}>
-                  {d.activities.length === 0 && <p className="text-xs text-zen-black/30">ยังไม่มีกิจกรรม</p>}
+                <Section title="ไทม์ไลน์ · Timeline nodes" onAdd={() => pick((n) => updateDay(i, (x) => ({ ...x, activities: [...x.activities, { time: null, priority: 'optional', node: n }] })))}>
+                  {d.activities.length === 0 && <p className="text-xs text-zen-black/30">ยังไม่มีโหนด — เพิ่มสถานที่ / อาหาร / การเดินทาง (logistics node) ลงไทม์ไลน์</p>}
                   {d.activities.map((a, ai) => (
                     <div key={ai} className="flex items-center gap-2 text-sm">
                       <span className="relative w-[72px] flex-shrink-0">
@@ -221,20 +264,6 @@ export default function TripBuilder() {
                     onSet={() => pick((n) => updateDay(i, (x) => ({ ...x, accommodation: single(n) })))}
                     onClear={() => updateDay(i, (x) => ({ ...x, accommodation: null }))}
                   />
-                </Section>
-
-                {/* Transport */}
-                <Section title="การเดินทาง · Transport" onAdd={() => updateDay(i, (x) => ({ ...x, transport: [...x.transport, { from: '', to: '', notes: '' }] }))}>
-                  {d.transport.length === 0 && <p className="text-xs text-zen-black/30">ยังไม่มี</p>}
-                  {d.transport.map((leg, li) => (
-                    <div key={li} className="flex items-center gap-1.5 text-sm">
-                      <input value={leg.from ?? ''} onChange={(e) => updateDay(i, (x) => ({ ...x, transport: x.transport.map((y, k) => k === li ? { ...y, from: e.target.value } : y) }))} placeholder="จาก" className={`${inp} w-24 py-1`} />
-                      <span className="text-zen-black/30">→</span>
-                      <input value={leg.to ?? ''} onChange={(e) => updateDay(i, (x) => ({ ...x, transport: x.transport.map((y, k) => k === li ? { ...y, to: e.target.value } : y) }))} placeholder="ถึง" className={`${inp} w-24 py-1`} />
-                      <input value={leg.notes ?? ''} onChange={(e) => updateDay(i, (x) => ({ ...x, transport: x.transport.map((y, k) => k === li ? { ...y, notes: e.target.value } : y) }))} placeholder="วิธี / โน้ต" className={`${inp} flex-1 py-1`} />
-                      <button onClick={() => updateDay(i, (x) => ({ ...x, transport: x.transport.filter((_, k) => k !== li) }))} className="text-zen-black/30 hover:text-red-600"><X size={14} /></button>
-                    </div>
-                  ))}
                 </Section>
               </div>
             </div>

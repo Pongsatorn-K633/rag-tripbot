@@ -73,6 +73,7 @@ function nodeToActivity(
     cost: n.cost ?? undefined,
     duration: n.duration ?? undefined,
     mapUrl: n.mapUrl ?? null,
+    isLogistics: !!n.categoryCode?.startsWith('log.'),
   }
 }
 

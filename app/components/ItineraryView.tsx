@@ -235,6 +235,35 @@ function DayCard({ day, isOpen, onToggle, t, variant }: { day: Day; isOpen: bool
 // ── Activity item ─────────────────────────────────────────────────────────────
 
 function ActivityItem({ activity, t }: { activity: Activity; t: Tokens }) {
+  // Logistics step — a compact connector "how you move between activities".
+  if (activity.isLogistics) {
+    return (
+      <div className={`relative pl-8 border-l-2 border-dashed ${t.divider}`}>
+        <span className="absolute -left-[9px] top-0 w-[18px] h-[18px] rounded-full bg-zen-black/[0.06] flex items-center justify-center text-[10px] leading-none">
+          {activity.emoji ?? '🚃'}
+        </span>
+        <div className={`flex items-center flex-wrap gap-x-2 gap-y-0.5 ${t.textMuted}`}>
+          {activity.time && (
+            <span className="text-[11px] font-bold text-basel-brick/80 flex items-center gap-0.5">
+              <Clock size={10} strokeWidth={2.5} /> {activity.time}
+            </span>
+          )}
+          <span className={`text-sm font-medium ${t.text}`}>{activity.name}</span>
+          {activity.duration && (
+            <span className={`text-[11px] flex items-center gap-0.5 ${t.textFaint}`}><Timer size={10} strokeWidth={2} /> {activity.duration}</span>
+          )}
+          {activity.cost && <span className="text-[11px] font-bold text-basel-brick">{activity.cost}</span>}
+          {activity.mapUrl && (
+            <a href={activity.mapUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-500 hover:underline flex items-center gap-0.5">
+              <ExternalLink size={10} strokeWidth={2.5} /> Maps
+            </a>
+          )}
+        </div>
+        {activity.notes && <p className={`text-xs mt-0.5 leading-relaxed ${t.textFaint}`}>{activity.notes}</p>}
+      </div>
+    )
+  }
+
   const priority = activity.priority ?? 'optional'
   return (
     <div className={`relative pl-8 border-l-[3px] ${priorityBorder(priority)}`}>

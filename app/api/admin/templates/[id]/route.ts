@@ -45,7 +45,8 @@ export async function PATCH(
       title: body.title ?? undefined,
       description: body.description ?? undefined,
       itinerary: body.itinerary ?? undefined,
-      coverImage: body.coverImage ?? undefined,
+      // Present-but-null clears the cover; absent leaves it untouched.
+      coverImage: 'coverImage' in body ? (body.coverImage ?? null) : undefined,
       totalDays: body.totalDays ?? undefined,
       season: body.season ?? undefined,
       availability,

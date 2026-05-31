@@ -58,7 +58,7 @@ export default function DateRangePicker({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`w-full flex items-center justify-between gap-3 border px-4 py-3 text-sm font-medium hover:border-basel-brick transition-colors ${tv.btn}`}
+        className={`w-full flex items-center justify-between gap-3 border rounded-lg px-4 py-3 text-sm font-medium hover:border-basel-brick transition-colors ${tv.btn}`}
       >
         <span className="flex items-center gap-2.5">
           <CalendarDays size={16} className="text-basel-brick" strokeWidth={2.5} />
@@ -75,7 +75,7 @@ export default function DateRangePicker({
           {/* Backdrop — closes on outside click without affecting layout */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
           {/* Floating overlay — does not shift surrounding content */}
-          <div className="absolute left-0 top-full mt-2 z-50 bg-white border border-zen-black/15 shadow-xl p-3 w-max max-w-[calc(100vw-3rem)]">
+          <div className="absolute left-0 top-full mt-2 z-50 bg-white border border-zen-black/15 rounded-xl shadow-xl p-3 w-max max-w-[calc(100vw-3rem)]">
             <DayPicker
               mode="range"
               min={1}
@@ -97,7 +97,7 @@ export default function DateRangePicker({
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="px-4 py-1.5 bg-basel-brick text-white text-[10px] font-black uppercase tracking-widest hover:bg-zen-black transition-colors"
+                className="px-4 py-1.5 rounded-lg bg-basel-brick text-white text-[10px] font-black uppercase tracking-widest hover:bg-zen-black transition-colors"
               >
                 เสร็จ · Done
               </button>

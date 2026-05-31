@@ -46,6 +46,7 @@ export default function PlanPreviewModal({
   defaultStartDate = '',
   defaultEndDate = '',
   callbackUrl,
+  viewOnly = false,
   onClose,
 }: {
   template: PlanTemplate | null
@@ -54,6 +55,8 @@ export default function PlanPreviewModal({
   /** Pre-fills the range end — together they seed the editable travel window. */
   defaultEndDate?: string
   callbackUrl: string
+  /** Read-only preview — hides the Duplicate-or-Edit flow (e.g. admin dashboard). */
+  viewOnly?: boolean
   onClose: () => void
 }) {
   const { data: session } = useSession()
@@ -223,7 +226,8 @@ export default function PlanPreviewModal({
               ) : (
                 <ItineraryCard
                   itinerary={template.itinerary}
-                  onConfirm={handleStartDuplication}
+                  onConfirm={viewOnly ? undefined : handleStartDuplication}
+                  viewOnly={viewOnly}
                   coverImage={template.coverImage}
                 />
               )}

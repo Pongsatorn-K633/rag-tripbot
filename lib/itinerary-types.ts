@@ -51,6 +51,8 @@ export interface Activity {
   emoji?: string | null
   /** Google Maps link (v2 nodes). */
   mapUrl?: string | null
+  /** v2: node is a Logistics category → render as a compact transport step, not an activity card. */
+  isLogistics?: boolean
 }
 
 // ── Choice ──────────────────────────────────────────────────────────────────

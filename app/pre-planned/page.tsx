@@ -118,7 +118,7 @@ export default function PrePlannedPage() {
       {/* Hero title (right) + compact filter card (left), side by side on desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 lg:items-center mb-16">
         {/* ── LEFT: compact date filter card (matches the LINE LIFF panel) ─────── */}
-        <div className="bg-white border border-zen-black/10 shadow-sm p-5 sm:p-6 order-2 lg:order-1">
+        <div className="bg-white border border-zen-black/10 rounded-xl shadow-sm p-5 sm:p-6 order-2 lg:order-1">
           <div className="flex items-center justify-between gap-3 mb-5">
             <h2 className="font-headline font-black text-sm text-zen-black uppercase tracking-[0.15em]">
               กรองตามวันเดินทาง · Filter by dates
@@ -148,7 +148,7 @@ export default function PrePlannedPage() {
                 type="button"
                 onClick={() => setFlex(opt.value)}
                 title={opt.sub}
-                className={`px-2 py-3 border text-center transition-all flex-1 ${
+                className={`px-2 py-3 border rounded-lg text-center transition-all flex-1 ${
                   flex === opt.value
                     ? 'border-basel-brick bg-basel-brick text-white'
                     : 'border-zen-black/20 text-zen-black hover:border-basel-brick'

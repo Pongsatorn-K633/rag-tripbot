@@ -12,6 +12,33 @@ Move pre-planned trips from a flat itinerary blob toward a **node + category** m
   (e.g. *"มื้อเช้าไม่ได้อยู่ในแผนครับ"*).
 - Nodes carry **place metadata** (Google Maps link now; `placeId`/coords later).
 
+## Naming convention
+
+The atomic unit is a **node** — a place / activity / meal / stay / logistics item from
+the Node Library, snapshotted into a trip. There is **no separate "activity" entity** —
+an activity is just a node. A node's **role is named by its category root**:
+
+| Category root | Node name | Renders as |
+|---|---|---|
+| Logistics | **logistics node** | a compact transport step in the timeline |
+| Living | **living node** (stay) | accommodation |
+| Food & Beverage | **food node** | a meal slot or a timeline item |
+| Experiences | **experience node** | an activity card |
+| Goods & Retail | **shopping node** | an activity card |
+| Admin & Services | **service node** | an activity card |
+| Emergency | **emergency node** | an activity card |
+
+A day holds nodes in two places:
+- **Slots** — fixed positions: the three `meals` + `accommodation`. A slot is empty,
+  one node, or a pick-one-of-N **choice**.
+- **Timeline** — an ordered list of nodes (each with a `time`). A **logistics node**
+  renders as a transport step *between* the nodes around it; every other node renders
+  as an activity card.
+
+Code note: the TS types still use `Activity` / `ActivityV2` for a timeline entry — that
+name is **legacy**; conceptually an entry is a *node entry* = `{ time, priority?, node }`,
+and `categoryCode.startsWith('log.')` ⇒ it's a logistics node (`Activity.isLogistics`).
+
 ## Locked decisions (from review)
 
 | # | Decision | Choice |
