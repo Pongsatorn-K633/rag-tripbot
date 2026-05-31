@@ -204,10 +204,16 @@ export default function AdminDashboard({ currentUser }: { currentUser: CurrentUs
           <TabButton active={tab === 'templates'} onClick={() => setTab('templates')}>
             Templates ({templates.length})
           </TabButton>
+          <Link
+            href="/admin/nodes"
+            className="ml-auto px-6 py-4 text-[10px] font-black uppercase tracking-widest text-basel-brick hover:bg-basel-brick hover:text-white transition-all border-l border-zen-black"
+          >
+            Node Library →
+          </Link>
           {currentUser.role === 'SUPERADMIN' && (
             <Link
               href="/admin/users"
-              className="ml-auto px-6 py-4 text-[10px] font-black uppercase tracking-widest text-basel-brick hover:bg-basel-brick hover:text-white transition-all border-l border-zen-black"
+              className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-basel-brick hover:bg-basel-brick hover:text-white transition-all border-l border-zen-black"
             >
               Users →
             </Link>

@@ -155,7 +155,34 @@ model Category {
   destination String  @default("generic") // generic | JP | TH | ...
   description String?
   sortOrder   Int     @default(0)
+  nodes       Node[]
 
   @@index([root])
   @@index([destination])
+}
+
+/// Node library (Phase N2 — see docs/node-architecture-spec.md). Reusable place/
+/// activity units an admin mixes into trips. SNAPSHOTTED into a trip's jsonb at
+/// insert time, so editing a Node here does NOT change existing trips. Place-search
+/// fields (placeId/lat/lng) are reserved for later — manual name + mapUrl for now.
+model Node {
+  id           String   @id @default(cuid())
+  name         String // English / romaji (primary)
+  nameTh       String? // ไทย
+  categoryCode String
+  category     Category @relation(fields: [categoryCode], references: [code])
+  notes        String?
+  cost         String? // "¥1,500" | "Free" | "¥3,000-5,000"
+  duration     String? // "1.5h"
+  mapUrl       String? // Google Maps link (manual now)
+  placeId      String? // Google Place ID (future auto-match)
+  lat          Float?
+  lng          Float?
+  city         String? // "Sapporo", "Kyoto" — for grouping/search
+  createdById  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([categoryCode])
+  @@index([city])
 }
