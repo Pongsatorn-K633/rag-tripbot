@@ -39,6 +39,13 @@ async function handleEvent(event: webhook.Event) {
     return
   }
 
+  // Bot removed from a group/room, or blocked in a DM → free that chat's binding
+  // so the trip's share code becomes available to activate elsewhere again.
+  if (event.type === 'leave' || event.type === 'unfollow') {
+    await releaseBinding(event)
+    return
+  }
+
   const parsedEvent = parseEvent(event)
   if (!parsedEvent || parsedEvent.type !== 'text' || !parsedEvent.text) return
 
@@ -48,6 +55,12 @@ async function handleEvent(event: webhook.Event) {
   // learning about the trigger word.
   if (text.toLowerCase().startsWith('/activate')) {
     await handleActivate(lineId, sourceType, replyToken, text)
+    return
+  }
+
+  // /deactivate releases this chat's binding so the code can be used elsewhere.
+  if (text.toLowerCase().startsWith('/deactivate')) {
+    await handleDeactivate(lineId, replyToken, text)
     return
   }
 
@@ -161,6 +174,22 @@ async function handleActivate(
     return
   }
 
+  // Exclusive claim: a trip holds at most ONE group binding + ONE DM binding.
+  // If the matching slot (same sourceType) is already held by a DIFFERENT chat,
+  // refuse — the code is in use elsewhere right now. (Freed via /deactivate, the
+  // bot leaving the group, or the trip being deleted.)
+  const slotHolder = await prisma.lineContext.findFirst({
+    where: { tripId: trip.id, sourceType, NOT: { lineId } },
+  })
+  if (slotHolder) {
+    await replyToLine(
+      replyToken,
+      'รหัสทริปนี้ถูกใช้งานโดยกลุ่มหรือบุคคลอื่นอยู่ ณ ขณะนี้ กรุณาตรวจสอบรหัสอีกครั้งครับ\n\n' +
+        `หากต้องการเปลี่ยนกลุ่มให้แชทบอท พิมพ์ /deactivate ${shareCode} ในกลุ่มเก่าครับ`
+    )
+    return
+  }
+
   await prisma.lineContext.upsert({
     where: { lineId },
     update: { trip: { connect: { id: trip.id } }, sourceType, chatHistory: [], updatedAt: new Date() },
@@ -174,6 +203,50 @@ async function handleActivate(
       `• "doma ร้านอาหารเย็นมีอะไรบ้าง"\n\n` +
       `ในกลุ่ม พิมพ์ "doma" หรือ "โดมะ" นำหน้าคำถามนะครับ 🙌🏻`
   )
+}
+
+/**
+ * /deactivate — release the binding in the current chat so the trip's share code
+ * can be activated in another group or DM. (Each trip holds at most one group +
+ * one DM binding; this frees the matching slot.)
+ */
+async function handleDeactivate(lineId: string, replyToken: string, text: string) {
+  const code = text.split(' ')[1]?.toUpperCase() // optional confirmation code
+  const ctx = await prisma.lineContext.findUnique({ where: { lineId }, include: { trip: true } })
+  if (!ctx) {
+    await replyToLine(
+      replyToken,
+      'แชทนี้ยังไม่ได้เปิดใช้งานแผนการเดินทาง พิมพ์ /activate [รหัส] เพื่อเริ่มใช้งานครับ'
+    )
+    return
+  }
+  // If a code is supplied it must match the plan active here — guards against
+  // releasing the wrong trip.
+  if (code && ctx.trip.shareCode && code !== ctx.trip.shareCode) {
+    await replyToLine(
+      replyToken,
+      `รหัส ${code} ไม่ตรงกับแผนที่เปิดใช้งานอยู่ในแชทนี้ (กำลังใช้: ${ctx.trip.shareCode}) ครับ`
+    )
+    return
+  }
+  const label = ctx.trip.shareCode ? `${ctx.trip.shareCode} · "${ctx.trip.title}"` : `"${ctx.trip.title}"`
+  await prisma.lineContext.delete({ where: { lineId } })
+  await replyToLine(
+    replyToken,
+    `ยกเลิกการใช้งานแผน ${label} ในแชทนี้แล้ว ✅\nรหัสนี้พร้อมเปิดใช้งานที่กลุ่มหรือแชทอื่นได้แล้วครับ`
+  )
+}
+
+/**
+ * Auto-release a binding when the bot is removed from a group/room (`leave`) or
+ * blocked by a user (`unfollow`). The bound `lineId` is the group/room/user id;
+ * deleteMany is a safe no-op if that chat had no active binding.
+ */
+async function releaseBinding(event: webhook.Event) {
+  const source = (event as { source?: { groupId?: string; roomId?: string; userId?: string } }).source
+  const lineId = source?.groupId ?? source?.roomId ?? source?.userId
+  if (!lineId) return
+  await prisma.lineContext.deleteMany({ where: { lineId } })
 }
 
 async function handleQuestion(lineId: string, replyToken: string, text: string) {

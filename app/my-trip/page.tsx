@@ -353,7 +353,7 @@ function CodeCopyButton({
       onClick={onCopy}
       title="คัดลอกคำสั่ง /activate"
       className={`w-full flex items-center justify-between gap-2 bg-zen-black text-white hover:bg-basel-brick transition-colors group/code ${
-        bar ? 'px-4 py-3 rounded-lg' : 'px-3 py-2'
+        bar ? 'min-h-[3.5rem] px-4 py-3 rounded-lg' : 'min-h-[2.75rem] px-3 py-2'
       }`}
     >
       <AnimatePresence mode="wait" initial={false}>
@@ -365,7 +365,7 @@ function CodeCopyButton({
             exit={{ opacity: 0 }}
             transition={{ type: 'spring', stiffness: 500, damping: 22 }}
             className={`w-full flex items-center justify-center gap-1.5 font-bold text-emerald-300 whitespace-nowrap ${
-              bar ? 'text-sm' : 'text-[10px]'
+              bar ? 'text-[21px]' : 'text-[12px]'
             }`}
           >
             <Check size={bar ? 15 : 12} strokeWidth={3} />
