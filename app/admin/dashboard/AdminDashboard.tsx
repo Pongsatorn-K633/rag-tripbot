@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowLeft, Plus, Edit2, Trash2, TrendingUp, Users, FileText, BookOpen, X, Eye, EyeOff, Check, AlertCircle, Copy, Sparkles, Boxes } from 'lucide-react'
 import CoverUpload from '@/app/components/CoverUpload'
+import RangeEditor from '@/app/components/RangeEditor'
 import { resolveCoverImage } from '@/lib/cover-image'
 import type { DateRange, TripAvailability } from '@/lib/itinerary-types'
 import { formatRanges } from '@/lib/availability'
@@ -37,6 +39,8 @@ interface TemplateRow {
   _count: { savedAs: number }
   /** Canonical LINE activation code for this template — same for all admins */
   shareCode: string | null
+  /** itinerary jsonb — only `version` is read here (v1 vs v2 badge). */
+  itinerary?: { version?: number } | null
 }
 
 interface CurrentUser {
@@ -502,96 +506,70 @@ function TemplatesGrid({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {templates.map((tpl) => (
-            <div key={tpl.id} className="bg-white border border-zen-black/10 p-5 flex flex-col">
-              {(
-                <div className="relative aspect-[16/10] overflow-hidden mb-4 bg-briefing-cream">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img alt={tpl.title} src={resolveCoverImage(tpl.coverImage, tpl.id)} className="w-full h-full object-cover" />
-                  {!tpl.published && (
-                    <div className="absolute inset-0 bg-zen-black/60 flex items-center justify-center">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-white bg-basel-brick px-3 py-1">
-                        Unpublished
-                      </span>
-                    </div>
-                  )}
+          {templates.map((tpl) => {
+            const v2 = (tpl.itinerary as { version?: number } | null)?.version === 2
+            const rec = tpl.availability?.recommended ?? []
+            const avail = tpl.availability?.available ?? []
+            return (
+            <div key={tpl.id} className="group bg-white border border-zen-black/10 rounded-xl p-4 flex flex-col hover:shadow-lg transition-all">
+              <div className="relative aspect-[16/10] overflow-hidden mb-4 rounded-lg bg-briefing-cream">
+                <Image alt={tpl.title} src={resolveCoverImage(tpl.coverImage, tpl.id)} fill className="object-cover" sizes="(max-width: 768px) 100vw, 33vw" />
+                <div className="absolute top-2 left-2 flex gap-1.5">
+                  <span className="text-[9px] font-black uppercase tracking-widest bg-zen-black/70 text-white px-2 py-0.5 rounded backdrop-blur-sm">{tpl.totalDays}D</span>
+                  <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded backdrop-blur-sm ${v2 ? 'bg-emerald-600 text-white' : 'bg-white/80 text-zen-black/60'}`}>{v2 ? 'v2' : 'v1'}</span>
                 </div>
-              )}
-
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <h3 className="font-headline font-bold text-lg text-zen-black leading-tight">
-                  {tpl.title}
-                </h3>
-                <div className="flex gap-1 flex-shrink-0">
-                  <span className="text-[9px] font-black uppercase tracking-widest bg-basel-brick/10 text-basel-brick px-2 py-0.5">
-                    {tpl.totalDays}D
-                  </span>
-                </div>
+                {!tpl.published && (
+                  <div className="absolute inset-0 bg-zen-black/60 flex items-center justify-center">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white bg-basel-brick px-3 py-1 rounded">Unpublished</span>
+                  </div>
+                )}
               </div>
 
-              {tpl.description && (
-                <p className="text-xs text-zen-black/60 leading-relaxed mb-3 line-clamp-2">
-                  {tpl.description}
+              <h3 className="font-headline font-bold text-lg text-zen-black leading-tight mb-1">{tpl.title}</h3>
+              {tpl.description && <p className="text-xs text-zen-black/55 leading-relaxed mb-3 line-clamp-2">{tpl.description}</p>}
+
+              {/* Seasonal availability — drives the /pre-planned date filter */}
+              <div className="mb-3 space-y-0.5">
+                {rec.length > 0 && (
+                  <p className="text-[10px] text-basel-brick font-bold flex items-center gap-1">
+                    <Sparkles size={10} strokeWidth={2.5} className="flex-shrink-0" /> {formatRanges(rec, 'th')}
+                  </p>
+                )}
+                <p className="text-[10px] text-zen-black/45">
+                  <span className="uppercase tracking-widest text-[8px] text-zen-black/35 mr-1">เปิด</span>{formatRanges(avail, 'th')}
                 </p>
-              )}
-
-              <div className="flex items-center gap-3 text-[10px] font-bold text-zen-black/40 uppercase tracking-widest mb-3">
-                <span>{tpl.season ?? ''}</span>
-                <span>·</span>
-                <span>{tpl._count.savedAs} saves</span>
               </div>
 
-              {/* Canonical share code — always present. Click copies the
-                  full `/activate TKY-427` command to the clipboard, ready
-                  to paste in LINE. */}
+              <div className="flex items-center gap-2 text-[10px] font-bold text-zen-black/40 uppercase tracking-widest mb-3">
+                <span>{tpl.season ?? '—'}</span><span>·</span><span>{tpl._count.savedAs} saves</span>
+              </div>
+
+              {/* Canonical share code — click copies the full `/activate TKY-427` command. */}
               {tpl.shareCode && (
                 <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(`/activate ${tpl.shareCode}`)
-                  }}
+                  onClick={() => navigator.clipboard.writeText(`/activate ${tpl.shareCode}`)}
                   title="Copy /activate command"
-                  className="w-full mb-3 flex items-center justify-between gap-2 px-3 py-2 bg-zen-black text-white hover:bg-basel-brick transition-colors group"
+                  className="w-full mb-3 flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-zen-black text-white hover:bg-basel-brick transition-colors group/code"
                 >
                   <div className="flex flex-col items-start leading-tight">
-                    <span className="text-[8px] font-black uppercase tracking-widest text-white/50">
-                      Share code
-                    </span>
+                    <span className="text-[8px] font-black uppercase tracking-widest text-white/50">Share code</span>
                     <span className="font-mono text-sm font-bold">{tpl.shareCode}</span>
                   </div>
-                  <Copy size={14} className="text-white/60 group-hover:text-white" />
+                  <Copy size={14} className="text-white/60 group-hover/code:text-white" />
                 </button>
               )}
 
               <div className="mt-auto pt-3 border-t border-zen-black/10 flex items-center justify-between gap-2">
-                <span className="text-[9px] text-zen-black/40 truncate">
-                  {tpl.createdBy.email ?? 'system'}
-                </span>
+                <span className="text-[9px] text-zen-black/40 truncate">{tpl.createdBy.email ?? 'system'}</span>
                 <div className="flex gap-1">
-                  <button
-                    onClick={() => onTogglePublished(tpl)}
-                    title={tpl.published ? 'Unpublish' : 'Publish'}
-                    className="p-1.5 text-zen-black/60 hover:text-basel-brick transition-colors"
-                  >
-                    {tpl.published ? <Eye size={14} /> : <EyeOff size={14} />}
-                  </button>
-                  <button
-                    onClick={() => onEdit(tpl)}
-                    title="Edit"
-                    className="p-1.5 text-zen-black/60 hover:text-basel-brick transition-colors"
-                  >
-                    <Edit2 size={14} />
-                  </button>
-                  <button
-                    onClick={() => onDelete(tpl.id)}
-                    title="Delete"
-                    className="p-1.5 text-zen-black/60 hover:text-red-600 transition-colors"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  <button onClick={() => onTogglePublished(tpl)} title={tpl.published ? 'Unpublish' : 'Publish'} className="p-1.5 text-zen-black/60 hover:text-basel-brick transition-colors">{tpl.published ? <Eye size={14} /> : <EyeOff size={14} />}</button>
+                  <button onClick={() => onEdit(tpl)} title="Edit" className="p-1.5 text-zen-black/60 hover:text-basel-brick transition-colors"><Edit2 size={14} /></button>
+                  <button onClick={() => onDelete(tpl.id)} title="Delete" className="p-1.5 text-zen-black/60 hover:text-red-600 transition-colors"><Trash2 size={14} /></button>
                 </div>
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
@@ -1205,96 +1183,6 @@ function CoverPicker({
         label="Upload from device"
         onUploaded={handleUploaded}
       />
-    </div>
-  )
-}
-
-// ── Availability range editor ───────────────────────────────────────────────
-// Stores year-agnostic "MM-DD" ranges. The <input type="date"> uses a fixed
-// leap year (2024) for the picker; only the month-day is persisted.
-
-function mmddToInput(mmdd: string): string {
-  return `2024-${mmdd}`
-}
-function inputToMMDD(value: string): string {
-  return value.slice(5) // "YYYY-MM-DD" → "MM-DD"
-}
-
-function RangeEditor({
-  label,
-  hint,
-  ranges,
-  onChange,
-}: {
-  label: string
-  hint: string
-  ranges: DateRange[]
-  onChange: (r: DateRange[]) => void
-}) {
-  function update(i: number, key: 'from' | 'to', value: string) {
-    if (!value) return
-    onChange(ranges.map((r, idx) => (idx === i ? { ...r, [key]: inputToMMDD(value) } : r)))
-  }
-  function add() {
-    onChange([...ranges, { from: '01-01', to: '12-31' }])
-  }
-  function remove(i: number) {
-    onChange(ranges.filter((_, idx) => idx !== i))
-  }
-
-  return (
-    <div>
-      <div className="flex items-baseline justify-between mb-2">
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zen-black/70">
-          {label}
-        </span>
-        <span className="text-[9px] text-zen-black/40">{hint}</span>
-      </div>
-
-      {ranges.length === 0 ? (
-        <p className="text-[10px] text-zen-black/40 italic mb-2">
-          {label.startsWith('Available') ? 'ตลอดทั้งปี · open all year' : 'ไม่ได้ระบุ · none set'}
-        </p>
-      ) : (
-        <div className="space-y-2 mb-2">
-          {ranges.map((r, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <input
-                type="date"
-                value={mmddToInput(r.from)}
-                onChange={(e) => update(i, 'from', e.target.value)}
-                className="flex-1 border border-zen-black/20 px-2 py-1.5 text-xs bg-transparent text-zen-black focus:outline-none focus:border-basel-brick"
-              />
-              <span className="text-zen-black/40 text-xs">→</span>
-              <input
-                type="date"
-                value={mmddToInput(r.to)}
-                onChange={(e) => update(i, 'to', e.target.value)}
-                className="flex-1 border border-zen-black/20 px-2 py-1.5 text-xs bg-transparent text-zen-black focus:outline-none focus:border-basel-brick"
-              />
-              <button
-                type="button"
-                onClick={() => remove(i)}
-                className="p-1.5 text-zen-black/40 hover:text-red-600 transition-colors flex-shrink-0"
-                aria-label="Remove range"
-              >
-                <Trash2 size={13} strokeWidth={2.5} />
-              </button>
-            </div>
-          ))}
-          <p className="text-[10px] text-zen-black/50">
-            ดูตัวอย่าง: <span className="font-medium">{formatRanges(ranges, 'th')}</span>
-          </p>
-        </div>
-      )}
-
-      <button
-        type="button"
-        onClick={add}
-        className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-basel-brick hover:text-zen-black transition-colors"
-      >
-        <Plus size={12} strokeWidth={3} /> Add window
-      </button>
     </div>
   )
 }

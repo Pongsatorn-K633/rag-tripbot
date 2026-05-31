@@ -174,6 +174,18 @@ async function handleActivate(
     return
   }
 
+  // Template / bridge codes (e.g. KYO-001) are read-only references for viewing
+  // the curated plan — NOT bot activation tokens. Users must duplicate the trip
+  // to get their own personal code.
+  if (trip.source === 'template') {
+    await replyToLine(
+      replyToken,
+      'รหัสนี้เป็นรหัสสำหรับ "ดูแผน" เท่านั้น ใช้เปิดบอทไม่ได้ครับ 🙏\n' +
+        'กรุณากด "ทำสำเนา & แก้ไข" บนเว็บหรือแอป เพื่อรับรหัสใช้งานส่วนตัวของคุณ'
+    )
+    return
+  }
+
   // Exclusive claim: a trip holds at most ONE group binding + ONE DM binding.
   // If the matching slot (same sourceType) is already held by a DIFFERENT chat,
   // refuse — the code is in use elsewhere right now. (Freed via /deactivate, the

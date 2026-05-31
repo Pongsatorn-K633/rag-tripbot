@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Plus, Edit2, Trash2, X, Search, MapPin, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Plus, Edit2, Trash2, X, Search, MapPin, ExternalLink, RefreshCw, Check } from 'lucide-react'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -57,6 +57,38 @@ export default function NodesAdmin() {
   const [form, setForm] = useState<NodeForm>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  // Where-used / re-sync modal
+  const [usage, setUsage] = useState<{ node: NodeRow; templates: { id: string; title: string; shareCode: string | null }[]; loading: boolean } | null>(null)
+  const [syncing, setSyncing] = useState(false)
+  const [syncResult, setSyncResult] = useState('')
+
+  async function openUsage(n: NodeRow) {
+    setUsage({ node: n, templates: [], loading: true })
+    setSyncResult('')
+    try {
+      const res = await fetch(`/api/admin/nodes/${n.id}/usage`)
+      const d = res.ok ? await res.json() : { templates: [] }
+      setUsage({ node: n, templates: d.templates ?? [], loading: false })
+    } catch {
+      setUsage({ node: n, templates: [], loading: false })
+    }
+  }
+  async function doResync() {
+    if (!usage) return
+    setSyncing(true)
+    setSyncResult('')
+    try {
+      const res = await fetch(`/api/admin/nodes/${usage.node.id}/usage`, { method: 'POST' })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error ?? 'Sync failed')
+      setSyncResult(`✓ ซิงค์แล้ว ${d.templatesUpdated} แพลน (${d.snapshotsReplaced} จุด)`)
+    } catch (e) {
+      setSyncResult(e instanceof Error ? e.message : 'Sync failed')
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   const roots = useMemo(() => [...new Set(categories.map((c) => c.root))], [categories])
 
@@ -216,6 +248,7 @@ export default function NodesAdmin() {
                     <p className="text-[10px] uppercase tracking-widest text-basel-brick/70 font-black mt-1 truncate">{n.category.subCategory}</p>
                   </div>
                   <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => openUsage(n)} aria-label="Where used / sync" title="ใช้ในแพลนไหน / ซิงค์ข้อมูลล่าสุด" className="p-1.5 text-zen-black/50 hover:text-basel-brick transition-colors"><RefreshCw size={15} /></button>
                     <button onClick={() => openEdit(n)} aria-label="Edit" className="p-1.5 text-zen-black/50 hover:text-basel-brick transition-colors"><Edit2 size={15} /></button>
                     <button onClick={() => remove(n)} aria-label="Delete" className="p-1.5 text-zen-black/50 hover:text-red-600 transition-colors"><Trash2 size={15} /></button>
                   </div>
@@ -276,6 +309,50 @@ export default function NodesAdmin() {
             <div className="flex gap-3 px-5 py-4 border-t border-zen-black/10">
               <button onClick={closeModal} disabled={saving} className="flex-1 py-3 rounded-lg border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-white transition-all disabled:opacity-40">ยกเลิก</button>
               <button onClick={save} disabled={saving} className="flex-1 py-3 rounded-lg bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all disabled:opacity-40">{saving ? 'กำลังบันทึก...' : editing ? 'บันทึก' : 'เพิ่มโหนด'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Where-used / re-sync modal */}
+      {usage && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-3" style={{ backgroundColor: 'rgba(35,26,14,0.7)' }} onClick={(e) => { if (e.target === e.currentTarget && !syncing) setUsage(null) }}>
+          <div className="w-full max-w-md bg-briefing-cream border border-zen-black/10 shadow-2xl rounded-xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-zen-black/10">
+              <h2 className="font-headline font-black text-lg italic text-zen-black truncate">ใช้ใน “{usage.node.name}”</h2>
+              <button onClick={() => setUsage(null)} className="text-zen-black/40 hover:text-zen-black text-2xl leading-none flex-shrink-0" aria-label="Close">&times;</button>
+            </div>
+            <div className="px-5 py-5 space-y-3 max-h-[60vh] overflow-y-auto">
+              {usage.loading ? (
+                <p className="text-sm text-zen-black/40 text-center py-4">กำลังค้นหา...</p>
+              ) : usage.templates.length === 0 ? (
+                <p className="text-sm text-zen-black/50 text-center py-4">ยังไม่มีแพลนสำเร็จรูปใช้โหนดนี้</p>
+              ) : (
+                <>
+                  <p className="text-[11px] text-zen-black/50">โหนดนี้ถูกใช้ใน {usage.templates.length} แพลน (เป็นสำเนาแช่แข็ง — กด “ซิงค์” เพื่ออัปเดตให้เป็นข้อมูลล่าสุด):</p>
+                  {usage.templates.map((t) => (
+                    <div key={t.id} className="flex items-center gap-2 bg-white border border-zen-black/10 rounded-lg px-3 py-2 text-sm">
+                      <span className="font-mono text-[11px] font-bold text-basel-brick w-16 flex-shrink-0">{t.shareCode ?? '—'}</span>
+                      <span className="truncate text-zen-black">{t.title}</span>
+                    </div>
+                  ))}
+                </>
+              )}
+              {syncResult && (
+                <p className={`text-sm flex items-center gap-1.5 ${syncResult.startsWith('✓') ? 'text-emerald-700' : 'text-red-600'}`}>
+                  {syncResult.startsWith('✓') ? <Check size={15} /> : <X size={15} />} {syncResult.replace(/^✓ /, '')}
+                </p>
+              )}
+            </div>
+            <div className="flex gap-3 px-5 py-4 border-t border-zen-black/10">
+              <button onClick={() => setUsage(null)} disabled={syncing} className="flex-1 py-3 rounded-lg border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-white transition-all disabled:opacity-40">ปิด</button>
+              <button
+                onClick={doResync}
+                disabled={syncing || usage.loading || usage.templates.length === 0}
+                className="flex-1 py-3 rounded-lg bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+              >
+                <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} /> {syncing ? 'กำลังซิงค์...' : 'ซิงค์ลงทุกแพลน'}
+              </button>
             </div>
           </div>
         </div>

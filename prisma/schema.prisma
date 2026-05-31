@@ -186,3 +186,20 @@ model Node {
   @@index([categoryCode])
   @@index([city])
 }
+
+/// Japan areas (prefectures + regions) — the source of trip-code prefixes
+/// (KYO-001, KAN-001). Single table because `code` is a SHARED prefix namespace
+/// that must be globally unique, and Hokkaido is both a prefecture AND a region
+/// (one row, type "both"). `regionCode` is a soft self-reference to the parent
+/// region's code (null for region-only rows). Seeded via prisma/seed/seed-jp-areas.ts.
+model JpArea {
+  code       String  @id // unique 3-letter prefix: "KYO", "KAN", "HOK"
+  name       String
+  nameTh     String?
+  type       String // "prefecture" | "region" | "both"
+  regionCode String? // parent region code (soft ref); null for region-only rows
+  sortOrder  Int     @default(0)
+
+  @@index([type])
+  @@index([regionCode])
+}

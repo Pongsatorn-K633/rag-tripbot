@@ -61,13 +61,28 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { title, description, itinerary, coverImage, totalDays, season, published = true } = body
+  const { title, description, itinerary, coverImage, totalDays, season, published = true, provinceCode } = body
 
   if (!title || !itinerary || typeof totalDays !== 'number') {
     return NextResponse.json(
       { error: 'title, itinerary, totalDays are required' },
       { status: 400 }
     )
+  }
+
+  // A template code's prefix can only be a real Japan area (JpArea) — validate
+  // against the DB so it's never a free-typed value. Optional: no prefix ⇒
+  // generateShareCodeForTemplate falls back to a city-derived crypto code.
+  let prefix: string | undefined
+  if (typeof provinceCode === 'string' && provinceCode.trim()) {
+    prefix = provinceCode.trim().toUpperCase()
+    const area = await prisma.jpArea.findUnique({ where: { code: prefix }, select: { code: true } })
+    if (!area) {
+      return NextResponse.json(
+        { error: `ไม่พบรหัสพื้นที่ "${prefix}" ในระบบ · Unknown area code` },
+        { status: 400 }
+      )
+    }
   }
 
   let availability
@@ -100,7 +115,7 @@ export async function POST(req: NextRequest) {
   // time so admins never see a template without a code.
   try {
     const systemUserId = await getSystemUserId()
-    const shareCode = await generateShareCodeForTemplate(template.id, systemUserId)
+    const shareCode = await generateShareCodeForTemplate(template.id, systemUserId, prefix)
     template.shareCode = shareCode
   } catch (err) {
     console.error('[admin/templates] share code generation failed:', err)

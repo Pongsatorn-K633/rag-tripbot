@@ -129,12 +129,14 @@ export default function PlanPreviewModal({
 
       // Auto-generate a fresh activation code so it's ready to redeem in My Trip
       // (revealed there, not here — now always bound to the chosen travel dates).
+      // Prefix from the template's PROVINCE (e.g. HOK from HOK-001), not the first
+      // city (Sapporo→SAP), so the personal code matches the plan's province.
       try {
-        const primaryCity = template.itinerary?.days?.[0]?.location ?? 'JPN'
+        const prefix = template.shareCode?.split('-')[0] || template.itinerary?.days?.[0]?.location || 'JPN'
         await fetch('/api/activate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tripId: trip.id, primaryCity }),
+          body: JSON.stringify({ tripId: trip.id, primaryCity: prefix }),
         })
       } catch {
         // Non-fatal — the user can still generate the code in My Trip.

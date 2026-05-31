@@ -60,6 +60,38 @@ export async function generateUniqueShareCode(primaryCity: string): Promise<stri
   return code
 }
 
+const NUMERIC_CODE_RE = /^([A-Z]{2,4})-(\d+)$/
+
+/**
+ * Mint an INCREMENTAL, human-friendly template code like `KYO-001` / `HOK-001`
+ * (province prefix + zero-padded running number). Template codes point at PUBLIC
+ * curated content (browsable on /pre-planned), so they don't need the high
+ * entropy of personal codes — short + sequential is fine and admin-readable.
+ * The next number is max(existing numeric codes for this prefix) + 1.
+ */
+export async function generateIncrementalTemplateCode(prefix: string): Promise<string> {
+  const p = (prefix.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4)) || 'JPN'
+  const [trips, templates] = await Promise.all([
+    prisma.trip.findMany({ where: { shareCode: { startsWith: `${p}-` } }, select: { shareCode: true } }),
+    prisma.template.findMany({ where: { shareCode: { startsWith: `${p}-` } }, select: { shareCode: true } }),
+  ])
+  let max = 0
+  for (const { shareCode } of [...trips, ...templates]) {
+    const m = shareCode && NUMERIC_CODE_RE.exec(shareCode) // ignores crypto codes (KYO-7F3K)
+    if (m && m[1] === p) max = Math.max(max, parseInt(m[2], 10))
+  }
+  let n = max + 1
+  let code = `${p}-${String(n).padStart(3, '0')}`
+  while (
+    (await prisma.trip.findUnique({ where: { shareCode: code } })) ||
+    (await prisma.template.findUnique({ where: { shareCode: code } }))
+  ) {
+    n++
+    code = `${p}-${String(n).padStart(3, '0')}`
+  }
+  return code
+}
+
 interface ItineraryShape {
   days?: Array<{ location?: string }>
 }
@@ -76,7 +108,8 @@ interface ItineraryShape {
  */
 export async function generateShareCodeForTemplate(
   templateId: string,
-  systemUserId: string
+  systemUserId: string,
+  prefix?: string
 ): Promise<string> {
   const template = await prisma.template.findUnique({ where: { id: templateId } })
   if (!template) throw new Error(`Template ${templateId} not found`)
@@ -103,11 +136,15 @@ export async function generateShareCodeForTemplate(
   }
 
   // Mint a new unique code — Trip.shareCode and Template.shareCode share the
-  // same unique constraint space since they're both checked here.
+  // same unique constraint space since they're both checked here. With a province
+  // prefix → incremental admin-friendly code (KYO-001); otherwise the legacy
+  // crypto code derived from the first city.
   const itinerary = template.itinerary as ItineraryShape
   const primaryCity = itinerary?.days?.[0]?.location ?? 'JPN'
 
-  const shareCode = await generateUniqueShareCode(primaryCity)
+  const shareCode = prefix
+    ? await generateIncrementalTemplateCode(prefix)
+    : await generateUniqueShareCode(primaryCity)
 
   // Create the bridge trip + update the template in one transaction
   await prisma.$transaction([

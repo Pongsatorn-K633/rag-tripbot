@@ -1,11 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, Trash2, Save, X, Clock } from 'lucide-react'
-import type { DayV2, Slot, NodeSnap, ItineraryV2, ActivityPriority } from '@/lib/itinerary-types'
+import { ArrowLeft, Plus, Trash2, Save, X, Clock, ChevronDown } from 'lucide-react'
+import type { DayV2, Slot, NodeSnap, ItineraryV2, ActivityPriority, DateRange } from '@/lib/itinerary-types'
 import NodePicker from './NodePicker'
+import RangeEditor from '@/app/components/RangeEditor'
+import { seasonsForRanges } from '@/lib/availability'
+
+interface JpArea { code: string; name: string; nameTh: string | null; type: string; regionCode: string | null }
+const AREA_TYPE_TH: Record<string, string> = { prefecture: 'จังหวัด', region: 'ภูมิภาค', both: 'จังหวัด + ภูมิภาค' }
+const SEASON_EMOJI: Record<string, string> = { Winter: '❄️', Spring: '🌸', Summer: '☀️', Autumn: '🍁' }
 
 const MEALS: { key: 'breakfast' | 'lunch' | 'dinner'; label: string }[] = [
   { key: 'breakfast', label: '🍳 เช้า' },
@@ -20,14 +25,40 @@ const single = (node: NodeSnap): Slot => ({ kind: 'single', node })
 
 /** Admin v2 trip builder — mix-and-match library nodes into day slots, save as a template. */
 export default function TripBuilder() {
-  const router = useRouter()
   const [title, setTitle] = useState('')
-  const [season, setSeason] = useState('')
+  const [provinceCode, setProvinceCode] = useState('')
   const [description, setDescription] = useState('')
+  const [available, setAvailable] = useState<DateRange[]>([])
+  const [recommended, setRecommended] = useState<DateRange[]>([])
+  // Season is derived from the availability windows (recommended first), not picked.
+  const recSeasons = seasonsForRanges(recommended)
+  const availSeasons = seasonsForRanges(available)
+  const derivedSeason = recSeasons[0] ?? availSeasons[0] ?? null
   const [days, setDays] = useState<DayV2[]>([newDay(1)])
+  const [areas, setAreas] = useState<JpArea[]>([])
+  const [nextCode, setNextCode] = useState<string | null>(null)
   const [picker, setPicker] = useState<{ onPick: (n: NodeSnap) => void } | null>(null)
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    fetch('/api/admin/jp-areas').then((r) => r.json()).then((d) => setAreas(d.areas ?? [])).catch(() => {})
+  }, [])
+
+  const pickedArea = areas.find((a) => a.code === provinceCode)
+
+  // Preview the real next code for the picked area (KYO-002 when KYO-001 exists).
+  useEffect(() => {
+    const area = areas.find((a) => a.code === provinceCode)
+    if (!area) { setNextCode(null); return }
+    let cancelled = false
+    fetch(`/api/admin/templates/next-code?prefix=${area.code}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (!cancelled && d?.code) setNextCode(d.code) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [provinceCode, areas])
 
   function updateDay(i: number, fn: (d: DayV2) => DayV2) {
     setDays((prev) => prev.map((d, idx) => (idx === i ? fn(d) : d)))
@@ -41,22 +72,59 @@ export default function TripBuilder() {
   async function save() {
     if (!title.trim()) { setError('กรุณาตั้งชื่อทริป'); return }
     if (days.some((d) => !d.location.trim())) { setError('กรุณากรอกเมืองให้ครบทุกวัน'); return }
+    if (!provinceCode.trim()) { setError('กรุณาเลือกจังหวัด/ภูมิภาค (ใช้ขึ้นต้นรหัสทริป)'); return }
+    // Only hard-block on mismatch when the list actually loaded — otherwise the
+    // server validates it (avoids being stuck if /api/admin/jp-areas hiccups).
+    if (areas.length > 0 && !pickedArea) { setError('รหัสจังหวัด/ภูมิภาคไม่ตรงกับรายการ — เลือกจากรายการที่มี'); return }
     setSaving(true); setError('')
-    const itinerary: ItineraryV2 = { version: 2, title: title.trim(), totalDays: days.length, season: season || undefined, description: description || undefined, days }
+    const itinerary: ItineraryV2 = { version: 2, title: title.trim(), totalDays: days.length, season: derivedSeason || undefined, description: description || undefined, days }
     try {
       const res = await fetch('/api/admin/templates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title.trim(), itinerary, totalDays: days.length, season: season || undefined, description: description || undefined, published: false }),
+        body: JSON.stringify({
+          title: title.trim(), itinerary, totalDays: days.length, season: derivedSeason || undefined,
+          description: description || undefined, published: false, provinceCode: provinceCode.trim() || undefined,
+          availability: available.length || recommended.length ? { available, recommended } : null,
+        }),
       })
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? 'Save failed')
-      router.push('/admin/dashboard')
+      setSaved(true)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Save failed'); setSaving(false)
     }
   }
 
+  function reset() {
+    setSaved(false); setSaving(false); setTitle(''); setProvinceCode(''); setDescription('')
+    setAvailable([]); setRecommended([]); setDays([newDay(1)])
+  }
+
   const inp = 'px-3 py-2 text-sm border border-zen-black/20 rounded-lg focus:outline-none focus:border-basel-brick bg-white'
+
+  if (saved) {
+    return (
+      <main className="pt-[120px] pb-24 min-h-screen bg-briefing-cream px-6 flex items-start justify-center">
+        <div className="max-w-md w-full bg-white border border-zen-black/10 rounded-xl p-8 text-center mt-10 shadow-sm">
+          <div className="w-14 h-14 mx-auto bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+            <Save size={22} className="text-emerald-600" strokeWidth={2.5} />
+          </div>
+          <h2 className="font-headline font-black text-2xl italic text-zen-black mb-2">บันทึกแล้ว!</h2>
+          <p className="text-sm text-zen-black/60 leading-relaxed mb-6">
+            ทริปถูกบันทึกเป็น <b>แบบร่าง (ยังไม่เผยแพร่)</b> — ดูและกด “เผยแพร่” ได้ที่ Dashboard แท็บ <b>Pre-planned</b>
+          </p>
+          <div className="flex gap-3">
+            <Link href="/admin/dashboard" className="flex-1 py-3 rounded-lg bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all">
+              ไปที่ Dashboard
+            </Link>
+            <button onClick={reset} className="flex-1 py-3 rounded-lg border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-white transition-all">
+              สร้างอีกอัน
+            </button>
+          </div>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="pt-[120px] pb-24 min-h-screen bg-briefing-cream px-6 md:px-8">
@@ -73,14 +141,37 @@ export default function TripBuilder() {
         {/* Meta */}
         <div className="bg-white border border-zen-black/10 rounded-xl p-4 mb-6 space-y-3">
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="ชื่อทริป · Trip title *" className={`${inp} w-full font-bold`} />
-          <div className="grid grid-cols-2 gap-3">
-            <select value={season} onChange={(e) => setSeason(e.target.value)} className={inp}>
-              <option value="">ฤดู · Season</option>
-              {['Winter', 'Spring', 'Summer', 'Autumn'].map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
+          <div className="grid grid-cols-[1fr_auto] gap-3">
+            <AreaPicker areas={areas} value={provinceCode} onChange={setProvinceCode} />
             <div className="flex items-center text-sm text-zen-black/50 px-1">{days.length} วัน</div>
           </div>
+          {provinceCode && (
+            <p className="text-[11px] -mt-1 px-1">
+              {pickedArea
+                ? <span className="text-emerald-700">✓ <span className="font-mono font-bold">{pickedArea.code}</span> — {pickedArea.name}{pickedArea.nameTh ? ` · ${pickedArea.nameTh}` : ''} · {AREA_TYPE_TH[pickedArea.type] ?? pickedArea.type} → โค้ดจะเป็น <span className="font-mono font-bold">{nextCode ?? `${pickedArea.code}-…`}</span></span>
+                : <span className="text-amber-600">รหัส “{provinceCode}” ไม่ตรงกับจังหวัด/ภูมิภาคในรายการ</span>}
+            </p>
+          )}
           <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="คำอธิบายสั้น ๆ · Description" className={`${inp} w-full`} />
+        </div>
+
+        {/* Availability — drives the /pre-planned date filter */}
+        <div className="bg-white border border-zen-black/10 rounded-xl p-4 mb-6 space-y-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-basel-brick">ช่วงเวลาเที่ยว · Travel availability</p>
+            <p className="text-[11px] text-zen-black/50 mt-1 leading-relaxed">
+              ใช้กรองในหน้า /pre-planned — เว้น “Available” ว่าง = เที่ยวได้ทั้งปี · วันที่เป็นแบบไม่ระบุปี (เดือน-วัน)
+            </p>
+          </div>
+          <RangeEditor label="Available (open) windows" hint="เปิดให้เที่ยว · open" ranges={available} onChange={setAvailable} />
+          <RangeEditor label="Recommended windows" hint="แนะนำ ✨ · best time" ranges={recommended} onChange={setRecommended} />
+          {(recSeasons.length > 0 || availSeasons.length > 0) && (
+            <p className="text-[11px] text-zen-black/70 flex flex-wrap items-center gap-x-2 gap-y-1 pt-2 border-t border-zen-black/5">
+              <span className="font-black uppercase tracking-widest text-[10px] text-basel-brick">ฤดูกาล (อัตโนมัติ)</span>
+              {(recSeasons.length ? recSeasons : availSeasons).map((s) => <span key={s} className="font-medium">{SEASON_EMOJI[s] ?? ''} {s}</span>)}
+              <span className="text-zen-black/40">{recSeasons.length ? '· จากช่วงแนะนำ' : '· จากช่วงเปิด'}</span>
+            </p>
+          )}
         </div>
 
         {/* Days */}
@@ -190,6 +281,71 @@ function SlotRow({ label, slot, onSet, onClear }: { label: string; slot: Slot | 
         </span>
       ) : (
         <button onClick={onSet} className="flex-1 text-left text-zen-black/40 border border-dashed border-zen-black/20 rounded px-2 py-1 hover:border-basel-brick transition-colors">+ เลือกโหนด</button>
+      )}
+    </div>
+  )
+}
+
+// ── Area combobox ────────────────────────────────────────────────────────────
+// Type to filter; clicking the field (or clearing the text) shows ALL areas —
+// unlike a native <datalist>, which filters by the current value.
+function AreaPicker({ areas, value, onChange }: { areas: JpArea[]; value: string; onChange: (code: string) => void }) {
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const [typing, setTyping] = useState(false)
+
+  const q = query.trim().toLowerCase()
+  const filtered = !typing || !q
+    ? areas
+    : areas.filter((a) => a.code.toLowerCase().includes(q) || a.name.toLowerCase().includes(q) || (a.nameTh ?? '').includes(query.trim()))
+
+  const picked = areas.find((a) => a.code === value)
+  // When closed, show the full label "KSI — Kansai · คันไซ"; when open, the search query.
+  const closedLabel = picked ? `${picked.code} — ${picked.name}${picked.nameTh ? ` · ${picked.nameTh}` : ''}` : value
+
+  function commit(a: JpArea) { onChange(a.code); setOpen(false); setTyping(false) }
+  // Open showing the full list. Used by both focus AND click, so clicking the
+  // field after a selection re-opens it (focus alone won't fire if already focused).
+  function openMenu(el?: HTMLInputElement | null) { setQuery(value); setTyping(false); setOpen(true); el?.select() }
+
+  return (
+    <div className="relative">
+      <input
+        value={open ? query : closedLabel}
+        onFocus={(e) => openMenu(e.currentTarget)}
+        onClick={(e) => { if (!open) openMenu(e.currentTarget) }}
+        onChange={(e) => {
+          setTyping(true)
+          setQuery(e.target.value)
+          const exact = areas.find((x) => x.code.toLowerCase() === e.target.value.trim().toLowerCase())
+          onChange(exact ? exact.code : '')
+        }}
+        onBlur={() => setTimeout(() => setOpen(false), 120)}
+        placeholder="พิมพ์ค้นหา · จังหวัด/ภูมิภาค"
+        title="พิมพ์ค้นหาแล้วเลือก เช่น Tokyo, Kanto, HOK"
+        className="w-full pl-3 pr-8 py-2 text-sm border border-zen-black/20 rounded-lg focus:outline-none focus:border-basel-brick bg-white"
+      />
+      <ChevronDown size={16} className={`absolute right-2.5 top-1/2 -translate-y-1/2 text-zen-black/35 pointer-events-none transition-transform ${open ? 'rotate-180' : ''}`} />
+      {open && (
+        <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white border border-zen-black/15 rounded-lg shadow-xl max-h-64 overflow-y-auto">
+          {filtered.length === 0 ? (
+            <div className="px-3 py-2 text-sm text-zen-black/40">ไม่พบจังหวัด/ภูมิภาค</div>
+          ) : (
+            filtered.map((a) => (
+              <button
+                key={a.code}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => commit(a)}
+                className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-briefing-cream ${a.code === value ? 'bg-briefing-cream/70' : ''}`}
+              >
+                <span className="font-mono font-bold text-basel-brick w-9 flex-shrink-0">{a.code}</span>
+                <span className="flex-1 truncate text-zen-black">{a.name}{a.nameTh ? ` · ${a.nameTh}` : ''}</span>
+                <span className="text-[10px] text-zen-black/40 flex-shrink-0">{AREA_TYPE_TH[a.type] ?? a.type}</span>
+              </button>
+            ))
+          )}
+        </div>
       )}
     </div>
   )

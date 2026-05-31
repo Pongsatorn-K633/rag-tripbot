@@ -12,6 +12,7 @@
     "db:setup-pgvector": "tsx prisma/seed/run-pgvector-setup.ts",
     "db:seed": "tsx prisma/seed/seed-blocks.ts",
     "db:seed-categories": "tsx prisma/seed/seed-categories.ts",
+    "db:seed-jp-areas": "tsx prisma/seed/seed-jp-areas.ts",
     "db:migrate": "prisma migrate dev"
   },
   "repository": {

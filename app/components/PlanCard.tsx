@@ -8,13 +8,6 @@ import { formatRanges } from '@/lib/availability'
 import type { TripAvailability } from '@/lib/itinerary-types'
 import { type Itinerary } from '@/app/components/TemplateCard'
 
-const SEASON_MONTHS: Record<string, string> = {
-  Winter: 'Dec–Feb',
-  Spring: 'Mar–May',
-  Summer: 'Jun–Aug',
-  Autumn: 'Sep–Nov',
-}
-
 /** The shape both /pre-planned and /saved fetch from GET /api/templates. */
 export interface PlanTemplate {
   id: string
@@ -109,16 +102,9 @@ export default function PlanCard({
           sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
         />
         <div className="absolute bottom-0 left-0 w-full p-4 sm:p-6 bg-gradient-to-t from-zen-black/80 to-transparent">
-          <div className="flex flex-col gap-1.5">
-            <span className="bg-basel-brick text-briefing-cream px-3 py-1 text-[10px] font-black uppercase tracking-widest font-headline self-start">
-              {tpl.totalDays} DAYS
-            </span>
-            {tpl.season && (
-              <span className="bg-white/20 text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest font-headline backdrop-blur-sm self-start">
-                {tpl.season}{SEASON_MONTHS[tpl.season] ? ` · ${SEASON_MONTHS[tpl.season]}` : ''}
-              </span>
-            )}
-          </div>
+          <span className="bg-basel-brick text-briefing-cream px-3 py-1 text-[10px] font-black uppercase tracking-widest font-headline self-start">
+            {tpl.totalDays} DAYS
+          </span>
         </div>
       </div>
       <h3 className={`text-2xl font-headline font-bold mb-2 ${c.title}`}>{tpl.title}</h3>

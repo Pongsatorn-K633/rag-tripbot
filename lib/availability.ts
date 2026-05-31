@@ -184,3 +184,38 @@ export function formatRanges(ranges: DateRange[], lang: 'th' | 'en' = 'th'): str
   if (!ranges || ranges.length === 0) return lang === 'th' ? 'ตลอดทั้งปี' : 'All year'
   return ranges.map((r) => formatRange(r, lang)).join(' · ')
 }
+
+// ── Season derivation ─────────────────────────────────────────────────────────
+// The trip's season is derived from its availability windows (no manual picker).
+
+const SEASON_BY_MONTH = [
+  'Winter', 'Winter', 'Spring', 'Spring', 'Spring', 'Summer',
+  'Summer', 'Summer', 'Autumn', 'Autumn', 'Autumn', 'Winter',
+] // index = month-1 (Jan…Dec)
+
+/** Northern-hemisphere season for a 1–12 month. */
+export function seasonForMonth(month: number): string {
+  return SEASON_BY_MONTH[(month - 1 + 12) % 12]
+}
+
+/** Distinct seasons a set of MM-DD ranges spans, in the order encountered. */
+export function seasonsForRanges(ranges: DateRange[]): string[] {
+  const seen: string[] = []
+  for (const r of ranges ?? []) {
+    const fm = Number(r.from.slice(0, 2))
+    const tm = Number(r.to.slice(0, 2))
+    let m = fm
+    for (let i = 0; i < 12; i++) {
+      const s = seasonForMonth(m)
+      if (!seen.includes(s)) seen.push(s)
+      if (m === tm) break
+      m = (m % 12) + 1 // walk forward, wrapping Dec→Jan
+    }
+  }
+  return seen
+}
+
+/** Single primary season for a trip: recommended window first, else available. */
+export function primarySeason(recommended: DateRange[], available: DateRange[]): string | null {
+  return seasonsForRanges(recommended)[0] ?? seasonsForRanges(available)[0] ?? null
+}

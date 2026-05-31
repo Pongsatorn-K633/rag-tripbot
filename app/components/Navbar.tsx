@@ -228,7 +228,7 @@ function NavUserMenu() {
                 className="flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-zen-black/70 hover:bg-briefing-cream hover:text-zen-black transition-colors"
               >
                 <Heart size={14} strokeWidth={2} />
-                แพลนที่คุณชอบ · You saved
+                แพลนที่คุณชอบ · Your Saved
               </Link>
 
               <Link
