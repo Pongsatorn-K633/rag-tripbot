@@ -3,10 +3,11 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import {
-  ChevronDown, MapPin, AlertTriangle, Star, Hotel, Train, Clock, Banknote, Timer, Circle, CalendarCheck,
+  ChevronDown, MapPin, AlertTriangle, Star, Hotel, Train, Clock, Banknote, Timer, Circle, CalendarCheck, ExternalLink,
 } from 'lucide-react'
-import type { Itinerary, Day, Activity, ActivityPriority } from '@/lib/itinerary-types'
+import type { AnyItinerary, Day, Activity, ActivityPriority } from '@/lib/itinerary-types'
 import { PRIORITY_LABEL } from '@/lib/itinerary-types'
+import { getRenderDays } from '@/lib/trips/itinerary-model'
 import CategoryIcon from '@/app/components/CategoryIcon'
 import ChoiceCarousel from '@/app/components/ChoiceCarousel'
 
@@ -50,7 +51,7 @@ export default function ItineraryView({
   hero,
   onClose,
 }: {
-  itinerary: Itinerary
+  itinerary: AnyItinerary
   variant?: Variant
   showJourneyHeader?: boolean
   /** Optional hero photo header with the title overlaid (matches the LIFF look). */
@@ -60,6 +61,8 @@ export default function ItineraryView({
 }) {
   const t = VIEW[variant]
   const [openDay, setOpenDay] = useState<number | null>(null) // all days collapsed by default
+  // Normalize v1 OR v2 into the v1 render shape (lib/trips/itinerary-model.ts).
+  const days = getRenderDays(itinerary)
 
   return (
     <div>
@@ -95,7 +98,7 @@ export default function ItineraryView({
       )}
 
       <div className="space-y-4">
-        {itinerary.days.map((day) => (
+        {days.map((day) => (
           <DayCard
             key={day.day}
             day={day}
@@ -252,12 +255,17 @@ function ActivityItem({ activity, t }: { activity: Activity; t: Tokens }) {
             {PRIORITY_LABEL.recommended}
           </span>
         )}
-        {activity.category && <CategoryIcon category={activity.category} size={13} className={t.catIcon} />}
+        {activity.emoji
+          ? <span className="text-sm leading-none">{activity.emoji}</span>
+          : activity.category && <CategoryIcon category={activity.category} size={13} className={t.catIcon} />}
       </div>
-      <p className={`font-bold text-lg mt-1 ${t.text}`}>{activity.name}</p>
+      <p className={`font-bold text-lg mt-1 ${t.text}`}>
+        {activity.name}
+        {activity.nameTh && <span className={`font-medium text-sm ml-2 ${t.textMuted}`}>{activity.nameTh}</span>}
+      </p>
       {activity.notes && <p className={`text-base mt-1.5 leading-relaxed ${t.textMuted}`}>{activity.notes}</p>}
-      {(activity.cost || activity.duration) && (
-        <div className="flex gap-3 mt-1.5">
+      {(activity.cost || activity.duration || activity.mapUrl) && (
+        <div className="flex gap-3 mt-1.5 items-center">
           {activity.cost && (
             <span className={`text-[11px] font-bold flex items-center gap-0.5 ${t.textFaint}`}>
               <Banknote size={11} strokeWidth={2} /> {activity.cost}
@@ -267,6 +275,11 @@ function ActivityItem({ activity, t }: { activity: Activity; t: Tokens }) {
             <span className={`text-[11px] font-bold flex items-center gap-0.5 ${t.textFaint}`}>
               <Timer size={11} strokeWidth={2} /> {activity.duration}
             </span>
+          )}
+          {activity.mapUrl && (
+            <a href={activity.mapUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] font-bold flex items-center gap-0.5 text-blue-500 hover:underline">
+              <ExternalLink size={11} strokeWidth={2.5} /> Maps
+            </a>
           )}
         </div>
       )}

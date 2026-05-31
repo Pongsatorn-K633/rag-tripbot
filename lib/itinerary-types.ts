@@ -45,6 +45,12 @@ export interface Activity {
   cost?: string
   /** Duration hint (e.g. "1.5h", "30min") */
   duration?: string
+  /** Thai name (v2 node snapshots carry this). */
+  nameTh?: string | null
+  /** Emoji from the node's category (v2). Shown instead of CategoryIcon when present. */
+  emoji?: string | null
+  /** Google Maps link (v2 nodes). */
+  mapUrl?: string | null
 }
 
 // ── Choice ──────────────────────────────────────────────────────────────────
@@ -119,7 +125,79 @@ export interface Itinerary {
   shareCode?: string | null
   /** Optional description shown on template cards */
   description?: string
+  /** Absent/1 = legacy flat shape. 2 = node/slot shape (see below). */
+  version?: number
 }
+
+// ── v2 node/slot model (docs/node-architecture-spec.md) ──────────────────────
+// A trip stays one self-contained jsonb document, but days are organized into
+// canonical meal slots + a flexible activity timeline + accommodation + transport,
+// each holding frozen NodeSnap copies of library nodes. lib/trips/itinerary-model.ts
+// normalizes v1 OR v2 into the v1 render shape so consumers stay simple.
+
+/** A frozen copy of a library Node at the moment it was added to a trip. */
+export interface NodeSnap {
+  /** Provenance back to the Node library; null for ad-hoc (typed-in) places. */
+  nodeId?: string | null
+  name: string
+  nameTh?: string | null
+  categoryCode: string
+  /** Denormalized from the node's Category for render-without-join. */
+  emoji?: string | null
+  notes?: string | null
+  cost?: string | null
+  duration?: string | null
+  time?: string | null
+  mapUrl?: string | null
+  placeId?: string | null
+}
+
+/** A slot is empty (null), one node, or a pick-one-of-N choice. */
+export type Slot =
+  | { kind: 'single'; node: NodeSnap }
+  | { kind: 'choice'; label?: string; selected?: number | null; options: NodeSnap[] }
+
+/** Canonical meal slots — keys ALWAYS present so the LLM can say "not scheduled". */
+export interface Meals {
+  breakfast: Slot | null
+  lunch: Slot | null
+  dinner: Slot | null
+}
+
+export interface ActivityV2 {
+  time?: string | null
+  priority?: ActivityPriority
+  node: NodeSnap
+}
+
+export interface TransportLeg {
+  from?: string | null
+  to?: string | null
+  notes?: string | null
+  node?: NodeSnap | null
+}
+
+export interface DayV2 {
+  day: number
+  location: string
+  free?: boolean
+  meals: Meals
+  activities: ActivityV2[]
+  accommodation: Slot | null
+  transport: TransportLeg[]
+}
+
+export interface ItineraryV2 {
+  version: 2
+  title?: string
+  totalDays?: number
+  season?: string
+  days: DayV2[]
+  shareCode?: string | null
+  description?: string
+}
+
+export type AnyItinerary = Itinerary | ItineraryV2
 
 // ── Display helpers ──────────────────────────────────────────────────────────
 // Icon mapping is NOT here — it lives in the React component layer

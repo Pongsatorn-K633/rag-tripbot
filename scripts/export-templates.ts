@@ -14,6 +14,8 @@ import { mkdirSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import * as XLSX from 'xlsx'
 import { prisma } from '../lib/db/index.js'
+import { getRenderDays } from '../lib/trips/itinerary-model.js'
+import type { AnyItinerary } from '../lib/itinerary-types.js'
 
 type Range = { from?: string; to?: string }
 function fmtRanges(arr: unknown): string {
@@ -40,16 +42,9 @@ async function main() {
 
   templates.forEach((t, i) => {
     const key = `${i + 1}. ${t.title}`
-    const itin = (t.itinerary ?? {}) as {
-      title?: string; totalDays?: number; season?: string
-      days?: Array<{
-        day: number; location?: string; accommodation?: string | null
-        transport?: string; transportNotes?: string; free?: boolean
-        activities?: Array<{ time?: string; name?: string; notes?: string; priority?: string; category?: string; cost?: string; duration?: string }>
-        choices?: Array<{ label?: string; priority?: string; category?: string; selected?: number; options?: Array<{ name?: string; notes?: string; cost?: string; time?: string }> }>
-        accommodationChoices?: Array<{ name?: string; tier?: string; cost?: string; notes?: string }>
-      }>
-    }
+    // getRenderDays normalizes v1 OR v2 into the v1 render shape, so the export
+    // stays correct after the N5 migration.
+    const renderDays = getRenderDays(t.itinerary as unknown as AnyItinerary)
     const av = (t.availability ?? {}) as { available?: Range[]; recommended?: Range[]; note?: string }
 
     tplRows.push({
@@ -66,7 +61,7 @@ async function main() {
       published: t.published,
     })
 
-    for (const d of itin.days ?? []) {
+    for (const d of renderDays) {
       dayRows.push({
         template: key,
         day: d.day,

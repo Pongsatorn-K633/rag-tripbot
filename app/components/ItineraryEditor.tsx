@@ -5,6 +5,7 @@ import {
   ChevronDown, ChevronUp, Trash2, Clock, CalendarDays, Check, Star, Save, CalendarCheck,
 } from 'lucide-react'
 import type { Itinerary, Day, Choice } from '@/lib/itinerary-types'
+import { isV2 } from '@/lib/trips/itinerary-model'
 import CategoryIcon from '@/app/components/CategoryIcon'
 
 /**
@@ -49,6 +50,9 @@ export default function ItineraryEditor({
   const [itin, setItin] = useState<Itinerary>(initialItinerary)
   const [startDate, setStartDate] = useState(initialStartDate)
   const [openDay, setOpenDay] = useState<number | null>(itin.days[0]?.day ?? null)
+  // v2 (node/slot) trips: the light day-editor doesn't speak slots yet, so we keep
+  // the start-date edit and skip the day list (view it in My Trip). Follow-up.
+  const v2 = isV2(initialItinerary)
 
   function updateDay(dayIdx: number, updater: (d: Day) => Day) {
     setItin((prev) => ({ ...prev, days: prev.days.map((d, i) => (i === dayIdx ? updater(d) : d)) }))
@@ -94,7 +98,13 @@ export default function ItineraryEditor({
       </div>
 
       {/* Days */}
-      {itin.days.map((day, dayIdx) => {
+      {v2 && (
+        <div className={`border p-4 text-sm leading-relaxed ${t.card} ${t.sub}`}>
+          ทริปนี้ใช้รูปแบบใหม่ (node/slot) — การแก้ไขรายวันแบบละเอียดกำลังจะมา ดูแผนเต็มได้ที่หน้า My Trip
+          ส่วนวันเริ่มเดินทางยังแก้ไขได้ที่นี่
+        </div>
+      )}
+      {!v2 && itin.days.map((day, dayIdx) => {
         const isOpen = openDay === day.day
         return (
           <div key={day.day} className={`border overflow-hidden ${t.card}`}>

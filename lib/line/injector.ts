@@ -1,19 +1,8 @@
 import { generateText } from '../llm/client'
 import { generateWithSearch } from '../rag/web-search'
 import { prisma } from '../db'
-
-interface Itinerary {
-  title?: string
-  totalDays?: number
-  season?: string
-  days?: {
-    day: number
-    location: string
-    activities: { time: string; name: string; notes?: string }[]
-    accommodation: string
-    transport: string
-  }[]
-}
+import { getRenderDays } from '../trips/itinerary-model'
+import type { AnyItinerary } from '../itinerary-types'
 
 // ── Date context ─────────────────────────────────────────────────────────────
 // The itinerary is relative ("Day 1..N"). To answer "วันนี้ / พรุ่งนี้ / เหลือกี่วัน"
@@ -33,7 +22,7 @@ function fmtThaiDate(eDay: number): string {
 }
 
 export function buildDateContext(
-  itinerary: Itinerary,
+  itinerary: AnyItinerary,
   startDate: Date | string | null | undefined,
   now: Date = new Date()
 ): string {
@@ -46,7 +35,7 @@ export function buildDateContext(
   const jst = new Date(now.getTime() + 9 * 3_600_000)
   const todayEpoch = epochDay(jst.getUTCFullYear(), jst.getUTCMonth(), jst.getUTCDate())
 
-  const days = itinerary.days ?? []
+  const days = getRenderDays(itinerary) // v1 or v2 → unified day list
   const totalDays = itinerary.totalDays ?? days.length
   const dayIndex = todayEpoch - startEpoch + 1 // 1-based; <1 = before, >total = after
 
@@ -98,19 +87,22 @@ function isFullPlanRequest(message: string): boolean {
   return FULL_PLAN_PATTERNS.some((p) => p.test(trimmed))
 }
 
-export function formatItinerary(itinerary: Itinerary): string {
+export function formatItinerary(itinerary: AnyItinerary): string {
   const lines: string[] = []
   lines.push(itinerary.title ?? 'แผนการเดินทาง')
   lines.push(`${itinerary.totalDays ?? '?'} วัน | ${itinerary.season ?? ''}`)
   lines.push('')
 
-  for (const day of itinerary.days ?? []) {
+  for (const day of getRenderDays(itinerary)) {
     lines.push(`วันที่ ${day.day}: ${day.location}`)
     for (const act of day.activities) {
       lines.push(`  ${act.time} ${act.name}${act.notes ? ` (${act.notes})` : ''}`)
     }
-    lines.push(`  ที่พัก: ${day.accommodation}`)
-    lines.push(`  เดินทาง: ${day.transport}`)
+    for (const c of day.choices ?? []) {
+      lines.push(`  ${c.label}: ${(c.options ?? []).map((o) => o.name).join(' / ')}`)
+    }
+    if (day.accommodation) lines.push(`  ที่พัก: ${day.accommodation}`)
+    if (day.transport) lines.push(`  เดินทาง: ${day.transport}`)
     lines.push('')
   }
 
@@ -144,7 +136,7 @@ export async function answerWithContext(
   shareCode?: string | null,
   startDate?: Date | string | null
 ): Promise<AnswerResult> {
-  const itinerary = itineraryJson as Itinerary
+  const itinerary = itineraryJson as AnyItinerary
 
   // Fast gate: regex catches clean "show plan" requests (0 API calls)
   if (isFullPlanRequest(userQuestion)) {
@@ -171,7 +163,7 @@ export async function answerWithContext(
   return { answer: trimmed, needsFollowUp: false }
 }
 
-function buildLiffOrTextResult(itinerary: Itinerary, shareCode?: string | null): AnswerResult {
+function buildLiffOrTextResult(itinerary: AnyItinerary, shareCode?: string | null): AnswerResult {
   if (shareCode) {
     return {
       answer: '',

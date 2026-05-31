@@ -205,8 +205,14 @@ export default function AdminDashboard({ currentUser }: { currentUser: CurrentUs
             Templates ({templates.length})
           </TabButton>
           <Link
-            href="/admin/nodes"
+            href="/admin/trip-builder"
             className="ml-auto px-6 py-4 text-[10px] font-black uppercase tracking-widest text-basel-brick hover:bg-basel-brick hover:text-white transition-all border-l border-zen-black"
+          >
+            Build Trip →
+          </Link>
+          <Link
+            href="/admin/nodes"
+            className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-basel-brick hover:bg-basel-brick hover:text-white transition-all border-l border-zen-black"
           >
             Node Library →
           </Link>
