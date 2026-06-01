@@ -31,6 +31,7 @@ interface TemplateRow {
   title: string
   description: string | null
   coverImage: string | null
+  coverImages?: string[] | null
   totalDays: number
   season: string | null
   availability: TripAvailability | null
@@ -653,7 +654,7 @@ function PromoteModal({
         </Field>
 
         <Field label="Cover Image (optional)">
-          <CoverPicker value={coverImage} onChange={setCoverImage} />
+          <CoverPicker value={coverImage ? [coverImage] : []} onChange={(v) => setCoverImage(v[0] ?? null)} max={1} />
         </Field>
 
         <Field label="Publish immediately?">

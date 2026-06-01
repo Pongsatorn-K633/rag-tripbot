@@ -1,25 +1,21 @@
 'use client'
 
-import { useRef, useState, useCallback } from 'react'
-import Cropper from 'react-easy-crop'
-import type { Area } from 'react-easy-crop'
-import { User, X } from 'lucide-react'
-import {
-  uploadToCloudinary,
-  validateUploadFile,
-} from '@/lib/cloudinary-upload'
+import { useRef, useState } from 'react'
+import { User, Crop } from 'lucide-react'
+import { uploadToCloudinary, validateUploadFile } from '@/lib/cloudinary-upload'
+import { isCloudinaryUrl, stripCloudinaryTransform } from '@/lib/cover-image'
+import CoverCropModal from '@/app/components/CoverCropModal'
 
 /**
- * Profile picture upload with circular crop.
+ * Profile picture upload with a non-destructive 1:1 circular crop.
  *
  * Flow:
- *   1. User clicks the avatar / "Upload" button
- *   2. Native file picker opens
- *   3. On file select → crop modal appears with circular mask
- *   4. User drags to reposition + scroll/pinch to zoom
- *   5. Click "Save" → crops on a hidden canvas → uploads the result to
- *      Cloudinary under `dopamichi/profiles` folder
- *   6. Returns the Cloudinary URL via `onChange(url)`
+ *   1. Pick a file → the ORIGINAL is uploaded to Cloudinary (dopamichi/profiles)
+ *   2. The crop modal opens on that upload (drag to reposition + zoom)
+ *   3. Save → stores a `c_crop` (1:1) Cloudinary URL — NO re-upload, the original
+ *      stays intact, and you can "Adjust" any time to re-frame losslessly.
+ *
+ * The square crop is shown inside a round mask via CSS (rounded-full).
  */
 export default function ProfilePictureUpload({
   value,
@@ -31,23 +27,13 @@ export default function ProfilePictureUpload({
   disabled?: boolean
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
-
-  // Crop state
-  const [rawImage, setRawImage] = useState<string | null>(null)
-  const [crop, setCrop] = useState({ x: 0, y: 0 })
-  const [zoom, setZoom] = useState(1)
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
-
-  // Upload state
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  // The original URL currently open in the crop modal (null = closed).
+  const [cropSrc, setCropSrc] = useState<string | null>(null)
 
-  const onCropComplete = useCallback((_: Area, croppedPixels: Area) => {
-    setCroppedAreaPixels(croppedPixels)
-  }, [])
-
-  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     e.target.value = ''
@@ -57,43 +43,14 @@ export default function ProfilePictureUpload({
       setError(validationError)
       return
     }
-
     setError(null)
-    const reader = new FileReader()
-    reader.onload = () => {
-      setRawImage(reader.result as string)
-      setCrop({ x: 0, y: 0 })
-      setZoom(1)
-    }
-    reader.readAsDataURL(file)
-  }
-
-  function handleCancelCrop() {
-    setRawImage(null)
-    setCroppedAreaPixels(null)
-  }
-
-  async function handleConfirmCrop() {
-    if (!rawImage || !croppedAreaPixels) return
-
     setUploading(true)
     setProgress(0)
-    setError(null)
-
     try {
-      // Crop on a canvas
-      const blob = await cropImageToBlob(rawImage, croppedAreaPixels, 512)
-      const file = new File([blob], 'profile.jpg', { type: 'image/jpeg' })
-
-      // Upload to Cloudinary using the profile preset (dopamichi/profiles folder)
-      const result = await uploadToCloudinary(
-        file,
-        (p) => setProgress(p.percent),
-        'profiles'
-      )
-
-      onChange(result.secure_url)
-      setRawImage(null)
+      // Upload the ORIGINAL (uncropped) — cropping is a URL transform afterwards.
+      const result = await uploadToCloudinary(file, (p) => setProgress(p.percent), 'profiles')
+      onChange(result.secure_url) // set immediately so cancelling the crop keeps the photo
+      setCropSrc(result.secure_url) // open the crop modal to frame it
     } catch (err) {
       setError(err instanceof Error ? err.message : 'อัปโหลดล้มเหลว')
     } finally {
@@ -140,12 +97,10 @@ export default function ProfilePictureUpload({
       )}
 
       {/* Error */}
-      {error && (
-        <p className="text-[10px] text-red-700 font-medium">⚠ {error}</p>
-      )}
+      {error && <p className="text-[10px] text-red-700 font-medium">⚠ {error}</p>}
 
       {/* Action buttons */}
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
@@ -154,6 +109,19 @@ export default function ProfilePictureUpload({
         >
           {value ? 'เปลี่ยนรูป · Change' : 'อัปโหลดรูป · Upload (Optional)'}
         </button>
+        {value && isCloudinaryUrl(value) && (
+          <>
+            <span className="text-zen-black/20">·</span>
+            <button
+              type="button"
+              onClick={() => setCropSrc(stripCloudinaryTransform(value))}
+              disabled={disabled || uploading}
+              className="text-[10px] font-bold tracking-widest text-basel-brick hover:text-zen-black transition-colors disabled:opacity-40 flex items-center gap-1"
+            >
+              <Crop size={11} strokeWidth={2.5} /> ปรับ · Adjust
+            </button>
+          </>
+        )}
         {value && (
           <>
             <span className="text-zen-black/20">·</span>
@@ -169,9 +137,7 @@ export default function ProfilePictureUpload({
         )}
       </div>
 
-      <p className="text-[9px] text-zen-black/40 text-center -mt-2">
-        JPG / PNG / WebP · max 5 MB
-      </p>
+      <p className="text-[9px] text-zen-black/40 text-center -mt-2">JPG / PNG / WebP · max 5 MB</p>
 
       {/* Hidden file input */}
       <input
@@ -183,124 +149,17 @@ export default function ProfilePictureUpload({
         disabled={disabled || uploading}
       />
 
-      {/* Crop modal */}
-      {rawImage && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-zen-black/80 px-4">
-          <div className="w-full max-w-md bg-white overflow-hidden shadow-2xl rounded-xl">
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-zen-black/10">
-              <h3 className="font-headline font-black text-lg text-zen-black">
-                ปรับตำแหน่งรูปโปรไฟล์
-              </h3>
-              <button
-                onClick={handleCancelCrop}
-                className="text-zen-black/40 hover:text-zen-black"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Crop area */}
-            <div className="relative w-full aspect-square bg-zen-black">
-              <Cropper
-                image={rawImage}
-                crop={crop}
-                zoom={zoom}
-                aspect={1}
-                cropShape="round"
-                showGrid={false}
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
-                onCropComplete={onCropComplete}
-              />
-            </div>
-
-            {/* Zoom slider */}
-            <div className="px-5 py-3 flex items-center gap-3 border-t border-zen-black/10 bg-briefing-cream">
-              <span className="text-[9px] font-black uppercase tracking-widest text-zen-black/40">
-                Zoom
-              </span>
-              <input
-                type="range"
-                min={1}
-                max={3}
-                step={0.05}
-                value={zoom}
-                onChange={(e) => setZoom(Number(e.target.value))}
-                className="flex-1 accent-basel-brick"
-              />
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-3 px-5 py-4 border-t border-zen-black/10">
-              <button
-                onClick={handleCancelCrop}
-                className="flex-1 py-3 border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-white transition-all"
-              >
-                ยกเลิก · Cancel
-              </button>
-              <button
-                onClick={handleConfirmCrop}
-                disabled={uploading}
-                className="flex-1 py-3 bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all disabled:opacity-50"
-              >
-                {uploading ? `${progress}%...` : 'บันทึก · Save'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Non-destructive crop (1:1, round) — stores a c_crop URL, no re-upload */}
+      {cropSrc && (
+        <CoverCropModal
+          src={cropSrc}
+          title="ปรับรูปโปรไฟล์ · Adjust photo"
+          aspect={1}
+          cropShape="round"
+          onClose={() => setCropSrc(null)}
+          onSave={(cropped) => { onChange(cropped); setCropSrc(null) }}
+        />
       )}
     </div>
   )
-}
-
-// ── Canvas-based image crop helper ──────────────────────────────────────────
-
-/**
- * Crops an image to the specified area at a given output size, returning a
- * JPEG Blob. Runs entirely in the browser (canvas), no server round-trip.
- */
-async function cropImageToBlob(
-  imageSrc: string,
-  crop: Area,
-  outputSize: number
-): Promise<Blob> {
-  const image = await loadImage(imageSrc)
-  const canvas = document.createElement('canvas')
-  canvas.width = outputSize
-  canvas.height = outputSize
-  const ctx = canvas.getContext('2d')!
-
-  ctx.drawImage(
-    image,
-    crop.x,
-    crop.y,
-    crop.width,
-    crop.height,
-    0,
-    0,
-    outputSize,
-    outputSize
-  )
-
-  return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (blob) resolve(blob)
-        else reject(new Error('Canvas crop failed'))
-      },
-      'image/jpeg',
-      0.9
-    )
-  })
-}
-
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new window.Image()
-    img.crossOrigin = 'anonymous'
-    img.onload = () => resolve(img)
-    img.onerror = reject
-    img.src = src
-  })
 }

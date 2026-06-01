@@ -95,9 +95,9 @@ export default function Home() {
               </div>
             </Link>
 
-            {/* Option C: Gallery (upload) */}
+            {/* Option C: Doc-to-Trip (upload) */}
             <Link
-              href="/gallery"
+              href="/doc-to-trip"
               className="group p-12 hover:bg-basel-brick hover:text-briefing-cream transition-all duration-300 cursor-pointer"
             >
               <Upload className="w-10 h-10 mb-8" strokeWidth={1.5} />

@@ -33,6 +33,14 @@ const nextConfig: NextConfig = {
         destination: '/my-trip',
         permanent: true,
       },
+      // ── RENAME: Gallery → Doc-to-Trip ───────────────────────────────────
+      // The doc-upload (VLM extraction) page moved from /gallery. Keep old
+      // links/bookmarks working.
+      {
+        source: '/gallery',
+        destination: '/doc-to-trip',
+        permanent: true,
+      },
     ]
   },
 }

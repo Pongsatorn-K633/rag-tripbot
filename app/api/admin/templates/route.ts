@@ -61,7 +61,8 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { title, description, itinerary, coverImage, totalDays, season, published = true, provinceCode } = body
+  const { title, description, itinerary, coverImage, coverImages, totalDays, season, published = true, provinceCode } = body
+  const gallery: string[] = Array.isArray(coverImages) ? coverImages.filter((u: unknown): u is string => typeof u === 'string').slice(0, 5) : []
 
   if (!title || !itinerary || typeof totalDays !== 'number') {
     return NextResponse.json(
@@ -100,7 +101,8 @@ export async function POST(req: NextRequest) {
       title,
       description: description ?? null,
       itinerary,
-      coverImage: coverImage ?? null,
+      coverImage: coverImage ?? gallery[0] ?? null,
+      coverImages: gallery,
       totalDays,
       season: season ?? null,
       availability: availability

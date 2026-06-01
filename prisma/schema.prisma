@@ -58,7 +58,8 @@ model Template {
   title       String
   description String?
   itinerary   Json
-  coverImage  String?
+  coverImage  String?           // primary cover (cards/thumbnails); kept in sync with coverImages[0]
+  coverImages String[] @default([]) // ordered cover gallery (max 5) — swiped in the published preview
   totalDays   Int
   season      String?
   availability Json?   // TripAvailability (lib/itinerary-types.ts): day-precise available + recommended MM-DD ranges. null = always available. Drives the /pre-planned date filter.

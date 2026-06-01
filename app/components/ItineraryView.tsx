@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import Image from 'next/image'
+import useEmblaCarousel from 'embla-carousel-react'
 import {
   ChevronDown, MapPin, AlertTriangle, Star, Hotel, Train, Clock, Banknote, Timer, Circle, CalendarCheck, ExternalLink,
 } from 'lucide-react'
@@ -40,6 +41,8 @@ type Tokens = (typeof VIEW)[Variant]
 
 export interface ItineraryHero {
   image: string
+  /** Optional gallery — when 2+ images, the hero becomes a swipeable carousel. */
+  images?: string[]
   title: string
   subtitle: string
 }
@@ -68,8 +71,12 @@ export default function ItineraryView({
     <div>
       {hero && (
         <div className="mb-8 relative overflow-hidden rounded-2xl h-60 sm:h-64 flex flex-col justify-end p-6 sm:p-8">
-          <Image src={hero.image} alt={hero.title} fill className={t.heroImg} sizes="(max-width: 640px) 100vw, 512px" />
-          <div className={`absolute inset-0 ${t.heroGrad}`} />
+          {hero.images && hero.images.length > 1 ? (
+            <HeroCarousel images={hero.images} alt={hero.title} imgClass={t.heroImg} />
+          ) : (
+            <Image src={hero.image} alt={hero.title} fill className={t.heroImg} sizes="(max-width: 640px) 100vw, 512px" />
+          )}
+          <div className={`absolute inset-0 pointer-events-none ${t.heroGrad}`} />
           {onClose && (
             <button
               onClick={onClose}
@@ -79,7 +86,7 @@ export default function ItineraryView({
               &times;
             </button>
           )}
-          <div className="relative z-10">
+          <div className="relative z-10 pointer-events-none">
             <span className="text-basel-brick text-xs sm:text-sm font-bold uppercase tracking-[0.2em] mb-2 block">
               Travel Dossier
             </span>
@@ -110,6 +117,46 @@ export default function ItineraryView({
         ))}
       </div>
     </div>
+  )
+}
+
+// ── Hero image carousel ─────────────────────────────────────────────────────
+// IG-style swipeable cover gallery (same embla style as ChoiceCarousel). Fills
+// the hero box; the gradient + title overlay sit on top (pointer-events-none so
+// drags reach the carousel). Dots top-center; the close button stays top-right.
+function HeroCarousel({ images, alt, imgClass }: { images: string[]; alt: string; imgClass: string }) {
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: 'start' })
+  const [idx, setIdx] = useState(0)
+  const onSelect = useCallback(() => { if (emblaApi) setIdx(emblaApi.selectedScrollSnap()) }, [emblaApi])
+  useEffect(() => {
+    if (!emblaApi) return
+    emblaApi.on('select', onSelect)
+    return () => { emblaApi.off('select', onSelect) }
+  }, [emblaApi, onSelect])
+
+  return (
+    <>
+      <div className="absolute inset-0 overflow-hidden" ref={emblaRef}>
+        <div className="flex h-full">
+          {images.map((src, i) => (
+            <div key={i} className="relative flex-[0_0_100%] h-full">
+              <Image src={src} alt={`${alt} ${i + 1}`} fill className={imgClass} sizes="(max-width: 640px) 100vw, 512px" />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
+        {images.map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => emblaApi?.scrollTo(i)}
+            className={`rounded-full transition-all duration-200 ${i === idx ? 'w-2 h-2 bg-white' : 'w-1.5 h-1.5 bg-white/50 hover:bg-white/80'}`}
+            aria-label={`Image ${i + 1}`}
+          />
+        ))}
+      </div>
+    </>
   )
 }
 

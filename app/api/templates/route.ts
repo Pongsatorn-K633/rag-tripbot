@@ -16,6 +16,7 @@ export async function GET() {
       description: true,
       itinerary: true,
       coverImage: true,
+      coverImages: true,
       totalDays: true,
       season: true,
       availability: true,

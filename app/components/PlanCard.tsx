@@ -15,6 +15,7 @@ export interface PlanTemplate {
   description: string | null
   itinerary: Itinerary
   coverImage: string | null
+  coverImages?: string[] | null
   totalDays: number
   season: string | null
   availability: TripAvailability | null

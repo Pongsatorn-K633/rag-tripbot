@@ -29,6 +29,7 @@ export interface BuilderInitial {
   title: string
   description: string | null
   coverImage: string | null
+  coverImages: string[]
   shareCode: string | null
   published: boolean
   season: string | null
@@ -43,7 +44,9 @@ export default function TripBuilder({ initial }: { initial?: BuilderInitial }) {
   const [title, setTitle] = useState(initial?.title ?? '')
   const [provinceCode, setProvinceCode] = useState('')
   const [description, setDescription] = useState(initial?.description ?? '')
-  const [coverImage, setCoverImage] = useState<string | null>(initial?.coverImage ?? null)
+  const [coverImages, setCoverImages] = useState<string[]>(
+    initial?.coverImages?.length ? initial.coverImages : initial?.coverImage ? [initial.coverImage] : []
+  )
   const [available, setAvailable] = useState<DateRange[]>(initial?.availability?.available ?? [])
   const [recommended, setRecommended] = useState<DateRange[]>(initial?.availability?.recommended ?? [])
   // Season is derived from the availability windows (recommended first), not picked.
@@ -105,7 +108,7 @@ export default function TripBuilder({ initial }: { initial?: BuilderInitial }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: title.trim(), itinerary, totalDays: days.length, season: derivedSeason || undefined,
-          description: description || null, coverImage: coverImage || null, availability,
+          description: description || null, coverImage: coverImages[0] ?? null, coverImages, availability,
           ...(isEdit ? {} : { published: false, provinceCode: provinceCode.trim() || undefined }),
         }),
       })
@@ -118,7 +121,7 @@ export default function TripBuilder({ initial }: { initial?: BuilderInitial }) {
 
   function reset() {
     setSaved(false); setSaving(false); setTitle(''); setProvinceCode(''); setDescription('')
-    setCoverImage(null); setAvailable([]); setRecommended([]); setDays([newDay(1)])
+    setCoverImages([]); setAvailable([]); setRecommended([]); setDays([newDay(1)])
   }
 
   const inp = 'px-3 py-2 text-sm border border-zen-black/20 rounded-lg focus:outline-none focus:border-basel-brick bg-white'
@@ -158,7 +161,7 @@ export default function TripBuilder({ initial }: { initial?: BuilderInitial }) {
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-basel-brick">Admin · {isEdit ? 'Editor' : 'Builder'}</p>
             <h1 className="text-4xl md:text-5xl font-black font-headline tracking-tighter text-zen-black italic">{isEdit ? 'Edit Trip' : 'Trip Builder'}</h1>
-            <p className="text-sm text-zen-black/50 mt-1">{isEdit ? 'แก้ไขแพลนแบบ node/slot (v2)' : 'สร้างแพลนแบบ node/slot (v2)'}</p>
+            <p className="text-sm text-zen-black/50 mt-1">{isEdit ? 'แก้ไขแพลนแบบ node/slot (v2)' : 'สร้างแพลนแบบ node/slot'}</p>
           </div>
           <Link href="/admin/dashboard" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zen-black/60 hover:text-basel-brick"><ArrowLeft size={14} strokeWidth={3} /> Dashboard</Link>
         </div>
@@ -189,12 +192,13 @@ export default function TripBuilder({ initial }: { initial?: BuilderInitial }) {
               )}
             </>
           )}
-          <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="คำอธิบายสั้น ๆ · Description" className={`${inp} w-full`} />
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="คำอธิบายสั้น ๆ · Description" className={`${inp} w-full resize-y`} />
 
-          {/* Cover image — same Cloudinary library + upload flow as the dashboard */}
+          {/* Cover gallery — up to 5; the first is the primary cover (cards),
+              the rest are swiped in the published preview. */}
           <div className="pt-3 border-t border-zen-black/10">
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-basel-brick mb-2">รูปปก · Cover image</p>
-            <CoverPicker value={coverImage} onChange={setCoverImage} />
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-basel-brick mb-2">รูปปก · Cover images <span className="text-zen-black/40 normal-case tracking-normal">(สูงสุด 5 · swipe in preview)</span></p>
+            <CoverPicker value={coverImages} onChange={setCoverImages} max={5} />
           </div>
         </div>
 

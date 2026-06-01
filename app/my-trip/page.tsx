@@ -167,7 +167,7 @@ export default function GoPage() {
             <div className="border-2 border-dashed border-zen-black/10 rounded-xl p-8 sm:p-16 text-center">
               <p className="text-zen-black/40 font-sans text-lg mb-2">ยังไม่มีแผนการเดินทาง</p>
               <p className="text-zen-black/30 font-sans text-sm mb-6">
-                สร้างแผนได้จาก <Link href="/pre-planned" className="text-basel-brick underline">แพลนพร้อมเที่ยว</Link>&nbsp;,&nbsp;&nbsp;หากมีแผนอยู่แล้วอัปโหลดที่นี่เลย <Link href="/gallery" className="text-basel-brick underline">Doc-to-Trip</Link>
+                สร้างแผนได้จาก <Link href="/pre-planned" className="text-basel-brick underline">แพลนพร้อมเที่ยว</Link>&nbsp;,&nbsp;&nbsp;หากมีแผนอยู่แล้วอัปโหลดที่นี่เลย <Link href="/doc-to-trip" className="text-basel-brick underline">Doc-to-Trip</Link>
               </p>
             </div>
           ) : (

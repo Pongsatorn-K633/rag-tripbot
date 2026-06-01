@@ -25,6 +25,7 @@ export default async function EditTripPage({ params }: { params: Promise<{ id: s
     title: tpl.title,
     description: tpl.description,
     coverImage: tpl.coverImage,
+    coverImages: tpl.coverImages ?? [],
     shareCode: tpl.shareCode,
     published: tpl.published,
     season: tpl.season,

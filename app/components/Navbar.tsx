@@ -12,7 +12,7 @@ const TABS = [
   { id: 'home', label: 'Home', href: '/' },
   { id: 'my-trip', label: 'My Trip', href: '/my-trip' },
   { id: 'pre-planned', label: 'Pre-planned', href: '/pre-planned' },
-  { id: 'gallery', label: 'Doc-to-Trip', href: '/gallery' },
+  { id: 'doc-to-trip', label: 'Doc-to-Trip', href: '/doc-to-trip' },
   // AI Chat is under maintenance — disabled in nav, /chat redirects to /maintenance
   { id: 'chat', label: 'AI Chat', href: '/chat', disabled: true },
 ]

@@ -39,9 +39,10 @@ type UploadState = 'idle' | 'uploading' | 'review' | 'saving' | 'done'
 
 const STOCK_IMAGES = [IMG.stock1, IMG.stock2, IMG.stock3, IMG.stock4]
 
-// ── Gallery page ─────────────────────────────────────────────────────────────
+// ── Doc-to-Trip page ─────────────────────────────────────────────────────────
+// Upload a PDF / screenshot / Excel → VLM extracts the itinerary → review → save.
 
-export default function GalleryPage() {
+export default function DocToTripPage() {
   const { data: session, status: sessionStatus } = useSession()
   const isSignedIn = !!session?.user
   // Upload state
@@ -88,7 +89,7 @@ export default function GalleryPage() {
   async function processFile(file: File) {
     // Guest gate — AI file extraction is member-only (VLM is expensive).
     if (!isSignedIn) {
-      signIn(undefined, { callbackUrl: '/gallery' })
+      signIn(undefined, { callbackUrl: '/doc-to-trip' })
       return
     }
 
@@ -291,7 +292,7 @@ export default function GalleryPage() {
                     Create a free account to use AI file extraction and save your trips.
                   </p>
                   <button
-                    onClick={() => signIn(undefined, { callbackUrl: '/gallery' })}
+                    onClick={() => signIn(undefined, { callbackUrl: '/doc-to-trip' })}
                     className="bg-basel-brick text-briefing-cream px-10 py-5 font-bold tracking-tight hover:bg-zen-black transition-colors duration-300 font-headline uppercase"
                   >
                     Sign up / Sign in

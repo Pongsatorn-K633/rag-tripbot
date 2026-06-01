@@ -229,6 +229,7 @@ export default function PlanPreviewModal({
                   onConfirm={viewOnly ? undefined : handleStartDuplication}
                   viewOnly={viewOnly}
                   coverImage={template.coverImage}
+                  coverImages={template.coverImages ?? undefined}
                 />
               )}
             </div>

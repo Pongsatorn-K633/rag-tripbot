@@ -19,6 +19,8 @@ interface ItineraryCardProps {
   onConfirm?: () => void
   confirmLoading?: boolean
   coverImage?: string | null
+  /** Cover gallery — when 2+, the hero becomes swipeable. Falls back to coverImage. */
+  coverImages?: string[]
   /** Show the Duplicate-or-Edit button greyed out + non-clickable (e.g. admin preview). */
   viewOnly?: boolean
 }
@@ -28,10 +30,13 @@ export default function ItineraryCard({
   onConfirm,
   confirmLoading = false,
   coverImage = null,
+  coverImages,
   viewOnly = false,
 }: ItineraryCardProps) {
   const totalDays = itinerary.totalDays ?? itinerary.days.length
-  const heroImage = coverImage ? resolveCoverImage(coverImage, itinerary.title ?? 'trip') : IMG.liffHero
+  const seed = itinerary.title ?? 'trip'
+  const covers = coverImages && coverImages.length > 0 ? coverImages : coverImage ? [coverImage] : []
+  const heroImages = covers.length > 0 ? covers.map((c) => resolveCoverImage(c, seed)) : [IMG.liffHero]
   const subtitle = `${totalDays} วัน${itinerary.season ? ` · ${itinerary.season}` : ''}`
 
   return (
@@ -40,7 +45,7 @@ export default function ItineraryCard({
       <ItineraryView
         itinerary={itinerary}
         variant="light"
-        hero={{ image: heroImage, title: itinerary.title ?? 'แผนการเดินทาง', subtitle }}
+        hero={{ image: heroImages[0], images: heroImages, title: itinerary.title ?? 'แผนการเดินทาง', subtitle }}
       />
 
       {/* Duplicate-or-Edit — next step asks for travel dates before saving.
