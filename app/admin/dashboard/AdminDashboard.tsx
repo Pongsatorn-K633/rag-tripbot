@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Plus, Edit2, Trash2, TrendingUp, Users, FileText, BookOpen, X, Eye, EyeOff, AlertCircle, Sparkles, Boxes } from 'lucide-react'
+import { ArrowLeft, Plus, Edit2, Trash2, TrendingUp, Users, FileText, BookOpen, X, Eye, EyeOff, AlertCircle, Sparkles, Boxes, Download } from 'lucide-react'
 import CoverPicker from '@/app/components/CoverPicker'
 import PlanPreviewModal from '@/app/components/PlanPreviewModal'
 import type { PlanTemplate } from '@/app/components/PlanCard'
@@ -479,6 +479,15 @@ function TemplatesGrid({
   return (
     <div>
       <div className="flex justify-end gap-3 mb-6">
+        <a
+          href="/dopamichi-itinerary-template.xlsx"
+          download
+          className="inline-flex items-center gap-2 px-5 py-3 border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-white transition-all"
+          title="เทมเพลต Excel โครงสร้างเดียวกับ Trip Builder — กรอกแล้วอัปโหลดที่ Doc-to-Trip"
+        >
+          <Download size={14} strokeWidth={3} />
+          Excel template
+        </a>
         <button
           onClick={onCleanupCovers}
           className="inline-flex items-center gap-2 px-5 py-3 border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-white transition-all"

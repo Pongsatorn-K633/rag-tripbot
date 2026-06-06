@@ -9,7 +9,9 @@ import { motion, AnimatePresence } from 'motion/react'
 import { useSession, signIn } from 'next-auth/react'
 import { IMG } from '@/lib/images'
 import { resolveCoverImage } from '@/lib/cover-image'
-import type { Itinerary } from '@/lib/itinerary-types'
+import type { Itinerary, AnyItinerary } from '@/lib/itinerary-types'
+import { makeDayOneFree, hasTrailingFreeDay } from '@/lib/trips/extend'
+import ConfirmDialog from '@/app/components/ConfirmDialog'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -38,6 +40,7 @@ export default function GoPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [viewingTripId, setViewingTripId] = useState<string | null>(null)
+  const [makeFreeTripId, setMakeFreeTripId] = useState<string | null>(null)
   const [generatingCode, setGeneratingCode] = useState<string | null>(null)
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
 
@@ -69,6 +72,27 @@ export default function GoPage() {
       alert('ไม่สามารถสร้างรหัสได้ กรุณาลองใหม่')
     } finally {
       setGeneratingCode(null)
+    }
+  }
+
+  // Late arrival → turn Day 1 into a free arrival day (keeps the trip length:
+  // absorbs a trailing free day if there is one, otherwise drops Day 1's plan).
+  async function handleMakeDayFree(tripId: string) {
+    const trip = trips.find((t) => t.id === tripId)
+    if (!trip?.itinerary) return
+    const prev = trip.itinerary
+    const next = makeDayOneFree(prev as unknown as AnyItinerary)
+    setTrips((ts) => ts.map((t) => (t.id === tripId ? { ...t, itinerary: next as unknown as Itinerary } : t)))
+    try {
+      const res = await fetch(`/api/trips/${tripId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itinerary: next }),
+      })
+      if (!res.ok) throw new Error('save failed')
+    } catch {
+      setTrips((ts) => ts.map((t) => (t.id === tripId ? { ...t, itinerary: prev } : t)))
+      alert('บันทึกไม่สำเร็จ กรุณาลองใหม่')
     }
   }
 
@@ -175,7 +199,9 @@ export default function GoPage() {
               <AnimatePresence mode="popLayout">
                 {trips.map((trip, idx) => {
                   const itin = trip.itinerary as Itinerary | null
-                  const imgSrc = resolveCoverImage(trip.coverImage, trip.id)
+                  // Seed the fallback with the source template so a duplicated trip
+                  // shows the SAME cover as the pre-planned trip it came from.
+                  const imgSrc = resolveCoverImage(trip.coverImage, trip.templateId ?? trip.id)
                   const tripTotalDays = itin?.totalDays ?? trip.totalDays ?? null
                   return (
                     <motion.div
@@ -186,7 +212,7 @@ export default function GoPage() {
                       exit={{ opacity: 0, scale: 0.85, y: -30, filter: 'blur(8px)', transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } }}
                       whileHover={{ y: -10 }}
                       transition={{ layout: { duration: 0.45, ease: [0.4, 0, 0.2, 1] } }}
-                      className="group flex flex-col bg-white p-4 rounded-xl shadow-sm hover:shadow-2xl transition-all duration-300 relative cursor-pointer"
+                      className="group flex flex-col bg-white p-4 rounded-xl shadow-sm hover:shadow-2xl transition-shadow duration-300 relative cursor-pointer"
                       onClick={() => setViewingTripId(trip.id)}
                     >
                       {!trip.locked && (
@@ -304,10 +330,12 @@ export default function GoPage() {
                       itinerary={itin}
                       variant="light"
                       hero={{
-                        image: resolveCoverImage(trip.coverImage, trip.id),
+                        image: resolveCoverImage(trip.coverImage, trip.templateId ?? trip.id),
                         title: trip.title,
                         subtitle: trip.startDate && itin.totalDays ? formatDateRange(trip.startDate, itin.totalDays) : `${itin.totalDays ?? itin.days.length} วัน`,
                       }}
+                      onMakeDayFree={() => setMakeFreeTripId(trip.id)}
+                      makeDayFreeLabel={hasTrailingFreeDay(itin as unknown as AnyItinerary) ? 'เลื่อนแผนลง · ใส่วันอิสระ' : 'ทำให้วันแรกเป็นวันอิสระ'}
                     />
                   </div>
                 )}
@@ -327,6 +355,26 @@ export default function GoPage() {
           )
         })()}
       </AnimatePresence>
+
+      {/* Make-Day-1-free confirm — case-aware (shift vs replace) */}
+      {(() => {
+        const trip = trips.find((t) => t.id === makeFreeTripId)
+        const itin = trip?.itinerary as unknown as AnyItinerary | undefined
+        const shift = itin ? hasTrailingFreeDay(itin) : false
+        return (
+          <ConfirmDialog
+            open={!!makeFreeTripId}
+            tone={shift ? 'default' : 'danger'}
+            title={shift ? 'เลื่อนแผนลง 1 วัน?' : 'ทำให้วันแรกเป็นวันอิสระ?'}
+            message={shift
+              ? <>วันแรกจะกลายเป็น <b>วันอิสระ (เดินทางถึง)</b> แล้วแผนเดิมเลื่อนลง 1 วัน โดยใช้วันอิสระท้ายทริปที่มีอยู่ — <b>ไม่เสียกิจกรรมใด ๆ</b></>
+              : <>ทริปนี้ยาวเท่าแผนพอดี ไม่มีวันว่างให้เลื่อน — แผนกิจกรรม<b>วันแรกจะถูกแทนที่</b>ด้วยวันอิสระ (เสียกิจกรรมวันแรก)</>}
+            confirmLabel={shift ? 'เลื่อนแผน' : 'ทำให้เป็นวันอิสระ'}
+            onConfirm={() => { if (makeFreeTripId) handleMakeDayFree(makeFreeTripId); setMakeFreeTripId(null) }}
+            onCancel={() => setMakeFreeTripId(null)}
+          />
+        )
+      })()}
     </main>
   )
 }

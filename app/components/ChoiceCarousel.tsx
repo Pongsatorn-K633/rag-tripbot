@@ -53,8 +53,7 @@ export default function ChoiceCarousel({
 }) {
   const v = VARIANTS[variant]
   const [emblaRef, emblaApi] = useEmblaCarousel({
-    align: 'start',
-    containScroll: 'trimSnaps',
+    align: 'center',
     dragFree: false,
   })
   const [activeIndex, setActiveIndex] = useState(choice.selected ?? 0)

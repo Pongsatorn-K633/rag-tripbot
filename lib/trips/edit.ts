@@ -28,7 +28,11 @@ export function validateItinerary(raw: unknown): Itinerary {
     if (!d || typeof d.day !== 'number') throw new TripEditError(400, 'each day needs a numeric `day`')
     if (!Array.isArray(d.activities)) throw new TripEditError(400, 'each day needs an `activities` array')
     for (const a of d.activities) {
-      if (!a || typeof a.name !== 'string') throw new TripEditError(400, 'each activity needs a `name`')
+      // v1 activity has `name`; v2 activity wraps a node with `node.name`.
+      const v1Named = !!a && typeof (a as { name?: unknown }).name === 'string'
+      const node = a && (a as { node?: { name?: unknown } }).node
+      const v2Named = !!node && typeof node.name === 'string'
+      if (!v1Named && !v2Named) throw new TripEditError(400, 'each activity needs a `name` (v1) or `node.name` (v2)')
     }
     if (d.choices !== undefined && !Array.isArray(d.choices)) {
       throw new TripEditError(400, '`choices` must be an array when present')

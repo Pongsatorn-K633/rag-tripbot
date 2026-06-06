@@ -91,6 +91,8 @@ export interface Day {
   transport: string
   /** Extra transport notes (e.g. "Buy Suica card at airport", "Last train 23:15") */
   transportNotes?: string
+  /** Render-only day-level banner (e.g. "your flight arrives after the plan starts"). */
+  notice?: string
 }
 
 // ── Availability ──────────────────────────────────────────────────────────────
@@ -117,6 +119,25 @@ export interface TripAvailability {
   note?: string
 }
 
+// ── Flight (per-traveler, captured when duplicating a plan) ──────────────────
+
+export interface FlightLeg {
+  /** Airport code or name, e.g. "NRT" / "Narita". */
+  airport?: string
+  /** Local time, "HH:MM". */
+  time?: string
+  /** Departure only: the flight leaves the morning AFTER the last itinerary day
+   *  (overnight / early-morning red-eye) → it's the next calendar day. Makes the
+   *  conflict/tight check exact instead of guessing from the clock. */
+  nextDay?: boolean
+}
+
+/** The traveler's own flights — stored on their trip copy, not the template. */
+export interface TripFlight {
+  arrival?: FlightLeg
+  departure?: FlightLeg
+}
+
 // ── Itinerary ───────────────────────────────────────────────────────────────
 
 export interface Itinerary {
@@ -129,6 +150,10 @@ export interface Itinerary {
   description?: string
   /** Absent/1 = legacy flat shape. 2 = node/slot shape (see below). */
   version?: number
+  /** Traveler's flights (added at duplicate time) — renders arrival/departure rows. */
+  flight?: TripFlight
+  /** Airport codes that make sense for this trip (e.g. ["KIX","ITM"]) — drives the flight picker. */
+  airports?: string[]
 }
 
 // ── v2 node/slot model (docs/node-architecture-spec.md) ──────────────────────
@@ -197,6 +222,10 @@ export interface ItineraryV2 {
   days: DayV2[]
   shareCode?: string | null
   description?: string
+  /** Traveler's flights (added at duplicate time) — renders arrival/departure rows. */
+  flight?: TripFlight
+  /** Airport codes that make sense for this trip (e.g. ["KIX","ITM"]) — drives the flight picker. */
+  airports?: string[]
 }
 
 export type AnyItinerary = Itinerary | ItineraryV2

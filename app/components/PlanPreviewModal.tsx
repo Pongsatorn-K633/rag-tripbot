@@ -5,11 +5,16 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'motion/react'
 import { useSession, signIn } from 'next-auth/react'
 import { DayPicker, type DateRange } from 'react-day-picker'
-import { ArrowLeft, CalendarDays, CalendarCheck, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, CalendarDays, CalendarCheck, AlertTriangle, Plane } from 'lucide-react'
 import 'react-day-picker/style.css'
 import ItineraryCard from '@/app/components/ItineraryCard'
 import type { PlanTemplate } from '@/app/components/PlanCard'
+import type { TripFlight } from '@/lib/itinerary-types'
 import { extendItineraryWithFreeDays } from '@/lib/trips/extend'
+import { AIRPORTS, getRenderDays, arrivalTooLate, departureTooTight, departureIsAfter, lastActivityEndTime } from '@/lib/trips/itinerary-model'
+
+/** Whole-hour options (24h, no AM/PM): 00:00 … 23:00. */
+const HOURS = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, '0')}:00`)
 
 type SaveState = 'idle' | 'dates' | 'saving' | 'done'
 
@@ -62,6 +67,7 @@ export default function PlanPreviewModal({
   const { data: session } = useSession()
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [range, setRange] = useState<DateRange | undefined>()
+  const [flight, setFlight] = useState<TripFlight>({})
 
   const today = useMemo(() => {
     const d = new Date()
@@ -71,12 +77,25 @@ export default function PlanPreviewModal({
 
   const tripDays = template?.totalDays ?? template?.itinerary?.days?.length ?? 1
 
+  // The plan's Day-1 first scheduled time — to warn if the flight lands after it.
+  const dayOneFirstTime = useMemo(
+    () => (template?.itinerary ? getRenderDays(template.itinerary)[0]?.activities.find((a) => a.time)?.time : undefined),
+    [template],
+  )
+  // The last day's last activity END time — to warn if departure is too tight.
+  const lastDayLastTime = useMemo(() => {
+    if (!template?.itinerary) return undefined
+    const days = getRenderDays(template.itinerary)
+    return lastActivityEndTime(days[days.length - 1]?.activities ?? [])
+  }, [template])
+
   // Reset + pre-fill whenever a different template is opened. Seed the range from
   // the page's filter window (start → end), padding the end to at least the plan
   // length so the pre-filled range is always valid. No filter ⇒ empty (user picks).
   useEffect(() => {
     if (!template) return
     setSaveState('idle')
+    setFlight({})
     const days = template.totalDays ?? template.itinerary?.days?.length ?? 1
     if (defaultStartDate) {
       const start = new Date(defaultStartDate)
@@ -114,13 +133,16 @@ export default function PlanPreviewModal({
     // Pad the plan with free days when the chosen window is longer than the plan.
     const itineraryToSave =
       freeDays > 0 ? extendItineraryWithFreeDays(template.itinerary, tripLength) : template.itinerary
+    // Attach the traveler's flights (arrival → Day 1, departure → last day).
+    const hasFlight = !!(flight.arrival?.airport || flight.arrival?.time || flight.departure?.airport || flight.departure?.time)
+    const itineraryFinal = hasFlight ? { ...itineraryToSave, flight } : itineraryToSave
     try {
       const res = await fetch('/api/trips', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: template.title,
-          itinerary: itineraryToSave,
+          itinerary: itineraryFinal,
           source: 'plan',
           templateId: template.id,
           coverImage: template.coverImage ?? undefined,
@@ -219,6 +241,11 @@ export default function PlanPreviewModal({
                   valid={valid}
                   today={today}
                   onChange={setRange}
+                  flight={flight}
+                  onFlightChange={setFlight}
+                  airports={template.itinerary?.airports?.length ? template.itinerary.airports : Object.keys(AIRPORTS)}
+                  dayOneFirstTime={dayOneFirstTime}
+                  lastDayLastTime={lastDayLastTime}
                   onBack={() => setSaveState('idle')}
                   onConfirm={handleConfirm}
                   saving={saveState === 'saving'}
@@ -252,6 +279,11 @@ function DateStep({
   valid,
   today,
   onChange,
+  flight,
+  onFlightChange,
+  airports,
+  dayOneFirstTime,
+  lastDayLastTime,
   onBack,
   onConfirm,
   saving,
@@ -271,12 +303,20 @@ function DateStep({
   valid: boolean
   today: Date
   onChange: (r: DateRange | undefined) => void
+  flight: TripFlight
+  onFlightChange: (f: TripFlight) => void
+  airports: string[]
+  dayOneFirstTime?: string
+  lastDayLastTime?: string
   onBack: () => void
   onConfirm: () => void
   saving: boolean
 }) {
   const from = range?.from
   const to = range?.to
+  const depTime = flight.departure?.time
+  const depTight = depTime ? departureTooTight(lastDayLastTime, depTime, flight.departure?.nextDay) : false
+  const depAfter = depTime ? departureIsAfter(lastDayLastTime, depTime, flight.departure?.nextDay) : false
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-2">
@@ -354,6 +394,89 @@ function DateStep({
           </span>
         </div>
       )}
+
+      {/* Optional flights — personalizes the copy: arrival → Day 1, departure → last day */}
+      <div className="space-y-2 border border-zen-black/10 rounded-xl bg-white p-4">
+        <p className="text-[11px] font-black uppercase tracking-widest text-basel-brick flex items-center gap-1.5">
+          <Plane size={12} strokeWidth={2.5} /> เที่ยวบิน · Flights
+          <span className="text-zen-black/40 font-medium normal-case tracking-normal">(ไม่บังคับ)</span>
+        </p>
+        {(['arrival', 'departure'] as const).map((leg) => (
+          <div key={leg} className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="w-12 text-[11px] font-bold text-zen-black/50">{leg === 'arrival' ? 'ขาเข้า' : 'ขาออก'}</span>
+              <select
+                value={flight[leg]?.airport ?? ''}
+                onChange={(e) => onFlightChange({ ...flight, [leg]: { ...flight[leg], airport: e.target.value || undefined } })}
+                className="flex-1 min-w-0 text-sm border border-zen-black/20 rounded-lg px-2 py-1.5 bg-white"
+              >
+                <option value="">สนามบิน · Airport</option>
+                {airports.map((code) => (
+                  <option key={code} value={code}>{AIRPORTS[code]?.label ?? code}</option>
+                ))}
+              </select>
+              <select
+                value={flight[leg]?.time ?? ''}
+                onChange={(e) => onFlightChange({ ...flight, [leg]: { ...flight[leg], time: e.target.value || undefined } })}
+                className="w-28 text-sm border border-zen-black/20 rounded-lg px-2 py-1.5 bg-white"
+              >
+                <option value="">เวลา</option>
+                {HOURS.map((h) => (
+                  <option key={h} value={h}>{h} น.</option>
+                ))}
+              </select>
+            </div>
+            {leg === 'departure' && flight.departure?.time && (
+              <label className="flex items-center justify-end gap-1.5 text-[11px] text-zen-black cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!flight.departure?.nextDay}
+                  onChange={(e) => onFlightChange({ ...flight, departure: { ...flight.departure, nextDay: e.target.checked } })}
+                  className="accent-basel-brick"
+                />
+                {to
+                  ? `ออกเดินทางวันถัดไป (${addDays(to, 1).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })})`
+                  : 'ออกเดินทางวันถัดไป'}
+              </label>
+            )}
+          </div>
+        ))}
+        <p className="text-[10px] text-zen-black/40 leading-relaxed">
+          ใส่เที่ยวบินเพื่อให้ระบบเพิ่มจุดรับ-ส่งสนามบินในวันแรก/วันสุดท้าย (เที่ยวบินกลางคืนถึงเช้า = เที่ยววันแรกได้เต็มวัน)
+        </p>
+        {valid && flight.arrival?.time && arrivalTooLate(flight.arrival.time, dayOneFirstTime) && (
+          <div className="flex items-start gap-2 text-[11px] leading-relaxed bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-amber-900">
+            <AlertTriangle size={13} className="text-amber-600 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+            <span>
+              เครื่องถึง <b>{flight.arrival.time} น.</b> + เผื่อเดินทางจากสนามบิน ~2 ชม. อาจไม่ทันแผนวันแรกที่เริ่ม <b>{dayOneFirstTime} น.</b>
+              <br />พี่ ๆ สามารถปรับได้ที่ <b>My Trip</b> หลังยืนยันและคัดลอกครับ —{' '}
+              {freeDays > 0 ? (
+                <>เนื่องจากเลือกวันยาวกว่าแผน จะ <b>เลื่อนแผนลง 1 วัน</b> เพิ่มวันอิสระวันแรกโดยใช้วันอิสระที่มีอยู่ (<b>ไม่เสียกิจกรรม</b>)</>
+              ) : (
+                <>ทริปยาวเท่าแผนพอดี จะ <b>แทนที่แผนวันแรกด้วยวันอิสระ</b> (เสียกิจกรรมวันแรก) หรือปรับเวลาเอง</>
+              )}
+            </span>
+          </div>
+        )}
+        {/* Departure warning — only once BOTH dates are picked AND the flight is too tight / impossible */}
+        {valid && depTight && (
+          <div className="flex items-start gap-2 text-[11px] leading-relaxed rounded-lg px-3 py-2 bg-amber-50 border border-amber-200 text-amber-900">
+            <AlertTriangle size={13} className="text-amber-600 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+            <span>
+              {depAfter ? (
+                <>กิจกรรมสุดท้ายจบ ~<b>{lastDayLastTime} น.</b> หลังเวลาบิน <b>{depTime} น.</b> — มีบางที่ไปไม่ได้แล้วครับ ลองปรับเวลา แก้ไข/ลบ/สลับกิจกรรม ที่ <b>My Trip</b> ดูนะครับ</>
+              ) : (
+                <>กิจกรรมสุดท้ายจบ ~<b>{lastDayLastTime} น.</b> ใกล้เวลาบิน <b>{depTime} น.</b> — อาจไม่ทันครับ ลองปรับเวลา แก้ไข/ลบ/สลับกิจกรรม ที่ <b>My Trip</b> ดูนะครับ</>
+              )}
+            </span>
+          </div>
+        )}
+        {/* Airport check-in reminder — always shown */}
+        <div className="flex items-start gap-2 text-[11px] leading-relaxed rounded-lg px-3 py-2 bg-zen-black/[0.03] border border-zen-black/10 text-zen-black/60">
+          <Plane size={13} className="text-zen-black/40 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+          <span>อย่าลืมเผื่อ<b>เดินทางไปสนามบิน ~2 ชม.</b> + เช็คอิน <b>อย่างน้อย 3 ชม.</b> (4 ชม. ถ้าต้องขอคืนภาษี VAT)</span>
+        </div>
+      </div>
 
       <button
         onClick={onConfirm}

@@ -333,6 +333,13 @@ export default function DocToTripPage() {
                       >
                         SELECT FILES FROM DEVICE
                       </button>
+                      <a
+                        href="/dopamichi-itinerary-template.xlsx"
+                        download
+                        className="mt-5 text-[11px] font-bold uppercase tracking-widest text-basel-brick hover:text-zen-black underline underline-offset-4 transition-colors"
+                      >
+                        ↓ ดาวน์โหลดเทมเพลต Excel · Download Excel template (auto-imports, no AI needed)
+                      </a>
                     </>
                   )}
                   <input
@@ -497,7 +504,7 @@ export default function DocToTripPage() {
                     }}
                     whileHover={{ y: -10 }}
                     transition={{ layout: { duration: 0.45, ease: [0.4, 0, 0.2, 1] } }}
-                    className="group flex flex-col bg-white p-4 rounded-xl shadow-sm hover:shadow-2xl transition-all duration-300 relative cursor-pointer"
+                    className="group flex flex-col bg-white p-4 rounded-xl shadow-sm hover:shadow-2xl transition-shadow duration-300 relative cursor-pointer"
                     onClick={() => setViewingTripId(trip.id)}
                   >
                     {/* Delete button — hidden on locked (promoted-to-template) trips */}

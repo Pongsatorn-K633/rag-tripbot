@@ -60,7 +60,7 @@ export default function PlanCard({
   return (
     <motion.div
       whileHover={{ y: dimmed ? 0 : -10 }}
-      className={`group flex flex-col ${c.card} p-4 rounded-xl shadow-sm hover:shadow-2xl transition-all duration-300 cursor-pointer relative ${
+      className={`group flex flex-col ${c.card} p-4 rounded-xl shadow-sm hover:shadow-2xl transition-shadow duration-300 cursor-pointer relative ${
         dimmed ? 'opacity-55 hover:opacity-90' : ''
       }`}
       onClick={onOpen}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 import { generateText, generateFromFile } from '@/lib/llm/client'
+import { parseTemplateWorkbook } from '@/lib/trips/excel-template'
 import { auth } from '@/lib/auth'
 import { apiRateLimit, checkLimit, getClientIp } from '@/lib/rate-limit'
 
@@ -233,7 +234,20 @@ export async function POST(req: NextRequest) {
         { responseSchema: ITINERARY_SCHEMA },
       )
     } else {
-      // Spreadsheet: parse cells locally with SheetJS, then ask Gemini to normalize
+      // Spreadsheet: first try the deterministic dopamichi template parser
+      // (exact, instant, no LLM, returns the latest v2 node/slot shape). Any
+      // non-template sheet returns null → fall back to the Gemini path below.
+      const wb = XLSX.read(buffer, { type: 'buffer' })
+      const parsed = parseTemplateWorkbook(wb)
+      if (parsed) {
+        console.log('[/api/upload] matched dopamichi xlsx template → v2 (no LLM)')
+        return NextResponse.json({
+          itinerary: parsed.itinerary,
+          debug: { kind, fileName: file.name, fileType: file.type, fileSize: file.size, source: 'xlsx-template' },
+        })
+      }
+
+      // Otherwise: flatten cells to CSV and ask Gemini to normalize (v1 shape).
       sheetText = spreadsheetToText(buffer)
       if (!sheetText.trim()) {
         return NextResponse.json({ error: 'ไฟล์ Excel ว่างเปล่า' }, { status: 400 })

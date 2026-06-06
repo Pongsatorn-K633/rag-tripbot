@@ -53,6 +53,8 @@ export default function ItineraryView({
   showJourneyHeader = true,
   hero,
   onClose,
+  onMakeDayFree,
+  makeDayFreeLabel,
 }: {
   itinerary: AnyItinerary
   variant?: Variant
@@ -61,9 +63,20 @@ export default function ItineraryView({
   hero?: ItineraryHero
   /** When provided (and a hero is shown), renders a × in the hero's top-right corner. */
   onClose?: () => void
+  /** When set, a flagged day (late arrival) shows a "make Day 1 free" action. */
+  onMakeDayFree?: () => void
+  /** Case-specific label for that action (shift vs replace). */
+  makeDayFreeLabel?: string
 }) {
   const t = VIEW[variant]
-  const [openDay, setOpenDay] = useState<number | null>(null) // all days collapsed by default
+  // Multiple days can be open at once; toggling one never collapses the others.
+  const [openDays, setOpenDays] = useState<Set<number>>(new Set())
+  const toggleDay = (d: number) =>
+    setOpenDays((prev) => {
+      const next = new Set(prev)
+      next.has(d) ? next.delete(d) : next.add(d)
+      return next
+    })
   // Normalize v1 OR v2 into the v1 render shape (lib/trips/itinerary-model.ts).
   const days = getRenderDays(itinerary)
 
@@ -109,10 +122,12 @@ export default function ItineraryView({
           <DayCard
             key={day.day}
             day={day}
-            isOpen={openDay === day.day}
-            onToggle={() => setOpenDay(openDay === day.day ? null : day.day)}
+            isOpen={openDays.has(day.day)}
+            onToggle={() => toggleDay(day.day)}
             t={t}
             variant={variant}
+            onMakeDayFree={onMakeDayFree}
+            makeDayFreeLabel={makeDayFreeLabel}
           />
         ))}
       </div>
@@ -162,7 +177,7 @@ function HeroCarousel({ images, alt, imgClass }: { images: string[]; alt: string
 
 // ── Day card ────────────────────────────────────────────────────────────────
 
-function DayCard({ day, isOpen, onToggle, t, variant }: { day: Day; isOpen: boolean; onToggle: () => void; t: Tokens; variant: Variant }) {
+function DayCard({ day, isOpen, onToggle, t, variant, onMakeDayFree, makeDayFreeLabel }: { day: Day; isOpen: boolean; onToggle: () => void; t: Tokens; variant: Variant; onMakeDayFree?: () => void; makeDayFreeLabel?: string }) {
   const paddedDay = String(day.day).padStart(2, '0')
   const mandatoryCount = day.activities.filter((a) => a.priority === 'mandatory').length
   const choiceCount = day.choices?.length ?? 0
@@ -199,6 +214,11 @@ function DayCard({ day, isOpen, onToggle, t, variant }: { day: Day; isOpen: bool
                 <Star size={10} strokeWidth={2.5} /> {choiceCount} choice{choiceCount > 1 ? 's' : ''}
               </span>
             )}
+            {day.notice && (
+              <span className="text-[10px] text-amber-600 font-bold flex items-center gap-0.5">
+                <AlertTriangle size={10} strokeWidth={2.5} /> ปรับเวลา
+              </span>
+            )}
           </div>
         </div>
         <ChevronDown
@@ -212,6 +232,26 @@ function DayCard({ day, isOpen, onToggle, t, variant }: { day: Day; isOpen: bool
 
       {isOpen && (
         <div className={`px-6 pb-8 pt-2 space-y-8 border-t ${t.divider}`}>
+          {day.notice && (
+            <div className={`flex items-start gap-2.5 text-[13px] leading-relaxed rounded-lg px-4 py-3 ${
+              variant === 'dark'
+                ? 'bg-amber-500/10 border border-amber-500/30 text-amber-200'
+                : 'bg-amber-50 border border-amber-300 text-amber-900'
+            }`}>
+              <AlertTriangle size={16} className="text-amber-600 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+              <div className="flex-1 space-y-2">
+                <span className="block">{day.notice}</span>
+                {onMakeDayFree && (
+                  <button
+                    onClick={onMakeDayFree}
+                    className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest bg-amber-600 text-white px-3 py-1.5 rounded-lg hover:bg-amber-700 transition-colors"
+                  >
+                    <CalendarCheck size={12} strokeWidth={2.5} /> {makeDayFreeLabel ?? 'ปรับวันแรก'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
           {day.free && day.activities.length === 0 && (!day.choices || day.choices.length === 0) && (
             <div className={`flex items-center gap-2.5 text-sm rounded-lg px-4 py-3 ${
               variant === 'dark' ? 'bg-white/5 text-briefing-cream/60' : 'bg-emerald-50 text-emerald-900'

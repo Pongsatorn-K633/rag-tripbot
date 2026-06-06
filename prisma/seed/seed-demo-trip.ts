@@ -92,26 +92,31 @@ async function main() {
     }
   }
   const single = (name: string, time?: string): Slot => ({ kind: 'single', node: snap(name, time) })
+  // Pick-one meal/stay slot — renders as the swipeable restaurant-choice carousel.
+  // selected=null → no option pre-picked (a template shouldn't default a choice).
+  const choice = (label: string, names: string[], selected: number | null = null): Slot =>
+    ({ kind: 'choice', label, selected, options: names.map((n) => snap(n)) })
   const act = (name: string, time: string, priority?: ActivityPriority) => ({ time, priority, node: snap(name) })
+
+  // A meal can be a quick [name, time] single, or a full Slot (e.g. a choice).
+  type MealInput = [string, string] | Slot
+  const mealSlot = (m?: MealInput): Slot | null =>
+    !m ? null : Array.isArray(m) ? single(m[0], m[1]) : m
 
   const day = (
     n: number, location: string,
-    meals: { b?: [string, string]; l?: [string, string]; d?: [string, string] },
+    meals: { b?: MealInput; l?: MealInput; d?: MealInput },
     activities: DayV2['activities'],
   ): DayV2 => ({
     day: n, location, free: false,
-    meals: {
-      breakfast: meals.b ? single(meals.b[0], meals.b[1]) : null,
-      lunch: meals.l ? single(meals.l[0], meals.l[1]) : null,
-      dinner: meals.d ? single(meals.d[0], meals.d[1]) : null,
-    },
+    meals: { breakfast: mealSlot(meals.b), lunch: mealSlot(meals.l), dinner: mealSlot(meals.d) },
     activities,
     accommodation: single('The Ritz-Carlton Kyoto'),
     transport: [],
   })
 
   const days: DayV2[] = [
-    day(1, 'Higashiyama (South)', { b: ['% Arabica Kyoto', '08:00'], l: ['Menbaka Fire Ramen', '12:30'], d: ['Kikunoi Honten', '18:30'] }, [
+    day(1, 'Higashiyama (South)', { b: ['% Arabica Kyoto', '08:00'], l: ['Menbaka Fire Ramen', '12:30'], d: choice('อาหารเย็น · เลือก 1 ร้าน (Dinner)', ['Kikunoi Honten', 'Pontocho Izakaya', 'Nishiki Market Street Food']) }, [
       act('Fushimi Inari Taisha', '09:00', 'recommended'),
       act('Kyoto City Bus 100', '11:00'),
       act('Kiyomizu-dera', '11:45', 'recommended'),
@@ -144,6 +149,7 @@ async function main() {
   const itinerary: ItineraryV2 = {
     version: 2, title: DEMO_TITLE, totalDays: 4, season: 'Spring',
     description: 'เดโม่ 4 วันเกียวโต — โหนด logistics (รถไฟ/บัส/เดิน) แทรกในไทม์ไลน์ + วันอุจิเดินชิมชาเขียว',
+    airports: ['KIX'], // Kyoto = Kansai international gateway (ITM is domestic-only)
     days,
   }
 

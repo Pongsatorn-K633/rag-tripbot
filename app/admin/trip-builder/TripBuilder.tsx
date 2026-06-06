@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Plus, Trash2, Save, X, Clock, ChevronDown } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Save, X, Clock, ChevronDown, Download } from 'lucide-react'
 import type { DayV2, Slot, NodeSnap, ItineraryV2, ActivityPriority, DateRange, TripAvailability } from '@/lib/itinerary-types'
 import NodePicker from './NodePicker'
 import RangeEditor from '@/app/components/RangeEditor'
@@ -163,7 +163,12 @@ export default function TripBuilder({ initial }: { initial?: BuilderInitial }) {
             <h1 className="text-4xl md:text-5xl font-black font-headline tracking-tighter text-zen-black italic">{isEdit ? 'Edit Trip' : 'Trip Builder'}</h1>
             <p className="text-sm text-zen-black/50 mt-1">{isEdit ? 'แก้ไขแพลนแบบ node/slot (v2)' : 'สร้างแพลนแบบ node/slot'}</p>
           </div>
-          <Link href="/admin/dashboard" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zen-black/60 hover:text-basel-brick"><ArrowLeft size={14} strokeWidth={3} /> Dashboard</Link>
+          <div className="flex flex-col items-end gap-2">
+            <Link href="/admin/dashboard" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zen-black/60 hover:text-basel-brick"><ArrowLeft size={14} strokeWidth={3} /> Dashboard</Link>
+            <a href="/dopamichi-itinerary-template.xlsx" download className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-basel-brick hover:text-zen-black transition-colors" title="เทมเพลต Excel โครงสร้างเดียวกับ Builder — กรอกแล้วอัปโหลดที่ Doc-to-Trip">
+              <Download size={14} strokeWidth={3} /> Excel template
+            </a>
+          </div>
         </div>
 
         {/* Meta */}

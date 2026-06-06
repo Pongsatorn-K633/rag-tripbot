@@ -1,6 +1,6 @@
 import type {
   Itinerary, ItineraryV2, AnyItinerary, Day, DayV2, Activity, Choice, ActivityCategory,
-  ActivityPriority, NodeSnap, Slot, Meals,
+  ActivityPriority, NodeSnap, Slot, Meals, FlightLeg, TripFlight,
 } from '@/lib/itinerary-types'
 
 /**
@@ -123,7 +123,9 @@ function v2DayToRenderDay(d: DayV2): Day {
   }
 
   const transport =
-    (d.transport ?? [])
+    // Defensive: a legacy free-day padded into a v2 trip may carry transport as a
+    // string ('') instead of an array — coerce so we never call .map on a string.
+    (Array.isArray(d.transport) ? d.transport : [])
       .map((leg) => {
         const route = [leg.from, leg.to].filter(Boolean).join(' → ')
         const via = leg.node ? `${leg.node.emoji ?? ''} ${leg.node.name}`.trim() : ''
@@ -138,12 +140,172 @@ function v2DayToRenderDay(d: DayV2): Day {
   }
 }
 
-/** v1 days as-is; v2 days converted to the v1 render shape. Empty array if no days. */
+/** v1 days as-is; v2 days converted to the v1 render shape. Empty array if no days.
+ *  Also injects the traveler's flight (arrival → day 1, departure → last day). */
 export function getRenderDays(itinerary: AnyItinerary | null | undefined): Day[] {
   if (!itinerary || typeof itinerary !== 'object') return []
-  if (isV2(itinerary)) return (itinerary.days ?? []).map(v2DayToRenderDay)
-  const days = (itinerary as Itinerary).days
-  return Array.isArray(days) ? days : []
+  const base = isV2(itinerary)
+    ? (itinerary.days ?? []).map(v2DayToRenderDay)
+    : Array.isArray((itinerary as Itinerary).days)
+      ? (itinerary as Itinerary).days
+      : []
+  return applyFlight(base, (itinerary as { flight?: TripFlight | null }).flight)
+}
+
+// ── flight injection (arrival/departure rows from the traveler's input) ───────
+
+export const AIRPORTS: Record<string, { label: string; transfer: string }> = {
+  NRT: { label: 'Narita (NRT)', transfer: 'Narita Express / Skyliner → เข้าเมือง (~60–90 นาที)' },
+  HND: { label: 'Haneda (HND)', transfer: 'Keikyu / Monorail → เข้าเมือง (~30 นาที)' },
+  KIX: { label: 'Kansai (KIX)', transfer: 'Haruka → Kyoto (~75 นาที) / Nankai → Osaka (~45 นาที)' },
+  NGO: { label: 'Chubu Centrair (NGO)', transfer: 'μ-Sky → Nagoya (~30 นาที)' },
+  CTS: { label: 'New Chitose (CTS)', transfer: 'JR Rapid → Sapporo (~40 นาที)' },
+  FUK: { label: 'Fukuoka (FUK)', transfer: 'Subway → Hakata (~5–10 นาที)' },
+}
+
+function airportInfo(airport?: string) {
+  return airport ? AIRPORTS[airport.trim().toUpperCase()] : undefined
+}
+
+/** Assumed minutes to get from the airport to the day's first activity. A fixed
+ *  default (varies by trip/transport, but ~2h keeps most plans from shifting). */
+export const AIRPORT_TRANSFER_BUFFER_MIN = 120
+
+function toMinutes(t?: string): number | null {
+  if (!t) return null
+  const [h, m] = t.split(':').map(Number)
+  return Number.isFinite(h) ? h * 60 + (Number.isFinite(m) ? m : 0) : null
+}
+
+function fmtHHMM(min: number): string {
+  const h = Math.floor(min / 60) % 24
+  const m = min % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
+/** Parse "1.5h" / "45min" / "1h 30min" / "2 ชม." → minutes (0 if unknown). */
+function durationMinutes(d?: string | null): number {
+  if (!d) return 0
+  let total = 0
+  const h = d.match(/([\d.]+)\s*(?:h|hr|hour|ชม|ชั่วโมง)/i)
+  const m = d.match(/([\d.]+)\s*(?:m|min|นาที)/i)
+  if (h) total += parseFloat(h[1]) * 60
+  if (m) total += parseFloat(m[1])
+  return Math.round(total)
+}
+
+function activityEndTime(a: { time?: string | null; duration?: string | null }): string | undefined {
+  const start = toMinutes(a.time ?? undefined)
+  if (start == null) return undefined
+  return fmtHHMM(start + durationMinutes(a.duration))
+}
+
+/** Latest END time among a day's activities (start + duration). */
+export function lastActivityEndTime(activities: { time?: string | null; duration?: string | null }[]): string | undefined {
+  return activities.reduce<string | undefined>((max, a) => {
+    const e = activityEndTime(a)
+    return e && (!max || e > max) ? e : max
+  }, undefined)
+}
+
+/** Day 1 needs adjusting when the flight can't reach the first activity in time —
+ *  i.e. arrival + transfer buffer ≥ the first activity (e.g. land 06:00 + 2h = 08:00
+ *  ≥ an 08:00 start ⇒ too tight; land 05:00 ⇒ fine). */
+export function arrivalTooLate(arrivalTime?: string, firstActivityTime?: string): boolean {
+  const a = toMinutes(arrivalTime)
+  const f = toMinutes(firstActivityTime)
+  if (a == null || f == null) return false
+  return a + AIRPORT_TRANSFER_BUFFER_MIN >= f
+}
+
+/** Check-in time before an international flight (4h if claiming a tax refund). */
+export const CHECKIN_BUFFER_MIN = 180
+
+/** Required gap from the last activity's END to the flight = travel-to-airport
+ *  (reusing the transfer estimate, since we can't know the exact location) +
+ *  check-in. ~5h with the defaults — powers a cautious reminder, not a hard rule. */
+export const DEPARTURE_TIGHT_MIN = AIRPORT_TRANSFER_BUFFER_MIN + CHECKIN_BUFFER_MIN
+
+/** Minutes from the last activity's END to the flight. `nextDay` (a red-eye /
+ *  morning-after departure) adds 24h — so the day is EXACT, no clock guessing. */
+function departureGap(lastActivityEnd?: string, departureTime?: string, nextDay?: boolean): number | null {
+  const e = toMinutes(lastActivityEnd)
+  const d = toMinutes(departureTime)
+  if (e == null || d == null) return null
+  return d + (nextDay ? 1440 : 0) - e
+}
+
+/** Not enough time after the last activity to make the flight (travel + check-in). */
+export function departureTooTight(lastActivityEnd?: string, departureTime?: string, nextDay?: boolean): boolean {
+  const gap = departureGap(lastActivityEnd, departureTime, nextDay)
+  return gap != null && gap < DEPARTURE_TIGHT_MIN
+}
+
+/** Last activity falls AFTER the flight (a same-day flight earlier than the activity → impossible). */
+export function departureIsAfter(lastActivityEnd?: string, departureTime?: string, nextDay?: boolean): boolean {
+  const gap = departureGap(lastActivityEnd, departureTime, nextDay)
+  return gap != null && gap < 0
+}
+
+function flightActivity(kind: 'arrival' | 'departure', leg: FlightLeg): Activity {
+  const info = airportInfo(leg.airport)
+  const place = info?.label ?? leg.airport?.trim()
+  const verb = kind === 'arrival' ? 'ถึง' : 'ออกจาก'
+  const name = place
+    ? `${verb} ${place}`
+    : kind === 'arrival' ? 'เที่ยวบินขาเข้า · Arrival' : 'เที่ยวบินขาออก · Departure'
+  return {
+    time: leg.time || '',
+    name,
+    emoji: kind === 'arrival' ? '🛬' : '🛫',
+    category: 'flight',
+    isLogistics: true,
+    priority: 'mandatory',
+    // Arrival → transfer-to-city hint; departure → check-in reminder (default).
+    notes: kind === 'departure'
+      ? 'เผื่อเดินทางไปสนามบิน ~2 ชม. + เช็คอินอย่างน้อย 3 ชม. (4 ชม. ถ้าขอคืนภาษี VAT)'
+      : info?.transfer || undefined,
+  }
+}
+
+const hasLeg = (leg?: FlightLeg) => !!leg && !!(leg.airport?.trim() || leg.time?.trim())
+
+/** Bookend the trip with flights (non-mutating): arrival is ALWAYS the first
+ *  item of day 1 and departure the LAST item of the final day — never time-sorted
+ *  into the middle (a 15:00 arrival must not land after a 14:00 activity). When
+ *  the arrival is later than the day's plan, the arrival row carries a "ปรับเวลา"
+ *  note so the traveler knows to shift Day 1. */
+function applyFlight(days: Day[], flight?: TripFlight | null): Day[] {
+  if (!flight || days.length === 0) return days
+  const out = days.slice()
+  if (hasLeg(flight.arrival)) {
+    const arr = flight.arrival!
+    // First curated activity time (before we prepend the arrival row).
+    const firstTime = out[0].activities.find((a) => a.time)?.time
+    const day0: Day = { ...out[0], activities: [flightActivity('arrival', arr), ...out[0].activities] }
+    // Can't reach the first activity in time (incl. airport-transfer buffer) →
+    // flag it prominently (non-destructive; the traveler shifts Day 1 in My Trip).
+    if (arrivalTooLate(arr.time, firstTime)) {
+      day0.notice = `✈️ เครื่องถึง ${arr.time} น. + เผื่อเวลาเดินทางจากสนามบิน ~2 ชม. อาจไม่ทันแผนวันแรกที่เริ่ม ${firstTime} น. — ปรับได้ที่ My Trip`
+    }
+    out[0] = day0
+  }
+  if (hasLeg(flight.departure)) {
+    const dep = flight.departure!
+    const li = out.length - 1
+    // When the LAST activity FINISHES (start + duration), on the last day.
+    const lastEnd = lastActivityEndTime(out[li].activities)
+    const lastDay: Day = { ...out[li], activities: [...out[li].activities, flightActivity('departure', dep)] }
+    // Can't make the flight after the activity ends + travel + check-in?
+    if (departureTooTight(lastEnd, dep.time, dep.nextDay)) {
+      const tight = departureIsAfter(lastEnd, dep.time, dep.nextDay)
+        ? `🛫 กิจกรรมสุดท้ายจบ ~${lastEnd} น. หลังเวลาบิน ${dep.time} น. — มีบางที่ไปไม่ได้แล้วครับ ลองปรับเวลา แก้ไข/ลบ/สลับกิจกรรม ที่ My Trip ดูนะครับ`
+        : `🛫 กิจกรรมสุดท้ายจบ ~${lastEnd} น. — เผื่อเดินทางไปสนามบิน (~2 ชม.) + เช็คอิน (3 ชม. / 4 ชม. ถ้าขอคืนภาษี) อาจไม่ทันบิน ${dep.time} น. ลองปรับเวลา แก้ไข/ลบ/สลับกิจกรรม ที่ My Trip ดูนะครับ`
+      lastDay.notice = [lastDay.notice, tight].filter(Boolean).join(' · ')
+    }
+    out[li] = lastDay
+  }
+  return out
 }
 
 // ── v1 → v2 migration (Phase N5) ─────────────────────────────────────────────
