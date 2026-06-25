@@ -1,0 +1,4216 @@
+{
+  "source_file": "Dopamichi.xlsx",
+  "sheet": "Trip Rec 2",
+  "overview": {
+    "title": "Tokyo - Matsumoto",
+    "cover_tagline": "ทริปเดียวได้ครบ 2 ฟีลลิ่ง! แสงสีก็มี วิวภูเขาหลักล้านก็มา!",
+    "description": "เปิดทริปด้วยการเข้า Tokyo ปักหลักย่าน Ikebukuro สะดวกขึ้นรถไฟสาย Yamanote นั่งวนลูปตะลุยช้อป กิน ดื่ม ชมแสงสีเสียงได้ทั่วเมือง! พ่วงเดย์ทริปสุดชิลที่คามาคุระ ก่อนเปลี่ยนโหมดเช่ารถขับตะลุยขุนเขา สูดอากาศบริสุทธิ์ที่มัตสึโมโตะ ทาเตยามะ ฮะคุบะ และคามิโคจิ",
+    "available_period": {
+      "primary": "17 April - 15 Nov",
+      "details": "Recheck the website for change\nhttps://www.kamikochi.org/ \nhttps://www.alpen-route.com/en/"
+    },
+    "recommended_period": [
+      {
+        "primary": "1 Oct – 15 Nov",
+        "details": "Tateyama ใบไม้เปลี่ยนสีสวยงามไล่จากยอดเขา Murodo (พีคปลาย ก.ย. - กลาง ต.ค.) ลงมาด้านล่างเขื่อน \nส่วน Kamikochi (พีคกลาง ต.ค. - ต้น พ.ย.) ได้ภาพยอดเขาโรยหิมะตัดใบไม้สี ยิ่งปลายเดือนใบไม้ยิ่งส้ม\nใน Tokyo อากาศเย็นสบาย ท้องฟ้าโปร่งใส"
+      },
+      {
+        "primary": "1 May – 20 June",
+        "details": "สัมผัสกำแพงหิมะสูงที่ Tateyama พร้อม\nชมวิวป่าสีเขียวตัดยอดเขาหิมะที่ Kamikochi และ Hakuba\nเดินชิลใต้ทิวต้นสนที่ Togakushi\nแวะชมดอกไฮเดรนเยียบานที่ Kamakura\nและชมแสงสีเสียงเที่ยว Tokyo ในบรรยากาศสบายๆ ก่อนเข้าฤดูฝน"
+      },
+      {
+        "primary": "15 July – 31 Aug",
+        "details": "เดินเขาฤดูร้อน\nTateyama ⭐ + Kamikochi ⭐ เดินเทรล + ดอกไม้อัลไพน์ อากาศบนเขาเย็นสบาย · Tokyo ร้อนชื้นจัด เหมาะอยู่ในร่ม/ห้าง/พิพิธภัณฑ์ มากกว่าเดินเที่ยวกลางแจ้ง"
+      }
+    ],
+    "area_code": "(fill in app)",
+    "cover_images": "(fill in app)",
+    "available_airports": {
+      "major_hubs": [
+        {
+          "name": "Kansai",
+          "code": "KIX"
+        }
+      ]
+    },
+    "car_rental": {
+      "primary": "Y",
+      "details": {
+        "rentalDuration": "4 days",
+        "byGroupSize": [
+          {
+            "size": "1-2",
+            "advice": "Public Transit (Most economical)"
+          },
+          {
+            "size": "3-5",
+            "advice": "Compact / Sedan (e.g., Yaris, Camry)"
+          },
+          {
+            "size": "6-7",
+            "advice": "Minivan / Passenger Van (e.g., Sienta, Alphard)"
+          }
+        ]
+      }
+    },
+    "arrival_to_first_act_hrs": 2,
+    "arrival_to_departure_airport_hrs": 3,
+    "logistic_guide_en": "🚆Most trains run from around 5:00 AM until midnight, so please allow extra time if you're traveling by train.",
+    "logistic_guide_th": "🚆รถไฟส่วนใหญ่วิ่งตั้งแต่ 05:00 น. ถึงเที่ยงคืน ถ้าจะเดินทางด้วยรถไฟ อย่าลืมกะเวลาดี ๆ นะครับ",
+    "accommodation_guide_en": "Check-in / Check-out: Usually 15:00 / 10:00 for hotels.\n🧳Luggage Storage: Most hotels allow free pre-check-in luggage drop-off (check with your host for Airbnbs).\n\nNo storage at your stay? Don't worry! use station coin lockers, nearby luggage storage shops, or we recommend using ecbo cloak app for convenient luggage storage.",
+    "accommodation_guide_th": "เวลาเช็คอิน / เช็คเอาต์: โดยปกติโรงแรมจะอยู่ที่ 15:00 / 10:00\n🧳การฝากกระเป๋า: โรงแรมส่วนใหญ่สามารถฝากกระเป๋าไว้ก่อนเช็คอินได้ฟรี (หากเป็น Airbnb แนะนำให้ตรวจสอบกับเจ้าของที่พักอีกครั้ง)\n\nหากที่พักไม่มีที่ฝากกระเป๋า? ไม่ต้องห่วงครับ! สามารถไปฝากตามตู้ล็อกเกอร์ในสถานีรถไฟ หรือร้านรับฝากกระเป๋าใกล้ๆ ได้เลย หรือแนะนำให้โหลดแอป ecbo cloak มาใช้ดูครับ สะดวกมากๆ",
+    "food_guide_en": "- Operating hours may vary. Please check directly with the restaurant before visiting.\n- Food prices and Rating are just estimates pulled from Google Maps.",
+    "food_guide_th": "- เวลาเปิด-ปิดอาจมีการเปลี่ยนแปลง แนะนำให้ตรวจสอบกับทางร้านอีกครั้งก่อนเดินทาง\n- ราคาร้านอาหารและเรทติ้งเป็นข้อมูลที่อิงจาก Google Maps",
+    "remark_en": "Prices for transport, food, accommodation, and activities are calculated for our exact trip dates (Oct 16–24, 2026).",
+    "remark_th": "ค่าเดินทาง ของกิน ที่พัก และกิจกรรมต่างๆ คำนวณจากช่วงที่เดินทางจริง (16-24 ต.ค. 2026)",
+    "queue_guide_en": "🟢 Low (Walk-in Friendly): Minimal to no wait expected. You can usually walk right in and be seated.\n\n🟡 Mid (Moderate Queue): Lines form during peak dining hours. Expect a standard 15–60 minute wait on average. Planning your arrival ahead of time is recommended.\n\n🔴 High (Heavy Crowds): Popular hotspot with significant wait times, often exceeding 1–2 hours. Preparing for a long queue and allocating substantial extra time is highly necessary.",
+    "queue_guide_th": "🟢 Low (เข้าใช้บริการได้สะดวก): คิวสั้นมากหรือไม่มีคิวเลย สามารถเดินเข้าร้านและรับบริการได้ทันที\n\n🟡 Mid (คิวปานกลาง): มักมีคิวในช่วงเวลาอาหาร แนะนำให้เผื่อเวลาสำหรับรอคิวประมาณ 15–60 นาทีโดยเฉลี่ย\n\n🔴 High (คิวหนาแน่นมาก): ร้านยอดฮิตที่มีคิวยาวเป็นพิเศษ อาจต้องรอคิวนานกว่า 1–2 ชั่วโมงขึ้นไป จำเป็นต้องเผื่อเวลาไว้ค่อนข้างมาก"
+  },
+  "highlights": [
+    {
+      "name": "Tateyama",
+      "description": "เดินชมกำแพงหิมะสูง 10–20 เมตร ซึ่งเป็นจุดหมายหลักที่ไม่ควรพลาดในช่วงเวลานี้",
+      "level": "😍"
+    },
+    {
+      "name": "Kamikochi",
+      "description": "สัมผัสความสดชื่นของป่าผลัดใบสีเขียว ตัดกับภาพยอดเขาที่ยังมีหิมะปกคลุมอยู่เบื้องหลัง",
+      "level": "😍"
+    },
+    {
+      "name": "Kamakura",
+      "description": "ชมความงามของดอกไฮเดรนเยียที่เริ่มบานสะพรั่ง เพิ่มสีสันให้ทั่วทั้งเมือง",
+      "level": "😍"
+    },
+    {
+      "name": "Hakuba",
+      "description": "ดื่มด่ำกับทิวทัศน์ของเทือกเขา และผืนป่าที่กำลังเปลี่ยนเป็นสีเขียวชอุ่ม",
+      "level": "😍"
+    },
+    {
+      "name": "Togakushi",
+      "description": "เดินเล่นใต้ร่มเงาต้นสนสูง ท่ามกลางบรรยากาศของหิมะที่กำลังละลาย",
+      "level": "⭐"
+    },
+    {
+      "name": "Tokyo",
+      "description": "แวะเที่ยวในเมืองช่วงที่อากาศยังเย็นสบาย เดินได้เรื่อยๆ ก่อนจะเข้าช่วงหน้าฝน",
+      "level": "👌🏻"
+    }
+  ],
+  "reference_date": "17 October 2026 - 24 October 2026",
+  "days": [
+    {
+      "day": 1,
+      "name": {
+        "en": "Japan, I'm coming",
+        "th": "ญี่ปุ่น ข้ามาแล้วว"
+      },
+      "activities": [
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "08:00",
+          "duration_min": 180,
+          "priority": "Must",
+          "location": "Tokyo, Narita",
+          "name": {
+            "en": "Arrive at Narita! Get in the City",
+            "th": "ถึง Narita แล้ว! เข้าเมืองเลย"
+          },
+          "description": {
+            "en": "🚌 Bus to Ikebukuro (Willer Bus), [~1 hr 50 mins | ¥2,300 (~472 THB)]\n- Boarding Point: Narita Airport Terminal 2 (1F), Bus Stop No. 7\n- Drop-off Point: Ikebukuro Station (West Exit)\n1 suitcase per person can be stored in the trunk.\nYou can check more details on prices and boarding points here: https://willer-travel.com/en/airport-bus/ikebukuro-narita/",
+            "th": "🚌 นั่งบัสเข้า Ikebukuro (Willer Bus), [~1 ชม. 50 นาที | ¥2,300 (~472 บาท)]\n- จุดขึ้นรถ: สนามบิน Narita Terminal 2 (ชั้น 1) ป้ายหมายเลข 7\n- จุดลงรถ: สถานี Ikebukuro (West Exit)\nโหลดกระเป๋าเดินทางใต้ท้องรถได้ คนละ 1 ใบ\nสามารถเช็ครายละเอียดราคา จุดขึ้นลงเพิ่มเติมได้ที่นี่: https://willer-travel.com/en/airport-bus/ikebukuro-narita/"
+          },
+          "cost": "¥2,300 (~฿472)",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": "Besides the bus, you can also travel via:\n🚆 Keisei Skyliner Train (Fastest) - Transfer to Yamanote Line, Total [~1 hr | ¥2,760]\nRoute: Narita Airport → Nippori Station (via Skyliner) → Transfer to JR Yamanote Line → Ikebukuro Station",
+            "th": "นอกจากรถบัสสามารถเดินทางผ่าน\n🚆 รถไฟ Keisei Skyliner (เร็วที่สุด) - ต่อรถไฟ Yamanote, รวม [~1 ชม. | ¥2,760]\nเส้นทาง: สนามบิน Narita → สถานี Nippori (นั่ง Skyliner) → เปลี่ยนขบวนเป็นสาย JR Yamanote → สถานี Ikebukuro"
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Admin & Services",
+          "is_default": null,
+          "time": "11:00",
+          "duration_min": 30,
+          "priority": "Recommend",
+          "location": "Tokyo, Ikebukuro",
+          "name": {
+            "en": "At Ikebukuro, Drop Luggage",
+            "th": "ถึง Ikebukuro ฝากกระเป๋า ณ ที่พัก"
+          },
+          "description": {
+            "en": "Suggest dropping luggage at the station or accommodation (might have fee) before exploring and finding food.\n- Accommodation Guide 🚆Most trains run from around 5:00 AM until midnight, so please allow extra time if you're traveling by train..",
+            "th": "แนะนำแวะฝากกระเป๋าที่สถานีหรือที่พัก (อาจมีค่าใช้จ่าย) ก่อนออกไปเดินเที่ยวและหาของกินครับ\n- คู่มือที่พัก 🚆รถไฟส่วนใหญ่วิ่งตั้งแต่ 05:00 น. ถึงเที่ยงคืน ถ้าจะเดินทางด้วยรถไฟ อย่าลืมกะเวลาดี ๆ นะครับ"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/RCJrqeY23k3vZuru5",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Lunch",
+          "is_default": true,
+          "time": "11:30",
+          "duration_min": 90,
+          "priority": "Normal",
+          "location": "Tokyo, Ikebukuro",
+          "name": {
+            "en": "Yakiniku Joan Ikebukuro",
+            "th": "Yakiniku Joan Ikebukuro"
+          },
+          "description": {
+            "en": "Japanese BBQ with high-quality, delicious meat without the premium price tag",
+            "th": "ร้านปิ้งย่าง เสิร์ฟเนื้อคุณภาพดีและรสชาติอร่อยในราคาสบายกระเป๋า"
+          },
+          "cost": "฿ (Budget / ประหยัด)",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": "Mid",
+          "booking_policy": "Optional",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/FQJkDuvLunypSPz1A",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Lunch",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Tokyo, Ikebukuro",
+          "name": {
+            "en": "Izumo Ikebukuro",
+            "th": "Izumo Ikebukuro"
+          },
+          "description": {
+            "en": "Unagi Donburi. A thick, towering cuts of eel sitting on a mound of rice",
+            "th": "ข้าวหน้าปลาไหลชิ้นหนาใหญ่วางอยู่บนข้าวแบบล้นๆ"
+          },
+          "cost": "฿฿ (Mid-range / ระดับกลาง)",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": "Mid",
+          "booking_policy": "Optional",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/fLZkhLbSpA7ddxHC8",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Lunch",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Tokyo, Ikebukuro",
+          "name": {
+            "en": "Mutekiya",
+            "th": "Mutekiya"
+          },
+          "description": {
+            "en": "Ramen, known for its rich, creamy pork-bone broth and exceptionally thick.",
+            "th": "ราเมน ขึ้นชื่อเรื่องซุปกระดูกหมูเข้มข้นกลมกล่อม และหมูชาชูย่างชิ้นหนา"
+          },
+          "cost": "฿ (Budget / ประหยัด)",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": "High",
+          "booking_policy": "Walk-in Only",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/omiifHCCdg612LH28",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Lunch",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Tokyo, Ikebukuro",
+          "name": {
+            "en": "Yellow 池袋",
+            "th": "Yellow 池袋"
+          },
+          "description": {
+            "en": "Omurice with Hamburg, expect a big juicy hamburg steak topped with a fluffy omelet",
+            "th": "ข้าวห่อไข่แฮมเบิร์ก เนื้อแฮมเบิร์กหนาฉ่ำท็อปด้วยไข่ออมเล็ตเนื้อฟูเยิ้มๆ"
+          },
+          "cost": "฿฿ (Mid-range / ระดับกลาง)",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": "Mid",
+          "booking_policy": "Walk-in Only",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/sPQV43GX8dLfTCD7A",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 1",
+          "is_default": null,
+          "time": "13:00",
+          "duration_min": 180,
+          "priority": "Recommend",
+          "location": "Tokyo, Ikebukuro",
+          "name": {
+            "en": "Explore Ikebukuro & Sunshine City",
+            "th": "เดินเล่นย่าน Ikebukuro, ตึก Sunshine City"
+          },
+          "description": {
+            "en": "🛍️ Sunshine City: A massive complex featuring shops, an aquarium, an observation deck, and popular character stores like the Pokemon Center and Monchhichi.\n👾 Animate / Otome Road: A must-visit for anime and manga fans! Home to the massive Animate Ikebukuro flagship store, plus endless crane games, arcades, and gachapon machines.",
+            "th": "🛍️ ตึก Sunshine City: แหล่งรวมร้านค้า อควาเรียม จุดชมวิว และมีสินค้าการ์ตูนดังมากมายอย่าง Pokemon Center, Monchichi ให้แวะละลายทรัพย์\n👾 Animate / Otome Road: สายอนิเมะ-มังงะพลาดไม่ได้กับ Animate Ikebukuro สาขาหลัก และแหล่งรวมร้านตู้คีบตุ๊กตา ตู้เกม ตู้กาชาปองที่มีให้เล่นเพียบ"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": "Please allocate time for check-in (Most hotels allow check-in after 15:00).",
+            "th": "เผื่อเวลาเช็คอินที่พักด้วยนะครับ (ส่วนมากโรงแรมเช็คอินได้หลังบ่าย 3)"
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "16:20",
+          "duration_min": 10,
+          "priority": "Normal",
+          "location": "Tokyo, Ikebukuro",
+          "name": {
+            "en": "Train from Ikebukuro to Shinjuku",
+            "th": "รถไฟจาก Ikebukuro ไป Shinjuku"
+          },
+          "description": {
+            "en": "Saikyō Line [~5 min | ¥200 (~฿41)] / Shonan-Shinjuku Line [~5 min | ¥200 (~฿41)]",
+            "th": "สาย Saikyō [~5 นาที | ¥200 (~฿41)] / สาย Shonan-Shinjuku [~5 นาที | ¥200 (~฿41)]"
+          },
+          "cost": "¥200 (~฿41)",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Dinner",
+          "is_default": true,
+          "time": "16:30",
+          "duration_min": 120,
+          "priority": "Recommend",
+          "location": "Tokyo, Takadanobaba",
+          "name": {
+            "en": "Tonkatsu Hinata",
+            "th": "Tonkatsu Hinata"
+          },
+          "description": {
+            "en": "Tonkatsu (deep-fried breaded pork cutlets) using premium, pedigree pork breeds",
+            "th": "ทงคัตสึ (หมูทอดชุบเกล็ดขนมปัง) ใช้เนื้อหมูสายพันธุ์พรีเมียม และเนื้อหมูส่วนพิเศษหายาก"
+          },
+          "cost": "฿฿ (Mid-range / ระดับกลาง)",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": "High",
+          "booking_policy": "Optional",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": "2-min walk from Takadanobaba Station.",
+            "th": "เดิน 2 นาทีจากสถานี Takadanobaba"
+          },
+          "remark": {
+            "en": "Get off at Takadanobaba Station (before Shinjuku).",
+            "th": "ต้องลงที่สถานี Takadanobaba (ก่อนถึง Shinjuku)"
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/VQbMopskB6eymDnr7",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Dinner",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Recommend",
+          "location": "Tokyo, Shinjuku",
+          "name": {
+            "en": "NO MEAT, NO LIFE. 5go.",
+            "th": "NO MEAT, NO LIFE. 5go."
+          },
+          "description": {
+            "en": "A popular Yakiniku (Japanese BBQ) restaurant specializing in high-quality, A5-ranked Black Wagyu beef.",
+            "th": "ร้านปิ้งย่างยากินิคุชื่อดังที่เน้นขายเนื้อวากิวขนดำระดับ A5"
+          },
+          "cost": "฿฿฿ (Luxury / หรูหรา)",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": "Mid",
+          "booking_policy": "Recommended",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/3F5eG74VohNGZiHE9",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Dinner",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Tokyo, Shinjuku",
+          "name": {
+            "en": "Lamb Yakiniku Lambne",
+            "th": "Lamb Yakiniku Lambne"
+          },
+          "description": {
+            "en": "Yakiniku restaurant that specializes exclusively in lamb meat.",
+            "th": "ร้านปิ้งย่างยากินิคุที่ขาย \"เนื้อแกะ\" โดยเฉพาะ"
+          },
+          "cost": "฿฿฿ (Luxury / หรูหรา)",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": "Mid",
+          "booking_policy": "Recommended",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/8DfbTfFkyjZwh7vH9",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 2",
+          "is_default": null,
+          "time": "18:30",
+          "duration_min": 120,
+          "priority": "Normal",
+          "location": "Tokyo, Shinjuku",
+          "name": {
+            "en": "Visit Shinjuku, the city that never sleeps!",
+            "th": "เยือน Shinjuku เมืองที่ไม่เคยหลับใหล!"
+          },
+          "description": {
+            "en": "Step into the vibrant heart of Tokyo! Shinjuku is a 24/7 hub of entertainment and a shopper's paradise.\n📍 Popular Shopping Spots:\n- BicCamera Shinjuku West Store (West Exit): Your go-to for electronics, gadgets, and lifestyle goods.\n- LUMINE (1, 2, EST) Shinjuku (South & East Exits): Trendy youth fashion, beauty products, and cafes.\n- Isetan Shinjuku (East Exit): Iconic upscale department store for luxury brands.\n- NEWoMan SHINJUKU (New South Gate): Sophisticated fashion, lifestyle goods, and premium dining.\n- Alpen Tokyo (East Exit): The massive flagship store for sports and outdoor gears.",
+            "th": "สัมผัสใจกลาง Tokyo สุดคึกคัก สวรรค์ของสายช้อปและแหล่งรวมความบันเทิง 24 ชั่วโมง\n📍 พิกัดช้อปปิ้งยอดฮิต:\n- BicCamera Shinjuku West Store (ทางออก West Exit): แหล่งรวมเครื่องใช้ไฟฟ้าและอุปกรณ์ไอทีครบวงจร\n- LUMINE (1, 2, EST) Shinjuku (ทางออก South และ East Exit): ศูนย์รวมแฟชั่นวัยรุ่น เครื่องสำอาง และคาเฟ่สุดฮิต\n- Isetan Shinjuku (ทางออก East Exit): ห้างหรูระดับตำนานสำหรับสินค้าแบรนด์เนมพรีเมียม\n- NEWoMan SHINJUKU (ทางออก New South Gate): แหล่งช้อปแฟชั่น ไลฟ์สไตล์ผู้ใหญ่ และร้านอาหารชั้นนำ\n- Alpen Tokyo (ทางออก East Exit): แฟลกชิปสโตร์อุปกรณ์กีฬาและสินค้าเอาท์ดอร์แบบครบวงจร"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": "Niche Shops: Disney Flagship Tokyo (East Exit) - massive Disney store, Yodobashi Camera (West Exit) - endless tech, and UNIQLO Shinjuku Honten (East Exit) - ultimate flagship store.",
+            "th": "ร้านเฉพาะกลุ่ม: Disney Flagship Tokyo (ทางออก East Exit) - ดิสนีย์สโตร์ที่ใหญ่ที่สุด, Yodobashi Camera (ทางออก West Exit) - ศูนย์รวมแก็ดเจ็ต, และ UNIQLO Shinjuku Honten (ทางออก East Exit) - สาขาแฟลกชิป สินค้าครบ"
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": "https://maps.app.goo.gl/ySsYsjQpXYLmwTpX8",
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 3",
+          "is_default": null,
+          "time": "20:30",
+          "duration_min": 60,
+          "priority": "Normal",
+          "location": "Tokyo, Shinjuku",
+          "name": {
+            "en": "Travel the night at Kabukicho.",
+            "th": "ท่องราตรีที่ Kabukicho"
+          },
+          "description": {
+            "en": "Explore Tokyo’s ultimate neon-lit entertainment district, packed with bars, restaurants, and non-stop nighttime energy.\n📸 Must-Visit Photo Spots:\n- The Giant 3D Cat: Hyper-realistic digital cat near Shinjuku Station.\n- The Godzilla Head: Iconic monster head atop the TOHO Cinemas building.",
+            "th": "สัมผัสสีสันยามค่ำคืนในย่านบันเทิงระดับโลกของ Tokyo เต็มไปด้วยแสงสีนีออน ร้านอาหาร และความคึกคักตลอดคืน\n📸 จุดถ่ายรูปห้ามพลาด:\n- แมวยักษ์ 3 มิติ: จอแอลอีดีแมวเหมียวสุดสมจริง หน้าสถานี Shinjuku\n- หัวก็อดซิลลา: แลนด์มาร์กสัตว์ประหลาดชื่อดัง บนตึก TOHO Cinemas"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": "https://maps.app.goo.gl/ApcUthXe7qDRjHYt7",
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "LatenightMeal",
+          "is_default": true,
+          "time": "21:30",
+          "duration_min": 60,
+          "priority": "Normal",
+          "location": "Tokyo, Shinjuku",
+          "name": {
+            "en": "Omoide Yokocho Memory Lane",
+            "th": "ตรอก Omoide"
+          },
+          "description": {
+            "en": "Food alley full of izakayas, ramen, soba, and sushi. Great chill vibe and super Instagrammable",
+            "th": "ตรอกรวมของกิน ทั้งอิซากายะ ราเมง โซบะ ซูชิ  บรรยากาศนั่งชิลสบายๆ มุมถ่ายรูปเพียบ"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/GGoS7zojeZpiQJDt6",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "LatenightMeal",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Tokyo, Shinjuku",
+          "name": {
+            "en": "Izakaya at Shinjuku 3 E",
+            "th": "อิซากายะ Shinjuku ซอย 3"
+          },
+          "description": {
+            "en": "Izakaya and Bar Hopping at Shinjuku 3 E, with the Local Price!\nNotable Mentions: Nihon saiseisakaba",
+            "th": "ตระเวนกินดื่มร้านอิซากายะและบาร์ ย่าน Shinjuku ซอย 3 ในราคาท้องถิ่น!\nร้านที่น่าสนใจ: Nihon saiseisakaba"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": "Located near the Shinjuku East Exit (Note: This is a different area from Kabukicho).",
+            "th": "ตั้งอยู่ตรง Shinjuku ทางออกทิศตะวันออก (คนละย่านกับ Kabukicho )"
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/aM9vDLWJPievBMgq5",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "22:30",
+          "duration_min": 10,
+          "priority": "Normal",
+          "location": "Tokyo, Shinjuku",
+          "name": {
+            "en": "Train from Shinjuku to Ikebukuro",
+            "th": "รถไฟจาก Shinjuku ไป Ikebukuro"
+          },
+          "description": {
+            "en": "Saikyō Line [~5 min | ¥200 (~฿41)] / Shonan-Shinjuku Line [~5 min | ¥200 (~฿41)]",
+            "th": "สาย Saikyō [~5 นาที | ¥200 (~฿41)] / สาย Shonan-Shinjuku [~5 นาที | ¥200 (~฿41)]"
+          },
+          "cost": "¥200 (~฿41)",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Living",
+          "is_default": null,
+          "time": "22:40",
+          "duration_min": 0,
+          "priority": "Normal",
+          "location": "Tokyo, Ikebukuro",
+          "name": {
+            "en": "Back to accommodation",
+            "th": "กลับที่พัก"
+          },
+          "description": {
+            "en": "We rest at Sakura Hotel Ikebukuro (5-min walk to Ikebukuro Station)\nOpinion: A budget hotel with great train connectivity. Features convenient luggage storage.",
+            "th": "พวกเราพัก Sakura Hotel Ikebukuro (เดิน 5 นาทีถึงสถานี Ikebukuro)\nรีวิว: โรงแรมราคาประหยัด เดินทางด้วยรถไฟสะดวก และมีบริการฝากกระเป๋า"
+          },
+          "cost": "฿ (Budget / ประหยัด)",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": "Online Booking Platform / Hotel Website",
+          "maps_api_call": null,
+          "notes": {
+            "en": "Looking for a budget-friendly, great-value stay? Focus on areas 2+ stops away from major stations. Not worried about budget? Shinjuku offers an unbeatable nightlife experience.",
+            "th": "หากเน้นความคุ้มค่าและประหยัดงบ แนะนำให้เลือกที่พักห่างจากสถานี Shinjuku ออกไปสัก 2 สถานีครับ แต่ถ้าไม่มีข้อจำกัดเรื่องงบและชอบแสงสียามค่ำคืน ย่าน Shinjuku คือคำตอบที่ดีที่สุด"
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/GhveRK6RGQNbzwxG6",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "name": {
+        "en": "All Roads Lead to Matsumoto",
+        "th": "ทุกเส้นทางมุ่งสู่ Matsumoto"
+      },
+      "activities": [
+        {
+          "slot": "Admin & Services",
+          "is_default": null,
+          "time": "07:00",
+          "duration_min": 90,
+          "priority": "Must",
+          "location": "Tokyo, Ikebukuro",
+          "name": {
+            "en": "Pick up Rental Car",
+            "th": "รับรถเช่า"
+          },
+          "description": {
+            "en": "Have a quick Breakfast & Pick up Rental Car. \n(Highway + Oil)",
+            "th": "ทานอาหารเช้าเร็ว ๆ แล้วไปรับรถเช่า (ค่าทางด่วน + ค่าน้ำมัน)"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": "- For Nippon Rent a Car (Ikebukuro East), there's a FamilyMart & Restaurant near by for a quick breakfast.\n- For Toyota Rent a Car (Ikebukuro West), there's a FamilyMart near by for a quick breakfast.",
+            "th": "- สำหรับ Nippon Rent a Car (Ikebukuro East) มี FamilyMart และร้านอาหารอยู่ใกล้ ๆ สำหรับทานอาหารเช้าแบบเร็ว ๆ\n- สำหรับ Toyota Rent a Car (Ikebukuro West) มี FamilyMart อยู่ใกล้ ๆ สำหรับทานอาหารเช้าแบบเร็ว ๆ"
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/Res7Tfam3YCDze5K6",
+            "walking_route": "https://maps.app.goo.gl/w1JEwhZFtViyQ49M9",
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "08:30",
+          "duration_min": 210,
+          "priority": "Normal",
+          "location": "Tokyo, Ikebukuro",
+          "name": {
+            "en": "Drive to Matsumoto",
+            "th": "มุ่งหน้าสู่ Matsumoto"
+          },
+          "description": {
+            "en": "Parking Lot near Matsumoto Station (~¥200-300 per hr), or drop at the accommodation.\n- Matsumoto City Central Parking Lot",
+            "th": "ที่จอดรถใกล้สถานี Matsumoto (~¥200-300 ต่อชั่วโมง) หรือนำรถไปจอดที่ที่พัก\n- Matsumoto City Central Parking Lot"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/TfCBP5nj68cJsLzo9",
+            "walking_route": "https://maps.app.goo.gl/VZbdNeD6DxG7tNZS9",
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Lunch",
+          "is_default": true,
+          "time": "12:00",
+          "duration_min": 90,
+          "priority": "Recommend",
+          "location": "Nagano, Matsumoto",
+          "name": {
+            "en": "Yana no unagi Kankouso",
+            "th": "Yana no unagi Kankouso"
+          },
+          "description": {
+            "en": "Long-running eel (unagi) restaurant near Matsumoto Castle; charcoal-grilled over a 50-year-old house sauce — crisp outside, tender within.",
+            "th": "ร้านปลาไหล (อุนางิ) เก่าแก่ใกล้ปราสาท Matsumoto ย่างถ่านกับซอสสูตรกว่า 50 ปี นอกกรอบในนุ่ม"
+          },
+          "cost": "฿฿ (Mid-range / ระดับกลาง)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "11:00–15:00 (L.O. 14:00); closed Thursdays",
+          "queue_time": "Mid",
+          "booking_policy": "Optional",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": "Quite far from Matsumoto Castle. (The Restaurant have parking lot)",
+            "th": "ค่อนข้างไกลจากปราสาท Matsumoto (ร้านมีที่จอดรถ)"
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/dJPHytv4MGbZXW8u7",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Lunch",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Nagano, Matsumoto",
+          "name": {
+            "en": "Mensho Sakura",
+            "th": "Mensho Sakura"
+          },
+          "description": {
+            "en": "Matsumoto ramen-ya known for rich miso ramen made with local Anyoji miso.",
+            "th": "ร้านราเมงชื่อดังของ Matsumoto เด่นที่มิโซะราเมงน้ำซุปเข้มข้นจากมิโซะท้องถิ่น Anyoji"
+          },
+          "cost": "฿ (Budget / ประหยัด)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "11:30–15:00, 17:30–22:00; closed Tuesdays",
+          "queue_time": "Mid",
+          "booking_policy": "Optional",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/Lh8JtAQjwfroXtdE8",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Lunch",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Nagano, Matsumoto",
+          "name": {
+            "en": "Miyota Matsumoto",
+            "th": "Miyota Matsumoto"
+          },
+          "description": {
+            "en": "Soba house serving Matsumoto's local Tōji soba — noodles dipped shabu-style in hot broth — plus sets with horse sashimi.",
+            "th": "ร้านโซบะชื่อดัง เสิร์ฟ \"โทจิโซบะ\" อาหารพื้นเมือง Matsumoto (ลวกเส้นในน้ำซุปร้อนแบบชาบู) และเซ็ตที่มีซาชิมิเนื้อม้า"
+          },
+          "cost": "฿฿ (Mid-range / ระดับกลาง)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "Lunch 11:30–14:30; Dinner 17:00–21:30 (closed Sun dinner)",
+          "queue_time": "Mid",
+          "booking_policy": "Optional",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/aBKEZs9B5fhSCUgw6",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 1",
+          "is_default": null,
+          "time": "13:30",
+          "duration_min": 120,
+          "priority": "Normal",
+          "location": "Nagano, Matsumoto",
+          "name": {
+            "en": "Nakamachi Dori & Cafe",
+            "th": "Nakamachi Dori & Yōhashira-jinja Shrine"
+          },
+          "description": {
+            "en": "Recommend \n- Torori Tenshi no Warabi-mochi - Matsumoto Shop.\n- Sioribi cafe\n- aL coffee & bake\nIf Art Museum is your thing, check out 'Matsumoto City Museum of Art'. The popular polka dot art by Yayoi Kusama.",
+            "th": "ถนนสายประวัติศาสตร์ย่านพ่อค้าสมัยเอโดะ อาคารโกดัง \"คุระ\" ผนังขาว-ดำ ร้านคราฟต์และคาเฟ่\nแนะนำ:\n- Torori Tenshi no Warabi-mochi สาขา Matsumoto\n- Sioribi cafe\n- aL coffee & bake\nชอบงานศิลปะ แวะ \"Matsumoto City Museum of Art\" ชมงานลายจุดของ Yayoi Kusama"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": "Parking lot nearby; Ryuパー https://maps.app.goo.gl/qiERYe7Cmot799ZM9 .",
+            "th": "มีที่จอดรถใกล้ ๆ: Ryuパー https://maps.app.goo.gl/qiERYe7Cmot799ZM9"
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/1raU8wbMjxu524MK9",
+            "walking_route": "https://maps.app.goo.gl/3gtBFDjaoMgUUNW19",
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 2",
+          "is_default": null,
+          "time": "15:30",
+          "duration_min": 90,
+          "priority": "Normal",
+          "location": "Nagano, Matsumoto",
+          "name": {
+            "en": "Matsumoto Castle",
+            "th": "Matsumoto Castle"
+          },
+          "description": {
+            "en": "Japan's oldest wooden castle keep (five-tier, six-story) and a National Treasure, nicknamed \"Crow Castle\" for its black exterior, set in a moat-ringed park.",
+            "th": "ปราสาทไม้ที่เก่าแก่ที่สุดของญี่ปุ่น (5 ชั้น 6 ระดับ) สมบัติแห่งชาติ ฉายา \"ปราสาทอีกา\" จากผนังสีดำ ตั้งกลางคูน้ำในสวน"
+          },
+          "cost": "¥1,200 (~฿270) adult e-ticket",
+          "rating": null,
+          "category": null,
+          "operating_hours": "8:30–17:00 (last entry 16:30); 8:00–18:00 during Golden Week / summer",
+          "queue_time": "Mid",
+          "booking_policy": "Optional",
+          "how_to_book": "Official e-ticket (reservable up to 3 months ahead) — https://www.matsumoto-castle.jp/",
+          "maps_api_call": null,
+          "notes": {
+            "en": "For more information please visit Official Website:\nhttps://www.matsumoto-castle.jp/eng/access",
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/5obiLc5hMLC522ri6",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": "https://www.matsumoto-castle.jp/eng/"
+          }
+        },
+        {
+          "slot": "Living",
+          "is_default": null,
+          "time": "17:00",
+          "duration_min": 30,
+          "priority": "Must",
+          "location": "Nagano, Matsumoto",
+          "name": {
+            "en": "Check-in Matsumoto accommodation",
+            "th": "เช็คอินที่พักใน Matsumoto"
+          },
+          "description": {
+            "en": null,
+            "th": null
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/dL3nYTMrXfvrb7Kw8",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Dinner",
+          "is_default": true,
+          "time": "17:30",
+          "duration_min": 90,
+          "priority": "Recommend",
+          "location": "Nagano, Matsumoto",
+          "name": {
+            "en": "Hamburger Steak by Amiya Yakiniku",
+            "th": "Hamburger Steak by Amiya Yakiniku"
+          },
+          "description": {
+            "en": "Flame-grilled hamburg steak specialist (Shinshu's original \"Amiya Burg\") — juicy patties seared over open fire; a Matsumoto favorite.",
+            "th": "ร้านแฮมเบิร์กสเต็กย่างไฟลุก (ต้นตำรับ \"Amiya Burg\" แห่ง Shinshu) เนื้อฉ่ำย่างบนเปลวไฟ ร้านโปรดของคน Matsumoto"
+          },
+          "cost": "฿฿ (Mid-range / ระดับกลาง)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "Lunch 11:30–14:00 (–15:00 Sat/Sun); Dinner from 17:30 (late); closed Mondays",
+          "queue_time": "Mid",
+          "booking_policy": "Optional",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/fiuncMrEHrvGKkNB8",
+            "walking_route": null,
+            "ig": "https://www.instagram.com/amiya__grilled_burger_patty/",
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Dinner",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Nagano, Matsumoto",
+          "name": {
+            "en": "Matsumoto Tsunagu Yokocho",
+            "th": "Matsumoto Tsunagu Yokocho"
+          },
+          "description": {
+            "en": "Yokocho-style food hall of izakayas and eateries, 2 min from JR Matsumoto Station — yakitori, seafood and local izakaya bites.",
+            "th": "ฟู้ดฮอลล์สไตล์ \"โยโกโจ\" รวมร้านอิซากายะและร้านอาหาร เดินจากสถานี JR Matsumoto 2 นาที มีทั้งยากิโทริ ซีฟู้ด และเมนูอิซากายะท้องถิ่น"
+          },
+          "cost": "฿฿ (Mid-range / ระดับกลาง)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "Varies by stall (most izakayas open evening until midnight)",
+          "queue_time": "Mid",
+          "booking_policy": "Optional",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/fq7UguPcRavP3PWf6",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Dinner",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Nagano, Matsumoto",
+          "name": {
+            "en": "Shizuka Izakaya",
+            "th": "Shizuka Izakaya"
+          },
+          "description": {
+            "en": "Old-school izakaya near Matsumoto Castle, known for the local Sanzoku-yaki (giant garlic-soy fried chicken), plus oden and yakitori.",
+            "th": "อิซากายะเก่าแก่ใกล้ปราสาท Matsumoto เด่นเมนูท้องถิ่น \"ซันโซคุยากิ\" (ไก่ทอดชิ้นใหญ่หมักกระเทียม-โชยุ) มีโอเด้งและยากิโทริ"
+          },
+          "cost": "฿฿ (Mid-range / ระดับกลาง)",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": "Mid",
+          "booking_policy": "Optional",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": "Locate Near Matsumoto Castle",
+            "th": "อยู่ใกล้ปราสาท Matsumoto"
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/rUtLnfZtfVvt44jM7",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 3",
+          "is_default": null,
+          "time": "19:00",
+          "duration_min": 90,
+          "priority": "Normal",
+          "location": "Nagano, Matsumoto",
+          "name": {
+            "en": "Matsumoto Night Walk & Breakfast Prep",
+            "th": "เดินเล่นยามค่ำใน Matsumoto & เตรียมอาหารเช้า"
+          },
+          "description": {
+            "en": "Grab food & snacks for tomorrow's breakfast — we head out early.",
+            "th": "ซื้ออาหารและของว่างไว้เป็นมื้อเช้าพรุ่งนี้ เพราะต้องออกเดินทางแต่เช้า"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Living",
+          "is_default": null,
+          "time": "20:30",
+          "duration_min": 0,
+          "priority": "Normal",
+          "location": "Nagano, Matsumoto",
+          "name": {
+            "en": "Back to Matsumoto accommodation",
+            "th": "กลับที่พักใน Matsumoto"
+          },
+          "description": {
+            "en": null,
+            "th": null
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/dL3nYTMrXfvrb7Kw8",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "name": {
+        "en": "Kamikochi & Oide Park",
+        "th": "เที่ยวธรรมชาติ Kamikochi & Oide Park"
+      },
+      "activities": [
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "07:00",
+          "duration_min": 60,
+          "priority": "Normal",
+          "location": "Nagano, Matsumoto",
+          "name": {
+            "en": "Let go Kamikochi",
+            "th": "มุ่งหน้าสู่ Kamikochi"
+          },
+          "description": {
+            "en": "Jump in the bus at Sawando Bus terminal",
+            "th": "ขึ้นบัสที่ Sawando Bus Terminal"
+          },
+          "cost": "¥3,000 (~฿675) round-trip shuttle",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": "Sawando Ohashi Parking Lot (¥800)",
+            "th": "ที่จอดรถ Sawando Ohashi (¥800)"
+          },
+          "remark": {
+            "en": "Private cars cannot enter Kamikochi — park at Sawando and take the non-reserved shuttle.",
+            "th": "รถส่วนตัวเข้า Kamikochi ไม่ได้ ต้องจอดที่ Sawando แล้วต่อบัส (ไม่รับจองที่นั่ง)"
+          },
+          "links": {
+            "map": null,
+            "walking_route": "https://maps.app.goo.gl/YqfprvuNExw9FWhg6",
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "08:00",
+          "duration_min": 30,
+          "priority": "Recommend",
+          "location": "Nagano, Matsumoto",
+          "name": {
+            "en": "Bus ride, suggest stop at Taisho Pond",
+            "th": "นั่งบัส แนะนำลงที่ Taisho Pond"
+          },
+          "description": {
+            "en": "Get off at the Taisho Pond stop before the terminal for the classic morning view.",
+            "th": "ลงป้าย Taisho Pond ก่อนถึงปลายทาง เพื่อชมวิวยามเช้าสุดคลาสสิก"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 1",
+          "is_default": null,
+          "time": "08:30",
+          "duration_min": 90,
+          "priority": "Normal",
+          "location": "Nagano, Matsumoto",
+          "name": {
+            "en": "Walking route, Taisho Pond to Kappa Bridge",
+            "th": "เส้นทางเดิน Taisho Pond ถึง Kappa Bridge"
+          },
+          "description": {
+            "en": "Flat 3.9 km riverside trail along the Azusa River from Taisho Pond to Kappa Bridge — birch forest, clear water, Hotaka peaks.",
+            "th": "เส้นทางเดินเรียบแม่น้ำ Azusa ระยะ 3.9 กม. จาก Taisho Pond ถึง Kappa Bridge ทางราบ ป่าเบิร์ช น้ำใส วิวเทือกเขา Hotaka"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 2",
+          "is_default": null,
+          "time": "10:00",
+          "duration_min": 90,
+          "priority": "Normal",
+          "location": "Nagano, Matsumoto",
+          "name": {
+            "en": "Kappa Bridge Area & Cafe",
+            "th": "ย่าน Kappa Bridge & คาเฟ่"
+          },
+          "description": {
+            "en": "Kamikochi's iconic wooden suspension bridge over the Azusa River, with Hotaka and Mt. Yake views. Try the famous apple pie at Trois Cinq Kamikochi nearby.",
+            "th": "สะพานแขวนไม้สัญลักษณ์ของ Kamikochi เหนือแม่น้ำ Azusa วิวเทือกเขา Hotaka และภูเขาไฟ Yake แวะชิมแอปเปิลพายชื่อดังที่ Trois Cinq Kamikochi ใกล้ ๆ"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": "Trois Cinq (apple pie) is ~30 sec from Kappa Bridge; the queue is usually long.",
+            "th": "Trois Cinq (แอปเปิลพาย) อยู่ห่าง Kappa Bridge ~30 วินาที มักมีคิวยาว"
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Brunch",
+          "is_default": true,
+          "time": "11:30",
+          "duration_min": 60,
+          "priority": "Normal",
+          "location": "Nagano, Matsumoto",
+          "name": {
+            "en": "Kamikochi Diner",
+            "th": "Kamikochi Diner"
+          },
+          "description": {
+            "en": "Casual diner on the 2nd floor of the Kamikochi Bus Terminal — set meals, soba, rice bowls, and katsu curry.",
+            "th": "ร้านอาหารสไตล์สบาย ๆ ชั้น 2 ของ Kamikochi Bus Terminal เสิร์ฟเซ็ตเมนู โซบะ ข้าวหน้าต่าง ๆ และข้าวแกงกะหรี่ทงคัตสึ"
+          },
+          "cost": "฿฿ (Mid-range / ระดับกลาง)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "From ~6:00 (mid-Apr–mid-Nov season)",
+          "queue_time": "Mid",
+          "booking_policy": "Optional",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": "On the 2nd floor of Kamikochi Bus Terminal — handy before or after the bus.",
+            "th": "อยู่ชั้น 2 ของ Kamikochi Bus Terminal สะดวกก่อนหรือหลังขึ้นบัส"
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "12:30",
+          "duration_min": 40,
+          "priority": "Normal",
+          "location": "Nagano, Matsumoto",
+          "name": {
+            "en": "Bus ride back from Kamikochi Bus Terminal",
+            "th": "นั่งบัสกลับจาก Kamikochi Bus Terminal"
+          },
+          "description": {
+            "en": "Locate near Kappa Bridge (5 min walk)",
+            "th": "อยู่ใกล้ Kappa Bridge (เดิน 5 นาที)"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "13:10",
+          "duration_min": 120,
+          "priority": "Normal",
+          "location": "Nagano, Matsumoto",
+          "name": {
+            "en": "Drive to Hakuba!",
+            "th": "ขับรถสู่ Hakuba!"
+          },
+          "description": {
+            "en": "Drive from Sawando to Hakuba (~2 hrs).",
+            "th": "ขับรถจาก Sawando สู่ Hakuba (~2 ชม.)"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": "https://maps.app.goo.gl/fEj3kC8voifVUa6V6",
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 3",
+          "is_default": null,
+          "time": "15:10",
+          "duration_min": 80,
+          "priority": "Normal",
+          "location": "Nagano, Hakuba",
+          "name": {
+            "en": "Visit ao LAKESIDE CAFE",
+            "th": "แวะ ao LAKESIDE CAFE"
+          },
+          "description": {
+            "en": "All-day lakeside cafe on Lake Aoki with mirror-lake and Northern Alps views; attached sauna.",
+            "th": "คาเฟ่ริมทะเลสาบ Aoki เปิดทั้งวัน วิวทะเลสาบสะท้อนเงาและเทือกเขา Northern Alps มีซาวน่าในตัว"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": "8:00–20:00 (L.O. 19:30); hours vary seasonally",
+          "queue_time": "Mid",
+          "booking_policy": "Optional",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": "Walk-in for the cafe — gets busy on weekends, so arrive early for a lakeside table.",
+            "th": "คาเฟ่รับ walk-in วันหยุดคนเยอะ มาแต่เช้าเพื่อได้โต๊ะริมทะเลสาบ"
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": "https://www.instagram.com/ao_lakeside_cafe/",
+            "fb": null,
+            "tt": null,
+            "website": "https://ao-lakeside.com/en/"
+          }
+        },
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "16:30",
+          "duration_min": 20,
+          "priority": "Normal",
+          "location": "Nagano, Hakuba",
+          "name": {
+            "en": "Find Restaurant near Hakuba Sta.",
+            "th": "หาร้านอาหารใกล้สถานี Hakuba"
+          },
+          "description": {
+            "en": "Head to the Hakuba Station area for dinner.",
+            "th": "มุ่งหน้าไปย่านสถานี Hakuba เพื่อหาร้านมื้อเย็น"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Dinner",
+          "is_default": true,
+          "time": "16:50",
+          "duration_min": 70,
+          "priority": "Normal",
+          "location": "Nagano, Hakuba",
+          "name": {
+            "en": "Nijiya Donmaru Hakubaten",
+            "th": "Nijiya Donmaru Hakuba"
+          },
+          "description": {
+            "en": "Takeout kaisen-don (seafood rice bowl) shop with bowls from ~¥550.",
+            "th": "ร้านข้าวหน้าซีฟู้ด (ไคเซ็นด้ง) แบบเทกอะเวย์ เริ่มต้นประมาณ ¥550"
+          },
+          "cost": "฿ (Budget / ประหยัด)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "11:00–21:00",
+          "queue_time": "Low",
+          "booking_policy": "Walk-in Only",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": "Takeout only — grab a bowl and eat near the station.",
+            "th": "เทกอะเวย์อย่างเดียว ซื้อแล้วนั่งทานแถวสถานีได้"
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/mHPA5k38PeERioc26",
+            "walking_route": null,
+            "ig": "https://www.instagram.com/donmaru.hakuba/",
+            "fb": "https://www.facebook.com/Donmaru.Hakuba/",
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Dinner",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Nagano, Hakuba",
+          "name": {
+            "en": "Takahashi-ke",
+            "th": "Takahashi-ke"
+          },
+          "description": {
+            "en": "Popular Hakuba ramen-ya for ramen, gyoza and chashu; walk-in only, expect a line.",
+            "th": "ร้านราเมงยอดนิยมของ Hakuba เด่นราเมง เกี๊ยวซ่า และชาชู รับเฉพาะ walk-in มักมีคิว"
+          },
+          "cost": "฿ (Budget / ประหยัด)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "11:30–15:00, 17:00–20:00 (weekends 11:30–21:00, L.O. 20:00); closed Thu–Fri",
+          "queue_time": "Mid",
+          "booking_policy": "Walk-in Only",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/d3WF4CMXHA1hr5aBA",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Dinner",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Nagano, Hakuba",
+          "name": {
+            "en": "Ramen Tottsuan",
+            "th": "Ramen Tottsuan"
+          },
+          "description": {
+            "en": "Tonkotsu ramen-ya near Hakuba Station — classic, garlic, or chili broth, plus gyoza and chashu.",
+            "th": "ร้านราเมงทงคตสึใกล้สถานี Hakuba มีน้ำซุปแบบคลาสสิก กระเทียม หรือเผ็ด พร้อมเกี๊ยวซ่าและชาชู"
+          },
+          "cost": "฿ (Budget / ประหยัด)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "11:00–13:30, 17:00–20:00 (Tue lunch only; closed Wed)",
+          "queue_time": "Mid",
+          "booking_policy": "Optional",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": "May close early once the broth or noodles run out — go early.",
+            "th": "อาจปิดเร็วถ้าน้ำซุปหรือเส้นหมด แนะนำไปแต่เนิ่น ๆ"
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/pMY4KntvKS2H232L7",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Admin & Services",
+          "is_default": null,
+          "time": "18:00",
+          "duration_min": 30,
+          "priority": "Must",
+          "location": "Nagano, Hakuba",
+          "name": {
+            "en": "Check in Hakuba Accommodation",
+            "th": "เช็คอินที่พักใน Hakuba"
+          },
+          "description": {
+            "en": "We choose AirBNB house",
+            "th": "เราเลือกพักบ้าน Airbnb"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/4c9efXTqoxLLrbHT6",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 4",
+          "is_default": null,
+          "time": "18:30",
+          "duration_min": 60,
+          "priority": "Normal",
+          "location": "Nagano, Hakuba",
+          "name": {
+            "en": "City Stroll & Oide Park at Night",
+            "th": "เดินเล่นในเมือง & Oide Park ยามค่ำ"
+          },
+          "description": {
+            "en": "Stroll the town and Oide Park — a suspension bridge over the Himekawa River with Hakuba Sanzan views. Free parking at Oide Park No.1 Lot. Grab food & snacks for tomorrow's early start.",
+            "th": "เดินเล่นในเมืองและ Oide Park สะพานแขวนเหนือแม่น้ำ Himekawa วิวเทือกเขา Hakuba Sanzan จอดรถฟรีที่ Oide Park No.1 ซื้ออาหารและของว่างไว้เป็นมื้อเช้าพรุ่งนี้ เพราะต้องออกแต่เช้า"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/cGMEwWG7Zqtw3Qpo9",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "LatenightMeal",
+          "is_default": true,
+          "time": "19:30",
+          "duration_min": 90,
+          "priority": "Recommend",
+          "location": "Nagano, Hakuba",
+          "name": {
+            "en": "KOKEMOMO - Craft Beer Bar & Bottle Shop",
+            "th": "KOKEMOMO Craft Beer Bar & Bottle Shop"
+          },
+          "description": {
+            "en": "Craft-beer bar & bottle shop — 4 taps and 100+ bottles, plus pizza and bar bites; a 3D Hakuba map table for trip planning.",
+            "th": "บาร์คราฟต์เบียร์และบอตเทิลช็อป มีเบียร์สด 4 หัวและขวดกว่า 100 ชนิด พร้อมพิซซ่าและของทานเล่น มีโต๊ะแผนที่ 3 มิติของ Hakuba ไว้วางแผนเที่ยว"
+          },
+          "cost": "฿฿ (Mid-range / ระดับกลาง)",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": "Low",
+          "booking_policy": "Walk-in Only",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/ePY8oS9zjcEW4Dmk8",
+            "walking_route": null,
+            "ig": null,
+            "fb": "https://www.facebook.com/p/KOKEMOMO-Beer-Bar-Bottle-Shop-61558373130169/",
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "LatenightMeal",
+          "is_default": null,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Nagano, Hakuba",
+          "name": {
+            "en": "FIREWORKS BAR MATSURI",
+            "th": "FIREWORKS BAR MATSURI"
+          },
+          "description": {
+            "en": "Japan's first 'firework bar' — drinks and Japanese bites, where staff set off the fireworks you choose.",
+            "th": "บาร์ดอกไม้ไฟแห่งแรกของญี่ปุ่น เสิร์ฟเครื่องดื่มและอาหารญี่ปุ่น พร้อมโชว์จุดพลุที่คุณเลือกเองโดยทีมงาน"
+          },
+          "cost": "฿฿ (Mid-range / ระดับกลาง)",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/MftahzHgExCGHkyGA",
+            "walking_route": null,
+            "ig": "https://www.instagram.com/hanabibar/",
+            "fb": "https://www.facebook.com/fireworkplace/",
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Living",
+          "is_default": null,
+          "time": "21:00",
+          "duration_min": 0,
+          "priority": "Normal",
+          "location": "Nagano, Hakuba",
+          "name": {
+            "en": "Back to Hakuba accommodation",
+            "th": "กลับที่พักใน Hakuba"
+          },
+          "description": {
+            "en": null,
+            "th": null
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "name": {
+        "en": "Tateyama Japan Alps Route!",
+        "th": "ลุยเส้นทางเทือกเขา Tateyama Kurobe Alpine Route"
+      },
+      "activities": [
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "07:00",
+          "duration_min": 60,
+          "priority": "Normal",
+          "location": "Nagano, Hakuba",
+          "name": {
+            "en": "Drive to Ogizawa Station",
+            "th": "มุ่งหน้าสู่สถานี Ogizawa"
+          },
+          "description": {
+            "en": "Parking at Ogisawa Dai 1 Parking Lot (12 hr ¥1000). Walk to Kanden Tunnel Electric Bus (Ogisawa Station)\n- Breakfast on the Go",
+            "th": "จอดรถที่ Ogizawa Dai-1 Parking (12 ชม. ¥1,000) แล้วเดินไปขึ้น Kanden Tunnel Electric Bus (สถานี Ogizawa)\n- ทานอาหารเช้าระหว่างทาง"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": "For more information please visit Official Website:\nhttps://www.alpen-route.com/en/transportation/ \nWe suggest starting point at Ogizawa over Tateyama Station, because Tateyama Starting point is 2.5 hrs. drive from Hakuba Station",
+            "th": "ดูข้อมูลเพิ่มเติมที่เว็บไซต์ทางการ: https://www.alpen-route.com/en/transportation/\nแนะนำเริ่มต้นที่ Ogizawa แทน Tateyama Station เพราะจาก Hakuba Station ไป Tateyama Station ต้องขับ 2.5 ชม."
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/GfCW5TSTe3duRWcu6",
+            "walking_route": "https://maps.app.goo.gl/ks3uaHn51gFi7jGd6",
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 1",
+          "is_default": null,
+          "time": "08:00",
+          "duration_min": 180,
+          "priority": "Recommend",
+          "location": "Nagano, Omachi",
+          "name": {
+            "en": "Start the Tateyama Kutobe Alpine Route Journey",
+            "th": "เริ่มเส้นทาง Tateyama Kurobe Alpine Route"
+          },
+          "description": {
+            "en": "Cross the Northern Alps from Ogizawa to Murodo by electric bus, Kurobe Dam, cable car, ropeway and trolley bus — Japan’s spectacular high-mountain route.",
+            "th": "ข้ามเทือกเขา Northern Alps จาก Ogizawa สู่ Murodo ด้วยรถบัสไฟฟ้า เขื่อน Kurobe เคเบิลคาร์ กระเช้า และรถรางทันเนล เส้นทางภูเขาสุดอลังการของญี่ปุ่น"
+          },
+          "cost": "¥12,300 (~฿2,770) round-trip (Ogizawa⇆Murodo)",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": "Reserve",
+          "booking_policy": "Recommended",
+          "how_to_book": "Reserve electric-bus boarding times via the official web ticket — https://www.alpen-route.com/en/",
+          "maps_api_call": null,
+          "notes": {
+            "en": "Live Camera: https://kanko-omachi.gr.jp/livecam/",
+            "th": "กล้องสด: https://kanko-omachi.gr.jp/livecam/"
+          },
+          "remark": {
+            "en": "Reserve the electric-bus boarding time in advance via the official web-ticket site.",
+            "th": "ควรจองเวลาขึ้นรถบัสไฟฟ้าล่วงหน้าผ่านเว็บตั๋วทางการ"
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/7SV2ezBqt77kUmQw5",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Lunch",
+          "is_default": true,
+          "time": "11:00",
+          "duration_min": 60,
+          "priority": "Normal",
+          "location": "Nagano, Omachi",
+          "name": {
+            "en": "Murodo Food Court",
+            "th": "Murodo Food Court"
+          },
+          "description": {
+            "en": "Food court at Murodo, the route’s highest point (2,450 m) — soba, curry, oden, and the local Mikurigaike soft-serve.",
+            "th": "ฟู้ดคอร์ตที่ Murodo จุดสูงสุดของเส้นทาง (2,450 ม.) มีโซบะ ข้าวแกงกะหรี่ โอเด้ง และซอฟต์ครีม Mikurigaike ของขึ้นชื่อ"
+          },
+          "cost": "฿ (Budget / ประหยัด)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "8:30–17:00 (Alpine Route season)",
+          "queue_time": "Mid",
+          "booking_policy": "Optional",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 2",
+          "is_default": null,
+          "time": "12:00",
+          "duration_min": 180,
+          "priority": "Normal",
+          "location": "Nagano, Omachi",
+          "name": {
+            "en": "Down from Murodo",
+            "th": "เดินทางลงจาก Murodo"
+          },
+          "description": {
+            "en": "Head back down the Alpine Route from Murodo toward Ogizawa (optionally stop at Kurobe Dam).",
+            "th": "เดินทางลงจาก Murodo กลับสู่ Ogizawa (แวะชมเขื่อน Kurobe ได้)"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "15:00",
+          "duration_min": 60,
+          "priority": "Normal",
+          "location": "Nagano, Omachi",
+          "name": {
+            "en": "Drive back to Hakuba, Oide Park",
+            "th": "ขับรถกลับสู่ Hakuba, Oide Park"
+          },
+          "description": {
+            "en": "Drive from Ogizawa back to Hakuba (~1 hr).",
+            "th": "ขับรถจาก Ogizawa กลับสู่ Hakuba (~1 ชม.)"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 3",
+          "is_default": null,
+          "time": "16:00",
+          "duration_min": 90,
+          "priority": "Normal",
+          "location": "Nagano, Hakuba",
+          "name": {
+            "en": "City walk and Oide Park",
+            "th": "เดินเล่นในเมือง & Oide Park"
+          },
+          "description": {
+            "en": "Evening stroll through Hakuba village and the Oide Park suspension-bridge viewpoint.",
+            "th": "เดินเล่นยามเย็นในหมู่บ้าน Hakuba และจุดชมวิวสะพานแขวน Oide Park"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Dinner",
+          "is_default": true,
+          "time": "17:30",
+          "duration_min": 90,
+          "priority": "Recommend",
+          "location": "Nagano, Hakuba",
+          "name": {
+            "en": "Yakiniku Gyu Zanmai",
+            "th": "Yakiniku Gyu Zanmai"
+          },
+          "description": {
+            "en": "Hida-beef yakiniku (Japanese BBQ) specialist in Hakuba.",
+            "th": "ร้านยากินิคุ (ปิ้งย่างสไตล์ญี่ปุ่น) เด่นเนื้อ Hida ในย่าน Hakuba"
+          },
+          "cost": "฿ (Budget / ประหยัด)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "15:00–22:00 (L.O. 21:30)",
+          "queue_time": "Mid",
+          "booking_policy": "Optional",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Dinner",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Nagano, Hakuba",
+          "name": {
+            "en": "Pizzakaya",
+            "th": "Pizzakaya"
+          },
+          "description": {
+            "en": "Tiny, popular izakaya-style pizza joint in Goryu — creative pizzas and grilled cod-roe mushrooms; cash only.",
+            "th": "ร้านพิซซ่าสไตล์อิซากายะเล็ก ๆ ยอดนิยมย่าน Goryu พิซซ่าครีเอทีฟและเห็ดย่างไข่ปลาค็อด รับเงินสดเท่านั้น"
+          },
+          "cost": "฿฿ (Mid-range / ระดับกลาง)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "18:00–23:00",
+          "queue_time": "Reserve",
+          "booking_policy": "Recommended",
+          "how_to_book": "Reserve by phone / AutoReserve",
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": "Cash only, and very small — book ahead.",
+            "th": "รับเงินสดเท่านั้น ร้านเล็กมาก ควรจองล่วงหน้า"
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/rwWBrdv2u1UU5wGG9",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Dinner",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Nagano, Hakuba",
+          "name": {
+            "en": "Niku Masa",
+            "th": "Niku Masa"
+          },
+          "description": {
+            "en": "Intimate husband-and-wife steakhouse in Hakuba; reservation-only.",
+            "th": "สเต็กเฮาส์เล็ก ๆ อบอุ่น บริหารโดยสามีภรรยาใน Hakuba รับเฉพาะลูกค้าที่จองล่วงหน้า"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": "Lunch 12:00–14:30 (L.O. 13:30); Dinner 18:00–22:00 (L.O. 21:00); closed Tue & 3rd Wed",
+          "queue_time": "Reserve",
+          "booking_policy": "Mandatory",
+          "how_to_book": "Reservation-only — call ahead (no online booking), 0261-85-2920",
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 4",
+          "is_default": null,
+          "time": "19:00",
+          "duration_min": 60,
+          "priority": "Normal",
+          "location": "Nagano, Hakuba",
+          "name": {
+            "en": "Free Style & Food Prep",
+            "th": "เวลาอิสระ & เตรียมอาหาร"
+          },
+          "description": {
+            "en": "Food Prep for Driving back to Tokyo tomorrow",
+            "th": "เตรียมอาหารสำหรับขับรถกลับ Tokyo พรุ่งนี้"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Living",
+          "is_default": null,
+          "time": "20:00",
+          "duration_min": 0,
+          "priority": "Normal",
+          "location": "Nagano, Hakuba",
+          "name": {
+            "en": "Back to Hakuba accommodation",
+            "th": "กลับที่พักใน Hakuba"
+          },
+          "description": {
+            "en": null,
+            "th": null
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": "AirBNB",
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/4c9efXTqoxLLrbHT6",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "name": {
+        "en": "Hakuba Iwatake & Togakushi shrine",
+        "th": "วิวภูเขา Hakuba Iwatake & ศาลเจ้า Togakushi"
+      },
+      "activities": [
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "07:00",
+          "duration_min": 10,
+          "priority": "Normal",
+          "location": "Nagano, Hakuba",
+          "name": {
+            "en": "Drive to Hakuba Iwatake",
+            "th": "ขับรถสู่ Hakuba Iwatake"
+          },
+          "description": {
+            "en": "Hakuba Iwatake Mountain Resort Parking lot (Free).\nBuy the ticket at Iwatake Gondola NOAH (Online Reservation have discount to ¥2,700).",
+            "th": "ที่จอดรถ Hakuba Iwatake Mountain Resort (ฟรี) ซื้อตั๋วที่ Iwatake Gondola NOAH (จองออนไลน์ลดเหลือ ¥2,700)"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/BW2puJqUKfETp3Jp9",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 1",
+          "is_default": null,
+          "time": "07:10",
+          "duration_min": 200,
+          "priority": "Normal",
+          "location": "Nagano, Hakuba",
+          "name": {
+            "en": "Hakuba Iwatake & Stunning Mountain View Cafe",
+            "th": "Hakuba Iwatake & คาเฟ่วิวภูเขา"
+          },
+          "description": {
+            "en": "Ride the Noah gondola up to Hakuba Mountain Harbor for Northern Alps panoramas; coffee & pastries at The City Bakery or tea lattes at Chavaty.",
+            "th": "นั่งกระเช้า Noah ขึ้น Hakuba Mountain Harbor ชมวิวพาโนรามาเทือกเขา Northern Alps จิบกาแฟและขนมที่ The City Bakery หรือชาลาเต้ที่ Chavaty"
+          },
+          "cost": "¥2,900",
+          "rating": null,
+          "category": null,
+          "operating_hours": "Gondola 8:45–16:30; cafes ~9:00–15:30 (seasonal)",
+          "queue_time": "Low",
+          "booking_policy": "Optional",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/QrxLEihbwotjNgkw8",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": "https://iwatake-mountain-resort-en.book.ntmg.com/"
+          }
+        },
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "10:30",
+          "duration_min": 90,
+          "priority": "Normal",
+          "location": "Nagano, Hakuba",
+          "name": {
+            "en": "Drive to Togakushi shrine",
+            "th": "ขับรถสู่ศาลเจ้า Togakushi"
+          },
+          "description": {
+            "en": "Drive from Hakuba to Togakushi (~1.5 hrs).",
+            "th": "ขับรถจาก Hakuba สู่ Togakushi (~1.5 ชม.)"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/QaBs14tb2fnbAhgF8",
+            "walking_route": "https://maps.app.goo.gl/yu8hS2Ec43P2vGEE9",
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Lunch",
+          "is_default": true,
+          "time": "12:00",
+          "duration_min": 60,
+          "priority": "Normal",
+          "location": "Nagano, Togakushi",
+          "name": {
+            "en": "Uzuraya (Togakushi Soba)",
+            "th": "Uzuraya"
+          },
+          "description": {
+            "en": "Centuries-old soba-ya beside Togakushi Chusha Shrine, famous for bocchi-mori zaru soba served in five bite-size coils.",
+            "th": "ร้านโซบะเก่าแก่ข้างศาลเจ้า Togakushi Chusha ขึ้นชื่อ \"บొช์ชิโมริ\" ซารุโซบะจัดเป็น 5 ก้อนพอดีคำ"
+          },
+          "cost": "฿ (Budget / ประหยัด)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "Mon–Fri 11:00–15:30 (closed Tue); Sat/Sun 10:30–16:00",
+          "queue_time": "Mid",
+          "booking_policy": "Optional",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Lunch",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Nagano, Togakushi",
+          "name": {
+            "en": "Yamaguchiya (Togakushi Soba)",
+            "th": "Yamaguchiya"
+          },
+          "description": {
+            "en": "Well-regarded Togakushi soba-ya with ample parking and quick service; reasonable sets.",
+            "th": "ร้านโซบะ Togakushi ชื่อดัง มีที่จอดรถกว้าง บริการรวดเร็ว เซ็ตราคาคุ้มค่า"
+          },
+          "cost": "฿ (Budget / ประหยัด)",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": "Mid",
+          "booking_policy": "Optional",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 2",
+          "is_default": null,
+          "time": "13:00",
+          "duration_min": 120,
+          "priority": "Normal",
+          "location": "Nagano, Nagano City",
+          "name": {
+            "en": "Togakushi shrine",
+            "th": "ศาลเจ้า Togakushi"
+          },
+          "description": {
+            "en": "Sacred five-shrine complex; the Okusha approach runs ~2 km under an avenue of 400-year-old cedars.",
+            "th": "กลุ่มศาลเจ้าศักดิ์สิทธิ์ 5 แห่ง ทางเดินสู่ Okusha ยาวราว 2 กม. ใต้แนวต้นซีดาร์อายุกว่า 400 ปี"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": "Okusha is a ~2 km walk from the gate (longer round-trip) — wear comfortable shoes.",
+            "th": "Okusha อยู่ห่างจากประตูทางเข้าราว 2 กม. (ไป-กลับไกลกว่านั้น) ใส่รองเท้าที่เดินสบาย"
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "15:00",
+          "duration_min": 300,
+          "priority": "Normal",
+          "location": "Nagano, Nagano City",
+          "name": {
+            "en": "Drive to Tokyo, Ikebukuro (Return the car)",
+            "th": "ขับรถสู่ Tokyo, Ikebukuro (คืนรถ)"
+          },
+          "description": {
+            "en": "We suggest grab the McDonald here: {mapURL}  or eat the food prep",
+            "th": "แนะนำแวะซื้อ McDonald's ที่นี่ หรือทานอาหารที่เตรียมไว้"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/TV4aM32nQcZL67SF7",
+            "walking_route": "https://maps.app.goo.gl/P6CDWhdC2wj9VBvM8",
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Admin & Services",
+          "is_default": null,
+          "time": "20:00",
+          "duration_min": 30,
+          "priority": "Must",
+          "location": "Tokyo, Ikebukuro",
+          "name": {
+            "en": "Return a Car",
+            "th": "คืนรถเช่า"
+          },
+          "description": {
+            "en": null,
+            "th": null
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "20:30",
+          "duration_min": 60,
+          "priority": "Normal",
+          "location": "Tokyo, Ikebukuro",
+          "name": {
+            "en": "Straight to Hotel",
+            "th": "ตรงไปที่พัก"
+          },
+          "description": {
+            "en": null,
+            "th": null
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Living",
+          "is_default": null,
+          "time": "21:30",
+          "duration_min": 30,
+          "priority": "Normal",
+          "location": "Tokyo, Roppongi",
+          "name": {
+            "en": "Check in Hotel in Tokyo",
+            "th": "เช็คอินที่พักใน Tokyo"
+          },
+          "description": {
+            "en": "Check in at the Roppongi Airbnb home — our base for the Tokyo days.",
+            "th": "เช็คอินที่บ้าน Airbnb ย่าน Roppongi ฐานที่พักสำหรับวันเที่ยว Tokyo"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/XnAdhvPG33TErHHB9",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Dinner",
+          "is_default": true,
+          "time": "22:00",
+          "duration_min": 90,
+          "priority": "Recommend",
+          "location": "Tokyo, Roppongi",
+          "name": {
+            "en": "Roppongi Tsunagu",
+            "th": "Roppongi Tsunagu"
+          },
+          "description": {
+            "en": "Late-night ramen-ya near Roppongi Station, known for its shellfish-and-seafood broth; open until after the last train.",
+            "th": "ร้านราเมงเปิดดึกใกล้สถานี Roppongi เด่นน้ำซุปหอยและซีฟู้ด เปิดถึงหลังรถไฟเที่ยวสุดท้าย"
+          },
+          "cost": "฿ (Budget / ประหยัด)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "Open ~morning until midnight",
+          "queue_time": "Mid",
+          "booking_policy": "Optional",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Dinner",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Tokyo, Roppongi",
+          "name": {
+            "en": "Aka no Ren",
+            "th": "Aka no Ren"
+          },
+          "description": {
+            "en": "Roppongi institution serving rich Hakata-style tonkotsu ramen; open late.",
+            "th": "ร้านในตำนานย่าน Roppongi เสิร์ฟทงคตสึราเมงสไตล์ Hakata เข้มข้น เปิดดึก"
+          },
+          "cost": "฿ (Budget / ประหยัด)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "Open late (until early morning)",
+          "queue_time": "Mid",
+          "booking_policy": "Walk-in Only",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Dinner",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Tokyo, Roppongi",
+          "name": {
+            "en": "Izakaya Tanuki",
+            "th": "Izakaya Tanuki"
+          },
+          "description": {
+            "en": "Creative Japanese izakaya with a French twist, 1 min from Roppongi Station; small inventive plates.",
+            "th": "อิซากายะญี่ปุ่นครีเอทีฟกลิ่นอายฝรั่งเศส ห่างสถานี Roppongi 1 นาที เสิร์ฟจานเล็กสร้างสรรค์"
+          },
+          "cost": "฿฿ (Mid-range / ระดับกลาง)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "Mon–Fri 17:00–24:00; Sat/Sun 16:00–24:00",
+          "queue_time": "Low",
+          "booking_policy": "Optional",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Living",
+          "is_default": null,
+          "time": "23:30",
+          "duration_min": 0,
+          "priority": "Normal",
+          "location": "Tokyo, Roppongi",
+          "name": {
+            "en": "Back to Tokyo accommodation",
+            "th": "กลับที่พักใน Tokyo"
+          },
+          "description": {
+            "en": null,
+            "th": null
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": "AirBNB",
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/XnAdhvPG33TErHHB9",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        }
+      ]
+    },
+    {
+      "day": 6,
+      "name": {
+        "en": "Old Tokyo: Tsukiji, Asakusa & Skytree",
+        "th": "Tokyo เมืองเก่า: Tsukiji, Asakusa & Skytree"
+      },
+      "activities": [
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "07:30",
+          "duration_min": 60,
+          "priority": "Normal",
+          "location": "Tokyo, Roppongi",
+          "name": {
+            "en": "Metro from Roppongi to Tsukiji",
+            "th": "รถไฟใต้ดินจาก Roppongi ไป Tsukiji"
+          },
+          "description": {
+            "en": "Hibiya / Oedo line toward Tsukiji — about 15 min.",
+            "th": "สาย Hibiya / Oedo มุ่งสู่ Tsukiji ~15 นาที"
+          },
+          "cost": "¥200 (~฿45)",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Breakfast",
+          "is_default": true,
+          "time": "08:30",
+          "duration_min": 60,
+          "priority": "Normal",
+          "location": "Tokyo, Tsukiji",
+          "name": {
+            "en": "Sushizanmai Tsukiji",
+            "th": "Sushizanmai Tsukiji"
+          },
+          "description": {
+            "en": "24-hour sushi chain at Tsukiji famous for premium tuna and 150+ sushi types.",
+            "th": "ร้านซูชิเครือดังเปิด 24 ชม. ที่ Tsukiji ขึ้นชื่อทูน่าคุณภาพและซูชิกว่า 150 ชนิด"
+          },
+          "cost": "฿฿ (Mid-range / ระดับกลาง)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "24 hours",
+          "queue_time": "Mid",
+          "booking_policy": "Optional",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Breakfast",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Tokyo, Tsukiji",
+          "name": {
+            "en": "Tsukiji Yamacho (Tamagoyaki)",
+            "th": "Tsukiji Yamacho (Tamagoyaki)"
+          },
+          "description": {
+            "en": "Classic Tsukiji stall for warm grilled rolled-omelet (tamagoyaki) on a stick.",
+            "th": "ร้านเด็ดใน Tsukiji ขายไข่ม้วนย่าง (ทามาโกยากิ) เสียบไม้ร้อน ๆ"
+          },
+          "cost": "฿ (Budget / ประหยัด)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "~6:00–14:00",
+          "queue_time": "Mid",
+          "booking_policy": "Walk-in Only",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 1",
+          "is_default": null,
+          "time": "09:30",
+          "duration_min": 90,
+          "priority": "Normal",
+          "location": "Tokyo, Tsukiji",
+          "name": {
+            "en": "Tsukiji Outer Market",
+            "th": "ตลาดนอก Tsukiji"
+          },
+          "description": {
+            "en": "Bustling lanes of ~400 stalls — fresh seafood, tamagoyaki, street snacks and kitchenware. Best 9–11 AM.",
+            "th": "ตรอกตลาดคึกคักราว 400 ร้าน ทั้งซีฟู้ดสด ทามาโกยากิ ของกินเล่น และเครื่องครัว ช่วงดีสุด 9–11 โมง"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": "5:00–14:00; many shops closed Sun & Wed",
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": "Most stalls wind down by early afternoon — go in the morning.",
+            "th": "ร้านส่วนใหญ่เริ่มปิดช่วงบ่ายต้น ๆ แนะนำไปตอนเช้า"
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "11:00",
+          "duration_min": 30,
+          "priority": "Normal",
+          "location": "Tokyo, Tsukiji",
+          "name": {
+            "en": "Metro from Tsukiji to Asakusa",
+            "th": "รถไฟใต้ดินจาก Tsukiji ไป Asakusa"
+          },
+          "description": {
+            "en": "About 20 min across town to Asakusa.",
+            "th": "นั่งราว 20 นาทีข้ามเมืองสู่ Asakusa"
+          },
+          "cost": "¥200 (~฿45)",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 2",
+          "is_default": null,
+          "time": "11:30",
+          "duration_min": 90,
+          "priority": "Normal",
+          "location": "Tokyo, Asakusa",
+          "name": {
+            "en": "Senso-ji Temple & Nakamise-dori",
+            "th": "วัด Senso-ji & ถนน Nakamise"
+          },
+          "description": {
+            "en": "Tokyo's oldest temple (founded 645) with the giant Kaminarimon lantern; Nakamise-dori's snack-and-souvenir lane leads to the main hall.",
+            "th": "วัดที่เก่าแก่ที่สุดของ Tokyo (สร้างปี 645) มีโคมแดงยักษ์ Kaminarimon ถนน Nakamise เต็มไปด้วยของกินและของฝากทอดยาวสู่วิหารหลัก"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": "Grounds 24h; main hall 6:00–17:00 (6:30 Oct–Mar); Nakamise shops ~10:00–18:00",
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Lunch",
+          "is_default": true,
+          "time": "13:00",
+          "duration_min": 90,
+          "priority": "Normal",
+          "location": "Tokyo, Asakusa",
+          "name": {
+            "en": "Asakusa Imahan",
+            "th": "Asakusa Imahan"
+          },
+          "description": {
+            "en": "Heritage sukiyaki & shabu-shabu house since 1895 — premium wagyu in a traditional setting.",
+            "th": "ร้านสุกี้ยากี้และชาบูเก่าแก่ตั้งแต่ปี 1895 เสิร์ฟวากิวคุณภาพในบรรยากาศดั้งเดิม"
+          },
+          "cost": "฿฿฿ (Luxury / หรูหรา)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "11:30–21:30 (lunch menu until ~15:00)",
+          "queue_time": "Mid",
+          "booking_policy": "Recommended",
+          "how_to_book": "Reserve via the official site — https://www.asakusaimahan.co.jp/en/",
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": "https://www.asakusaimahan.co.jp/en/"
+          }
+        },
+        {
+          "slot": "Lunch",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Tokyo, Asakusa",
+          "name": {
+            "en": "Daikokuya Tempura",
+            "th": "Daikokuya Tempura"
+          },
+          "description": {
+            "en": "Old-school Asakusa tendon (tempura rice bowl) institution since 1887 — dark sesame-oil batter; expect a queue.",
+            "th": "ร้านเทมปุระข้าวหน้า (เทนด้ง) ระดับตำนานของ Asakusa ตั้งแต่ปี 1887 แป้งทอดน้ำมันงาเข้ม มักมีคิว"
+          },
+          "cost": "฿฿ (Mid-range / ระดับกลาง)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "Mon–Fri 11:15–20:30; Sat 11:15–21:00; Sun 11:15–20:30",
+          "queue_time": "High",
+          "booking_policy": "Walk-in Only",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 3",
+          "is_default": null,
+          "time": "15:00",
+          "duration_min": 120,
+          "priority": "Normal",
+          "location": "Tokyo, Sumida",
+          "name": {
+            "en": "Tokyo Skytree",
+            "th": "Tokyo Skytree"
+          },
+          "description": {
+            "en": "634 m tower with observation decks at 350 m (Tembo Deck) and 450 m (Tembo Galleria); Solamachi mall at the base.",
+            "th": "หอคอยสูง 634 ม. มีจุดชมวิวที่ 350 ม. (Tembo Deck) และ 450 ม. (Tembo Galleria) ด้านล่างเป็นห้าง Solamachi"
+          },
+          "cost": "¥1,800+ (~฿405) Tembo Deck",
+          "rating": null,
+          "category": null,
+          "operating_hours": "10:00–22:00 (last entry 21:00); from 9:00 on weekends/holidays",
+          "queue_time": "Mid",
+          "booking_policy": "Optional",
+          "how_to_book": "Advance online tickets are cheaper & skip the line — https://en.tokyo-skytree.jp/ticket/",
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": "https://en.tokyo-skytree.jp/"
+          }
+        },
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "17:30",
+          "duration_min": 90,
+          "priority": "Normal",
+          "location": "Tokyo, Sumida",
+          "name": {
+            "en": "Metro back to Roppongi",
+            "th": "รถไฟใต้ดินกลับสู่ Roppongi"
+          },
+          "description": {
+            "en": "About 40 min back across the city.",
+            "th": "นั่งราว 40 นาทีกลับข้ามเมือง"
+          },
+          "cost": "¥300 (~฿68)",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Dinner",
+          "is_default": true,
+          "time": "19:00",
+          "duration_min": 120,
+          "priority": "Normal",
+          "location": "Tokyo, Roppongi",
+          "name": {
+            "en": "Gonpachi Nishiazabu",
+            "th": "Gonpachi Nishiazabu"
+          },
+          "description": {
+            "en": "The 'Kill Bill' izakaya near Roppongi — kushiyaki, soba and tempura under a dramatic wooden interior; English-friendly.",
+            "th": "อิซากายะ \"Kill Bill\" ใกล้ Roppongi เสิร์ฟคุชิยากิ โซบะ และเทมปุระ ในอาคารไม้สุดอลังการ พนักงานพูดอังกฤษได้"
+          },
+          "cost": "฿฿ (Mid-range / ระดับกลาง)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "11:30–03:30",
+          "queue_time": "Mid",
+          "booking_policy": "Recommended",
+          "how_to_book": "Reserve online (official site / JPNEAZY)",
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Dinner",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Tokyo, Roppongi",
+          "name": {
+            "en": "Sushi Gonpachi Nishiazabu",
+            "th": "Sushi Gonpachi Nishiazabu"
+          },
+          "description": {
+            "en": "Sushi counter on Gonpachi's 3rd floor — à la carte and sets in the same building.",
+            "th": "เคาน์เตอร์ซูชิชั้น 3 ของ Gonpachi อาคารเดียวกัน สั่งแบบจานเดียวหรือเซ็ตก็ได้"
+          },
+          "cost": "฿฿ (Mid-range / ระดับกลาง)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "17:00–02:00",
+          "queue_time": "Mid",
+          "booking_policy": "Recommended",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Living",
+          "is_default": null,
+          "time": "21:30",
+          "duration_min": 0,
+          "priority": "Normal",
+          "location": "Tokyo, Roppongi",
+          "name": {
+            "en": "Back to Roppongi accommodation",
+            "th": "กลับที่พักใน Roppongi"
+          },
+          "description": {
+            "en": "Return to the Roppongi Airbnb home.",
+            "th": "กลับสู่บ้าน Airbnb ย่าน Roppongi"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/XnAdhvPG33TErHHB9",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        }
+      ]
+    },
+    {
+      "day": 7,
+      "name": {
+        "en": "Harajuku, Meiji Shrine & Shibuya",
+        "th": "Harajuku, ศาลเจ้า Meiji & Shibuya"
+      },
+      "activities": [
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "08:30",
+          "duration_min": 30,
+          "priority": "Normal",
+          "location": "Tokyo, Roppongi",
+          "name": {
+            "en": "Metro from Roppongi to Harajuku",
+            "th": "รถไฟใต้ดินจาก Roppongi ไป Harajuku"
+          },
+          "description": {
+            "en": "Chiyoda/other lines toward Meiji-Jingumae / Harajuku — ~15 min.",
+            "th": "สาย Chiyoda ฯลฯ มุ่งสู่ Meiji-Jingumae / Harajuku ~15 นาที"
+          },
+          "cost": "¥200 (~฿45)",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 1",
+          "is_default": null,
+          "time": "09:00",
+          "duration_min": 90,
+          "priority": "Normal",
+          "location": "Tokyo, Harajuku",
+          "name": {
+            "en": "Meiji Jingu",
+            "th": "ศาลเจ้า Meiji Jingu"
+          },
+          "description": {
+            "en": "Tokyo’s grand Shinto shrine for Emperor Meiji, set in a tranquil forest of ~100,000 donated trees, a short walk from Harajuku.",
+            "th": "ศาลเจ้าชินโตขนาดใหญ่ของ Tokyo อุทิศแด่จักรพรรดิ Meiji ตั้งอยู่ในป่าสงบร่มรื่นราว 100,000 ต้น เดินไม่ไกลจาก Harajuku"
+          },
+          "cost": "Free",
+          "rating": null,
+          "category": null,
+          "operating_hours": "Sunrise–sunset (≈5:40–17:10 in Oct); free entry",
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": "Inner Garden & Meiji Jingu Museum are paid; main grounds are free.",
+            "th": "สวนชั้นใน และพิพิธภัณฑ์ Meiji Jingu มีค่าเข้า ส่วนพื้นที่หลักเข้าฟรี"
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": "https://www.meijijingu.or.jp/en/"
+          }
+        },
+        {
+          "slot": "Activity 2",
+          "is_default": null,
+          "time": "10:30",
+          "duration_min": 90,
+          "priority": "Normal",
+          "location": "Tokyo, Harajuku",
+          "name": {
+            "en": "Takeshita Street & Omotesando",
+            "th": "ถนน Takeshita & Omotesando"
+          },
+          "description": {
+            "en": "Harajuku’s youth-fashion lane (Takeshita-dori) for crepes and quirky shops, plus the upscale, tree-lined Omotesando boulevard.",
+            "th": "ถนนแฟชั่นวัยรุ่น Takeshita-dori แหล่งเครปและร้านแนว ๆ และถนน Omotesando สายหรูเรียงรายด้วยต้นไม้"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Lunch",
+          "is_default": true,
+          "time": "12:00",
+          "duration_min": 90,
+          "priority": "Normal",
+          "location": "Tokyo, Harajuku",
+          "name": {
+            "en": "Afuri Harajuku",
+            "th": "Afuri Harajuku"
+          },
+          "description": {
+            "en": "Famous for light, citrusy yuzu-shio ramen and tsukemen; quick and refreshing.",
+            "th": "ร้านดังเรื่องราเมงน้ำใส yuzu-shio กลิ่นส้มยูซุ และสึเคเมง รสชาติสดชื่น"
+          },
+          "cost": "฿ (Budget / ประหยัด)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "11:00–23:00 (L.O. 22:30)",
+          "queue_time": "Mid",
+          "booking_policy": "Walk-in Only",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Lunch",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Tokyo, Omotesando",
+          "name": {
+            "en": "Tonkatsu Maisen Aoyama",
+            "th": "Tonkatsu Maisen Aoyama"
+          },
+          "description": {
+            "en": "Renowned Omotesando tonkatsu house — crisp, tender pork cutlets in a former bathhouse building.",
+            "th": "ร้านทงคัตสึชื่อดังย่าน Omotesando หมูชุบเกล็ดทอดกรอบนุ่ม ในอาคารโรงอาบน้ำเก่า"
+          },
+          "cost": "฿฿ (Mid-range / ระดับกลาง)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "11:00–21:00 (L.O. 20:30)",
+          "queue_time": "Mid",
+          "booking_policy": "Optional",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "13:30",
+          "duration_min": 30,
+          "priority": "Normal",
+          "location": "Tokyo, Harajuku",
+          "name": {
+            "en": "Head to Shibuya",
+            "th": "มุ่งหน้าสู่ Shibuya"
+          },
+          "description": {
+            "en": "~10 min walk down to Shibuya (or one train stop).",
+            "th": "เดินลงไป Shibuya ~10 นาที (หรือนั่งรถไฟ 1 สถานี)"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 3",
+          "is_default": null,
+          "time": "14:00",
+          "duration_min": 180,
+          "priority": "Normal",
+          "location": "Tokyo, Shibuya",
+          "name": {
+            "en": "Shibuya Crossing & Shibuya Sky",
+            "th": "Shibuya Crossing & Shibuya Sky"
+          },
+          "description": {
+            "en": "The world’s busiest scramble crossing, then 360° rooftop views from Shibuya Sky (230 m) atop Shibuya Scramble Square.",
+            "th": "สี่แยกข้ามถนนที่พลุกพล่านที่สุดในโลก แล้วขึ้นชมวิว 360 องศาบนดาดฟ้า Shibuya Sky (230 ม.) เหนือตึก Shibuya Scramble Square"
+          },
+          "cost": "¥3,000–3,700 (~฿675–833) Shibuya Sky",
+          "rating": null,
+          "category": null,
+          "operating_hours": "10:00–22:30 (last entry 21:20)",
+          "queue_time": "High",
+          "booking_policy": "Recommended",
+          "how_to_book": "Timed-entry tickets — reserve online (Shibuya Sky site / Klook / KKday), esp. for sunset.",
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": "https://www.shibuya-scramble-square.com/sky/"
+          }
+        },
+        {
+          "slot": "Dinner",
+          "is_default": true,
+          "time": "18:00",
+          "duration_min": 120,
+          "priority": "Normal",
+          "location": "Tokyo, Shibuya",
+          "name": {
+            "en": "Uobei Shibuya Dogenzaka",
+            "th": "Uobei Shibuya Dogenzaka"
+          },
+          "description": {
+            "en": "High-speed sushi — order on a touch panel and plates zoom to your seat on lanes; plates from ¥100. Near Shibuya Crossing.",
+            "th": "ซูชิสายส่งความเร็วสูง สั่งผ่านจอทัชสกรีน จานวิ่งมาที่โต๊ะตามราง เริ่มต้นจานละ ¥100 ใกล้ Shibuya Crossing"
+          },
+          "cost": "฿ (Budget / ประหยัด)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "11:00–24:00",
+          "queue_time": "High",
+          "booking_policy": "Walk-in Only",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Dinner",
+          "is_default": false,
+          "time": null,
+          "duration_min": null,
+          "priority": "Normal",
+          "location": "Tokyo, Shibuya",
+          "name": {
+            "en": "Shibuya Yokocho (Miyashita Park)",
+            "th": "Shibuya Yokocho (Miyashita Park)"
+          },
+          "description": {
+            "en": "Retro food alley in RAYARD Miyashita Park — ~19 stalls of regional Japanese dishes; lively and open late.",
+            "th": "ตรอกอาหารสไตล์เรโทรใน RAYARD Miyashita Park รวมร้านอาหารประจำภูมิภาคของญี่ปุ่นราว 19 ร้าน คึกคักและเปิดดึก"
+          },
+          "cost": "฿฿ (Mid-range / ระดับกลาง)",
+          "rating": null,
+          "category": null,
+          "operating_hours": "Most stalls open late (until early morning) — varies by stall",
+          "queue_time": "Mid",
+          "booking_policy": "Walk-in Only",
+          "how_to_book": null,
+          "maps_api_call": true,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "20:30",
+          "duration_min": 30,
+          "priority": "Normal",
+          "location": "Tokyo, Shibuya",
+          "name": {
+            "en": "Metro back to Roppongi",
+            "th": "รถไฟใต้ดินกลับสู่ Roppongi"
+          },
+          "description": {
+            "en": "~15 min back to Roppongi.",
+            "th": "นั่งราว 15 นาทีกลับสู่ Roppongi"
+          },
+          "cost": "¥200 (~฿45)",
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Living",
+          "is_default": null,
+          "time": "21:00",
+          "duration_min": 0,
+          "priority": "Normal",
+          "location": "Tokyo, Roppongi",
+          "name": {
+            "en": "Back to Roppongi accommodation",
+            "th": "กลับที่พักใน Roppongi"
+          },
+          "description": {
+            "en": "Return to the Roppongi Airbnb home.",
+            "th": "กลับสู่บ้าน Airbnb ย่าน Roppongi"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/XnAdhvPG33TErHHB9",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        }
+      ]
+    },
+    {
+      "day": 8,
+      "name": {
+        "en": "Free Day & Flight Home",
+        "th": "วันอิสระ & บินกลับบ้าน"
+      },
+      "activities": [
+        {
+          "slot": "Admin & Services",
+          "is_default": null,
+          "time": "09:30",
+          "duration_min": 60,
+          "priority": "Normal",
+          "location": "Tokyo, Roppongi",
+          "name": {
+            "en": "Check out of Roppongi accommodation",
+            "th": "เช็คเอาต์ที่พักใน Roppongi"
+          },
+          "description": {
+            "en": "Pack and check out of the Airbnb; you can often leave luggage for a few hours if you want more free time.",
+            "th": "เก็บของและเช็คเอาต์จาก Airbnb โดยทั่วไปฝากกระเป๋าไว้ได้สักสองสามชั่วโมงหากอยากมีเวลาเที่ยวต่อ"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": "https://maps.app.goo.gl/XnAdhvPG33TErHHB9",
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Activity 1",
+          "is_default": null,
+          "time": "10:00",
+          "duration_min": 90,
+          "priority": "Normal",
+          "location": "Tokyo, Roppongi",
+          "name": {
+            "en": "Free morning in Roppongi",
+            "th": "เช้าวันอิสระใน Roppongi"
+          },
+          "description": {
+            "en": "Free day — coffee, last-minute shopping or souvenirs, or simply relax. Keep it light before heading to the airport.",
+            "th": "วันอิสระ จิบกาแฟ ช้อปปิ้งหรือซื้อของฝากครั้งสุดท้าย หรือพักผ่อนตามสบาย เผื่อเวลาก่อนไปสนามบิน"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "11:30",
+          "duration_min": 120,
+          "priority": "Must",
+          "location": "Tokyo, Roppongi",
+          "name": {
+            "en": "Head to Narita Airport (NRT)",
+            "th": "มุ่งหน้าสู่สนามบิน Narita (NRT)"
+          },
+          "description": {
+            "en": "Allow ~2 hrs by Airport Limousine Bus, N’EX, or Skyliner (via Nippori). Aim to arrive by ~13:30.",
+            "th": "เผื่อเวลาราว 2 ชม. โดย Airport Limousine Bus, N’EX หรือ Skyliner (ผ่าน Nippori) ให้ถึงสนามบินราว 13:30"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": "International flight at 15:55 — be at Narita by ~13:30 (≈2 hrs before departure).",
+            "th": "เที่ยวบินระหว่างประเทศ 15:55 ควรถึง Narita ราว 13:30 (ก่อนออกเดินทางราว 2 ชม.)"
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Admin & Services",
+          "is_default": null,
+          "time": "13:30",
+          "duration_min": 120,
+          "priority": "Must",
+          "location": "Chiba, Narita",
+          "name": {
+            "en": "Check-in & security at Narita",
+            "th": "เช็คอินและผ่านจุดตรวจที่ Narita"
+          },
+          "description": {
+            "en": "Check in for the flight, drop bags, clear security and immigration. Confirm your terminal with the airline.",
+            "th": "เช็คอินเที่ยวบิน โหลดกระเป๋า ผ่านจุดตรวจและตรวจคนเข้าเมือง ตรวจสอบอาคารผู้โดยสารกับสายการบิน"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        },
+        {
+          "slot": "Logistics",
+          "is_default": null,
+          "time": "15:55",
+          "duration_min": 0,
+          "priority": "Must",
+          "location": "Chiba, Narita",
+          "name": {
+            "en": "Flight home — Narita (NRT) 15:55",
+            "th": "บินกลับ — Narita (NRT) 15:55"
+          },
+          "description": {
+            "en": "Departure: flight back home from Narita International Airport at 15:55.",
+            "th": "ออกเดินทาง: เที่ยวบินกลับบ้านจากสนามบินนานาชาติ Narita เวลา 15:55"
+          },
+          "cost": null,
+          "rating": null,
+          "category": null,
+          "operating_hours": null,
+          "queue_time": null,
+          "booking_policy": null,
+          "how_to_book": null,
+          "maps_api_call": null,
+          "notes": {
+            "en": null,
+            "th": null
+          },
+          "remark": {
+            "en": null,
+            "th": null
+          },
+          "links": {
+            "map": null,
+            "walking_route": null,
+            "ig": null,
+            "fb": null,
+            "tt": null,
+            "website": null
+          }
+        }
+      ]
+    }
+  ]
+}

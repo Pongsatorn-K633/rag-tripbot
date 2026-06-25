@@ -5,6 +5,7 @@ import useEmblaCarousel from 'embla-carousel-react'
 import { Star, Banknote, Timer, Check } from 'lucide-react'
 import type { Choice } from '@/lib/itinerary-types'
 import CategoryIcon from '@/app/components/CategoryIcon'
+import QueueBookingBadge from '@/app/components/QueueBookingBadge'
 
 /**
  * IG-style swipeable card carousel for itinerary choices.
@@ -56,7 +57,7 @@ export default function ChoiceCarousel({
     align: 'center',
     dragFree: false,
   })
-  const [activeIndex, setActiveIndex] = useState(choice.selected ?? 0)
+  const [activeIndex, setActiveIndex] = useState(choice.selected ?? choice.recommended ?? 0)
 
   const onSelect = useCallback(() => {
     if (!emblaApi) return
@@ -69,10 +70,11 @@ export default function ChoiceCarousel({
     return () => { emblaApi.off('select', onSelect) }
   }, [emblaApi, onSelect])
 
-  // Open on the user's picked option (when customizing their copy).
+  // Open on the user's picked option, else the admin-recommended one.
   useEffect(() => {
-    if (emblaApi && choice.selected != null) emblaApi.scrollTo(choice.selected)
-  }, [emblaApi, choice.selected])
+    const idx = choice.selected ?? choice.recommended
+    if (emblaApi && idx != null) emblaApi.scrollTo(idx)
+  }, [emblaApi, choice.selected, choice.recommended])
 
   function scrollTo(idx: number) {
     emblaApi?.scrollTo(idx)
@@ -100,17 +102,33 @@ export default function ChoiceCarousel({
             <div
               key={idx}
               className={`flex-[0_0_85%] min-w-0 border rounded-lg px-4 py-3 ${
-                choice.selected === idx ? 'border-basel-brick' : v.card
+                choice.selected === idx ? 'border-basel-brick'
+                  : choice.recommended === idx ? 'border-amber-400'
+                  : v.card
               }`}
             >
-              {choice.selected === idx && (
-                <span className="inline-flex items-center gap-1 mb-1.5 bg-basel-brick text-white text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded">
-                  <Check size={9} strokeWidth={3} /> เลือกแล้ว
-                </span>
+              {(choice.recommended === idx || choice.selected === idx) && (
+                <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                  {choice.recommended === idx && (
+                    <span className="inline-flex items-center gap-1 bg-amber-400 text-zen-black text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded">
+                      <Star size={9} strokeWidth={3} fill="currentColor" /> แนะนำ
+                    </span>
+                  )}
+                  {choice.selected === idx && (
+                    <span className="inline-flex items-center gap-1 bg-basel-brick text-white text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded">
+                      <Check size={9} strokeWidth={3} /> เลือกแล้ว
+                    </span>
+                  )}
+                </div>
               )}
               <div className="flex items-center gap-2 flex-wrap mb-1.5">
                 {opt.category && <CategoryIcon category={opt.category} size={14} className={v.catIcon} />}
                 <span className={`font-bold text-sm ${v.name}`}>{opt.name}</span>
+                {opt.rating != null && (
+                  <span className="text-[10px] font-bold text-amber-500 flex items-center gap-0.5">
+                    <Star size={10} strokeWidth={2.5} fill="currentColor" /> {opt.rating}
+                  </span>
+                )}
                 {opt.cost && (
                   <span className="text-[10px] font-bold text-basel-brick flex items-center gap-0.5 ml-auto">
                     <Banknote size={10} strokeWidth={2} /> {opt.cost}
@@ -118,6 +136,7 @@ export default function ChoiceCarousel({
                 )}
               </div>
               {opt.notes && <p className={`text-xs leading-relaxed ${v.notes}`}>{opt.notes}</p>}
+              <QueueBookingBadge queue={opt.queueTime} booking={opt.bookingPolicy} howToBook={opt.howToBook} variant={variant} />
               {opt.duration && (
                 <p className={`text-[10px] mt-1.5 flex items-center gap-0.5 ${v.duration}`}>
                   <Timer size={10} strokeWidth={2} /> {opt.duration}

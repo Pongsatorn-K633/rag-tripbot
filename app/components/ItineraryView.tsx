@@ -1,14 +1,16 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, type ReactNode } from 'react'
 import Image from 'next/image'
 import useEmblaCarousel from 'embla-carousel-react'
 import {
-  ChevronDown, MapPin, AlertTriangle, Star, Hotel, Train, Clock, Banknote, Timer, Circle, CalendarCheck, ExternalLink,
+  ChevronDown, MapPin, AlertTriangle, Star, Hotel, Train, Clock, Banknote, Timer, Circle, CalendarCheck,
+  ExternalLink, Globe, Footprints, Sparkles,
 } from 'lucide-react'
-import type { AnyItinerary, Day, Activity, ActivityPriority } from '@/lib/itinerary-types'
+import type { AnyItinerary, Day, Activity, ActivityPriority, ItineraryV3, HighlightV3 } from '@/lib/itinerary-types'
 import { PRIORITY_LABEL } from '@/lib/itinerary-types'
-import { getRenderDays } from '@/lib/trips/itinerary-model'
+import { getRenderDays, isV3 } from '@/lib/trips/itinerary-model'
+import QueueBookingBadge from '@/app/components/QueueBookingBadge'
 import CategoryIcon from '@/app/components/CategoryIcon'
 import ChoiceCarousel from '@/app/components/ChoiceCarousel'
 
@@ -77,8 +79,13 @@ export default function ItineraryView({
       next.has(d) ? next.delete(d) : next.add(d)
       return next
     })
-  // Normalize v1 OR v2 into the v1 render shape (lib/trips/itinerary-model.ts).
+  // Normalize v1 OR v2 OR v3 into the v1 render shape (lib/trips/itinerary-model.ts).
   const days = getRenderDays(itinerary)
+  // V3 trips carry extra trip-level content (full description, highlights, guides).
+  const v3 = isV3(itinerary) ? itinerary : null
+  const description = v3?.overview.description ?? (itinerary as { description?: string }).description
+  const highlights = v3?.highlights ?? []
+  const guides = v3 ? collectGuides(v3) : []
 
   return (
     <div>
@@ -111,6 +118,12 @@ export default function ItineraryView({
         </div>
       )}
 
+      {description && (
+        <p className={`text-sm leading-relaxed mb-6 whitespace-pre-line ${t.textMuted}`}>{description}</p>
+      )}
+
+      {highlights.length > 0 && <HighlightsStrip highlights={highlights} t={t} />}
+
       {showJourneyHeader && (
         <div className="mb-6">
           <h2 className={`font-headline text-2xl font-extrabold ${t.text}`}>The Journey</h2>
@@ -130,6 +143,93 @@ export default function ItineraryView({
             makeDayFreeLabel={makeDayFreeLabel}
           />
         ))}
+      </div>
+
+      {guides.length > 0 && <GuidesAccordion guides={guides} t={t} variant={variant} />}
+    </div>
+  )
+}
+
+// ── Highlights carousel (V3) ─────────────────────────────────────────────────
+// Swipeable must-see places with their level (😍 / ⭐ / 👌). Photos are mocked
+// (gradient + emoji) for now — swap the placeholder block for an <Image> later.
+const MOCK_GRADIENT = [
+  'bg-gradient-to-br from-rose-200 to-orange-200',
+  'bg-gradient-to-br from-sky-200 to-indigo-200',
+  'bg-gradient-to-br from-emerald-200 to-teal-200',
+  'bg-gradient-to-br from-amber-200 to-yellow-200',
+  'bg-gradient-to-br from-fuchsia-200 to-purple-200',
+  'bg-gradient-to-br from-cyan-200 to-blue-200',
+]
+
+function HighlightsStrip({ highlights, t }: { highlights: HighlightV3[]; t: Tokens }) {
+  const [emblaRef] = useEmblaCarousel({ align: 'start', dragFree: true })
+  return (
+    <div className="mb-8">
+      <p className="text-xs font-bold text-basel-brick uppercase tracking-widest mb-3 flex items-center gap-1.5">
+        <Sparkles size={13} strokeWidth={2.5} /> ไฮไลต์ทริป · Highlights
+      </p>
+      <div className="overflow-hidden -mx-1" ref={emblaRef}>
+        <div className="flex gap-3 px-1">
+          {highlights.map((h, i) => (
+            <div key={i} className={`flex-[0_0_72%] sm:flex-[0_0_46%] min-w-0 border rounded-xl overflow-hidden ${t.card}`}>
+              {/* mock photo */}
+              <div className={`relative h-24 flex items-center justify-center ${MOCK_GRADIENT[i % MOCK_GRADIENT.length]}`}>
+                <span className="text-3xl opacity-90 leading-none">{h.level || '📍'}</span>
+                <span className="absolute top-1.5 right-2 text-[10px] font-bold text-zen-black/40">photo</span>
+              </div>
+              <div className="px-3 py-2.5">
+                <p className={`font-bold text-sm ${t.text}`}>{h.name}</p>
+                {h.description && <p className={`text-xs leading-relaxed mt-0.5 line-clamp-3 ${t.textMuted}`}>{h.description}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Guides accordion (V3) ────────────────────────────────────────────────────
+// Bilingual trip-level guides (logistics / food / accommodation / queue / remark).
+interface Guide { key: string; label: string; emoji: string; text: string }
+function collectGuides(v3: ItineraryV3): Guide[] {
+  const o = v3.overview
+  const pick = (en?: string, th?: string) => (th || en || '').trim()
+  const defs: Guide[] = [
+    { key: 'logistic', label: 'การเดินทาง · Logistics', emoji: '🚆', text: pick(o.logistic_guide_en, o.logistic_guide_th) },
+    { key: 'food', label: 'อาหาร · Food', emoji: '🍜', text: pick(o.food_guide_en, o.food_guide_th) },
+    { key: 'accommodation', label: 'ที่พัก · Stay', emoji: '🏨', text: pick(o.accommodation_guide_en, o.accommodation_guide_th) },
+    { key: 'queue', label: 'คิว · Queues', emoji: '⏳', text: pick(o.queue_guide_en, o.queue_guide_th) },
+    { key: 'remark', label: 'หมายเหตุ · Notes', emoji: '📌', text: pick(o.remark_en, o.remark_th) },
+  ]
+  return defs.filter((g) => g.text)
+}
+
+function GuidesAccordion({ guides, t, variant }: { guides: Guide[]; t: Tokens; variant: Variant }) {
+  const [open, setOpen] = useState<Set<string>>(new Set())
+  const toggle = (k: string) => setOpen((p) => { const n = new Set(p); n.has(k) ? n.delete(k) : n.add(k); return n })
+  return (
+    <div className="mt-8">
+      <p className="text-xs font-bold text-basel-brick uppercase tracking-widest mb-3 flex items-center gap-1.5">
+        <Sparkles size={13} strokeWidth={2.5} /> คู่มือทริป · Trip guides
+      </p>
+      <div className="space-y-2">
+        {guides.map((g) => {
+          const isOpen = open.has(g.key)
+          return (
+            <div key={g.key} className={`border rounded-xl overflow-hidden ${t.card}`}>
+              <button onClick={() => toggle(g.key)} className="w-full text-left px-4 py-3 flex items-center gap-2.5">
+                <span className="text-base leading-none">{g.emoji}</span>
+                <span className={`flex-1 font-bold text-sm ${t.text}`}>{g.label}</span>
+                <ChevronDown size={16} className={`flex-shrink-0 transition-transform ${isOpen ? 'rotate-180 text-basel-brick' : t.textFaint}`} />
+              </button>
+              {isOpen && (
+                <p className={`px-4 pb-4 pt-1 text-sm leading-relaxed whitespace-pre-line border-t ${t.divider} ${t.textMuted}`}>{g.text}</p>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -181,6 +281,13 @@ function DayCard({ day, isOpen, onToggle, t, variant, onMakeDayFree, makeDayFree
   const paddedDay = String(day.day).padStart(2, '0')
   const mandatoryCount = day.activities.filter((a) => a.priority === 'mandatory').length
   const choiceCount = day.choices?.length ?? 0
+  // Interleave activities + choices by time so choosable slots sit in their real
+  // place in the day instead of being dumped at the bottom. Untimed → end.
+  const timeline = [
+    ...day.activities.map((a) => ({ kind: 'act' as const, time: a.time, el: a })),
+    ...(day.choices ?? []).map((c) => ({ kind: 'choice' as const, time: c.time, el: c })),
+  ].sort((a, b) => cmpTime(a.time, b.time))
+  const itemCount = timeline.length
 
   return (
     <div className={`border rounded-2xl overflow-hidden ${t.card}`}>
@@ -197,7 +304,7 @@ function DayCard({ day, isOpen, onToggle, t, variant, onMakeDayFree, makeDayFree
           <p className={`font-bold text-xl leading-tight truncate ${t.text}`}>{day.location}</p>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
             <span className={`text-xs font-medium flex items-center gap-1 ${t.textFaint}`}>
-              <MapPin size={11} strokeWidth={2.5} /> Day {day.day} · {day.activities.length} กิจกรรม
+              <MapPin size={11} strokeWidth={2.5} /> Day {day.day} · {itemCount} กิจกรรม
             </span>
             {day.free && (
               <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest flex items-center gap-0.5">
@@ -260,19 +367,13 @@ function DayCard({ day, isOpen, onToggle, t, variant, onMakeDayFree, makeDayFree
               <span>วันอิสระ — ยังไม่มีแผน เพิ่มกิจกรรมเองได้ที่ My Trip</span>
             </div>
           )}
-          {day.activities.length > 0 && (
+          {timeline.length > 0 && (
             <div className="space-y-6">
-              {day.activities.map((act, idx) => (
-                <ActivityItem key={idx} activity={act} t={t} />
-              ))}
-            </div>
-          )}
-
-          {day.choices && day.choices.length > 0 && (
-            <div className="space-y-4">
-              {day.choices.map((choice, idx) => (
-                <ChoiceCarousel key={idx} choice={choice} variant={variant} />
-              ))}
+              {timeline.map((it, idx) =>
+                it.kind === 'act'
+                  ? <ActivityItem key={idx} activity={it.el} t={t} variant={variant} />
+                  : <ChoiceCarousel key={idx} choice={it.el} variant={variant} />
+              )}
             </div>
           )}
 
@@ -282,7 +383,7 @@ function DayCard({ day, isOpen, onToggle, t, variant, onMakeDayFree, makeDayFree
                 <Hotel size={12} strokeWidth={2.5} /> ที่พัก
               </p>
               {day.accommodation && (
-                <p className={`text-base leading-relaxed ${t.text}`}>{day.accommodation}</p>
+                <p className={`font-bold text-sm leading-relaxed ${t.text}`}>{day.accommodation}</p>
               )}
               {day.accommodationChoices && day.accommodationChoices.length > 0 && (
                 <div className="mt-2 space-y-1.5">
@@ -321,7 +422,7 @@ function DayCard({ day, isOpen, onToggle, t, variant, onMakeDayFree, makeDayFree
 
 // ── Activity item ─────────────────────────────────────────────────────────────
 
-function ActivityItem({ activity, t }: { activity: Activity; t: Tokens }) {
+function ActivityItem({ activity, t, variant }: { activity: Activity; t: Tokens; variant: Variant }) {
   // Logistics step — a compact connector "how you move between activities".
   if (activity.isLogistics) {
     return (
@@ -335,7 +436,7 @@ function ActivityItem({ activity, t }: { activity: Activity; t: Tokens }) {
               <Clock size={10} strokeWidth={2.5} /> {activity.time}
             </span>
           )}
-          <span className={`text-sm font-medium ${t.text}`}>{activity.name}</span>
+          <span className={`text-sm font-bold ${t.text}`}>{activity.name}</span>
           {activity.duration && (
             <span className={`text-[11px] flex items-center gap-0.5 ${t.textFaint}`}><Timer size={10} strokeWidth={2} /> {activity.duration}</span>
           )}
@@ -346,7 +447,7 @@ function ActivityItem({ activity, t }: { activity: Activity; t: Tokens }) {
             </a>
           )}
         </div>
-        {activity.notes && <p className={`text-xs mt-0.5 leading-relaxed ${t.textFaint}`}>{activity.notes}</p>}
+        {activity.notes && <p className={`text-sm mt-1 leading-relaxed ${t.textMuted}`}>{activity.notes}</p>}
       </div>
     )
   }
@@ -375,13 +476,34 @@ function ActivityItem({ activity, t }: { activity: Activity; t: Tokens }) {
           ? <span className="text-sm leading-none">{activity.emoji}</span>
           : activity.category && <CategoryIcon category={activity.category} size={13} className={t.catIcon} />}
       </div>
-      <p className={`font-bold text-lg mt-1 ${t.text}`}>
+      <p className={`font-bold text-sm mt-1 ${t.text}`}>
         {activity.name}
-        {activity.nameTh && <span className={`font-medium text-sm ml-2 ${t.textMuted}`}>{activity.nameTh}</span>}
+        {activity.nameTh && <span className={`font-medium text-xs ml-2 ${t.textMuted}`}>{activity.nameTh}</span>}
       </p>
-      {activity.notes && <p className={`text-base mt-1.5 leading-relaxed ${t.textMuted}`}>{activity.notes}</p>}
-      {(activity.cost || activity.duration || activity.mapUrl) && (
-        <div className="flex gap-3 mt-1.5 items-center">
+
+      {(activity.location || activity.rating != null || activity.operatingHours) && (
+        <div className={`flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-[11px] ${t.textFaint}`}>
+          {activity.location && <span className="flex items-center gap-0.5"><MapPin size={10} strokeWidth={2.5} /> {activity.location}</span>}
+          {activity.rating != null && <span className="flex items-center gap-0.5 text-amber-500 font-bold"><Star size={10} strokeWidth={2.5} fill="currentColor" /> {activity.rating}</span>}
+          {activity.operatingHours && <span className="flex items-center gap-0.5"><Clock size={10} strokeWidth={2} /> {activity.operatingHours}</span>}
+        </div>
+      )}
+
+      {activity.notes && <p className={`text-sm mt-1 leading-relaxed ${t.textMuted}`}>{activity.notes}</p>}
+
+      {activity.remark && (
+        <div className={`flex items-start gap-1.5 text-xs mt-1.5 leading-relaxed rounded-lg px-2.5 py-1.5 ${
+          variant === 'dark' ? 'bg-amber-500/10 text-amber-200' : 'bg-amber-50 text-amber-900'
+        }`}>
+          <AlertTriangle size={12} className="text-amber-600 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+          <span>{activity.remark}</span>
+        </div>
+      )}
+
+      <QueueBookingBadge queue={activity.queueTime} booking={activity.bookingPolicy} howToBook={activity.howToBook} variant={variant} />
+
+      {(activity.cost || activity.duration || activity.mapUrl || activity.walkingUrl || hasSocial(activity.social)) && (
+        <div className="flex gap-x-3 gap-y-1 mt-1.5 items-center flex-wrap">
           {activity.cost && (
             <span className={`text-[11px] font-bold flex items-center gap-0.5 ${t.textFaint}`}>
               <Banknote size={11} strokeWidth={2} /> {activity.cost}
@@ -392,15 +514,39 @@ function ActivityItem({ activity, t }: { activity: Activity; t: Tokens }) {
               <Timer size={11} strokeWidth={2} /> {activity.duration}
             </span>
           )}
-          {activity.mapUrl && (
-            <a href={activity.mapUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] font-bold flex items-center gap-0.5 text-blue-500 hover:underline">
-              <ExternalLink size={11} strokeWidth={2.5} /> Maps
-            </a>
-          )}
+          {activity.mapUrl && <LinkPill href={activity.mapUrl} icon={<ExternalLink size={11} strokeWidth={2.5} />} label="Maps" />}
+          {activity.walkingUrl && <LinkPill href={activity.walkingUrl} icon={<Footprints size={11} strokeWidth={2.5} />} label="เส้นทางเดิน" />}
+          {activity.social?.website && <LinkPill href={activity.social.website} icon={<Globe size={11} strokeWidth={2.5} />} label="Website" />}
+          {activity.social?.ig && <LinkPill href={activity.social.ig} label="IG" />}
+          {activity.social?.fb && <LinkPill href={activity.social.fb} label="FB" />}
+          {activity.social?.tt && <LinkPill href={activity.social.tt} label="TikTok" />}
         </div>
       )}
     </div>
   )
+}
+
+// ── Activity sub-pieces ──────────────────────────────────────────────────────
+
+function hasSocial(s?: Activity['social']): boolean {
+  return !!s && !!(s.ig || s.fb || s.tt || s.website)
+}
+
+function LinkPill({ href, icon, label }: { href: string; icon?: ReactNode; label: string }) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="text-[11px] font-bold flex items-center gap-0.5 text-blue-500 hover:underline">
+      {icon} {label}
+    </a>
+  )
+}
+
+// Sort by HH:MM ascending; items without a time fall to the end.
+function cmpTime(a?: string, b?: string): number {
+  const ta = (a ?? '').trim(), tb = (b ?? '').trim()
+  if (ta && tb) return ta.localeCompare(tb)
+  if (ta) return -1
+  if (tb) return 1
+  return 0
 }
 
 function priorityBorder(p: ActivityPriority): string {

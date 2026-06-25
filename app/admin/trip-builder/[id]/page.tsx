@@ -30,6 +30,7 @@ export default async function EditTripPage({ params }: { params: Promise<{ id: s
     published: tpl.published,
     season: tpl.season,
     availability: (tpl.availability as unknown as TripAvailability | null) ?? null,
+    airports: v2.airports ?? [],
     days: v2.days ?? [],
   }
 

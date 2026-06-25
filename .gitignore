@@ -20,7 +20,10 @@ build/
 .idea/
 *.swp
 *.swo
-.claude
+
+# Claude Code — commit shared config (agents, skills, settings.json); ignore personal/local only
+.claude/settings.local.json
+.claude/*.local.json
 
 # OS
 .DS_Store
@@ -47,3 +50,7 @@ npm-debug.log*
 
 # Prisma generated
 node_modules/.prisma/
+
+# Excel files (local working drafts) — but keep the served download template
+*.xlsx
+!public/dopamichi-itinerary-template.xlsx

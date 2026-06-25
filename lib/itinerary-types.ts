@@ -53,6 +53,19 @@ export interface Activity {
   mapUrl?: string | null
   /** v2: node is a Logistics category → render as a compact transport step, not an activity card. */
   isLogistics?: boolean
+  // ── V3 rich fields (optional; surfaced by the redesigned activity card) ──
+  location?: string
+  rating?: number
+  operatingHours?: string
+  queueTime?: PlanQueueTime
+  bookingPolicy?: PlanBookingPolicy
+  howToBook?: string
+  /** Must-know "important remark" (how to reach/complete it). */
+  remark?: string
+  /** Custom walking-route directions URL (distinct from the single-place map pin). */
+  walkingUrl?: string | null
+  /** Social / website links for the venue. */
+  social?: { ig?: string | null; fb?: string | null; tt?: string | null; website?: string | null }
 }
 
 // ── Choice ──────────────────────────────────────────────────────────────────
@@ -60,6 +73,8 @@ export interface Activity {
 export interface Choice {
   /** What this choice is about (e.g. "Lunch near Fushimi Inari") */
   label: string
+  /** Start time (HH:MM) — lets the choice interleave into the timeline by time. */
+  time?: string
   /** 2–4 alternative activities to pick from */
   options: Activity[]
   /** Priority of the choice group itself */
@@ -68,6 +83,8 @@ export interface Choice {
   category?: ActivityCategory
   /** Index into `options` the user picked when customizing their copy (non-destructive). */
   selected?: number
+  /** Index of the admin-recommended option (⭐ "แนะนำ") — distinct from the traveler's `selected`. */
+  recommended?: number
 }
 
 // ── Day ─────────────────────────────────────────────────────────────────────
@@ -184,11 +201,15 @@ export type Slot =
   | { kind: 'single'; node: NodeSnap }
   | { kind: 'choice'; label?: string; selected?: number | null; options: NodeSnap[] }
 
-/** Canonical meal slots — keys ALWAYS present so the LLM can say "not scheduled". */
+/** Meal slots. breakfast/lunch/dinner are the canonical core — ALWAYS present so
+ *  the LLM can say "not scheduled". brunch/afternoon/latenight are optional extras. */
 export interface Meals {
   breakfast: Slot | null
+  brunch?: Slot | null     // มื้อสาย — late-morning meal
   lunch: Slot | null
+  afternoon?: Slot | null  // มื้อบ่าย — café / sweets / light bite
   dinner: Slot | null
+  latenight?: Slot | null  // มื้อดึก — post-drinks ramen / izakaya
 }
 
 export interface ActivityV2 {
@@ -228,7 +249,111 @@ export interface ItineraryV2 {
   airports?: string[]
 }
 
-export type AnyItinerary = Itinerary | ItineraryV2
+// ── V3: rich pre-planned plan schema ─────────────────────────────────────────
+// Mirrors docs/pre-planned-trip/columns.md (the SSOT). Keys stay snake_case to
+// match the transformer JSON 1:1, so import is validation, not renaming.
+
+/** Bilingual text — EN and TH say the same thing (see columns.md Thai-style rules). */
+export interface Bilingual { en: string; th: string }
+
+export type PlanPriority = 'Must' | 'Recommend' | 'Normal'
+export type PlanQueueTime = 'Low' | 'Mid' | 'High' | 'Reserve'
+export type PlanBookingPolicy = 'Walk-in Only' | 'Same-Day Ticket' | 'Optional' | 'Recommended' | 'Mandatory'
+
+/** Meal slots (food). */
+export const PLAN_MEAL_SLOTS = ['Breakfast', 'Brunch', 'Lunch', 'AfternoonMeal', 'Dinner', 'LatenightMeal'] as const
+/** Slots that render as a pick-one carousel — ONLY meals. Activity 1–8 are never
+ *  choices; each is its own timeline row. */
+export const PLAN_CHOOSABLE_SLOTS = [...PLAN_MEAL_SLOTS] as const
+/** All slot values are free-form strings (Logistics | Living | Admin & Services | meal | Activity 1–8). */
+export type PlanSlot = string
+
+export interface PlanLinks {
+  map?: string | null
+  walking_route?: string | null
+  ig?: string | null
+  fb?: string | null
+  tt?: string | null
+  website?: string | null
+}
+
+export interface ActivityV3 {
+  slot: PlanSlot
+  is_default?: boolean | null
+  time?: string | null
+  duration_min?: number | null
+  priority?: PlanPriority | null
+  location?: string | null
+  name: Bilingual
+  description?: Bilingual | null
+  cost?: string | null
+  rating?: number | null
+  category?: string | null
+  operating_hours?: string | null
+  queue_time?: PlanQueueTime | null
+  booking_policy?: PlanBookingPolicy | null
+  how_to_book?: string | null
+  maps_api_call?: boolean | null
+  notes?: Bilingual | null
+  remark?: Bilingual | null
+  links?: PlanLinks | null
+}
+
+export interface DayV3 {
+  day: number
+  name: Bilingual
+  activities: ActivityV3[]
+}
+
+export interface PlanPeriod { primary?: string; details?: string }
+export interface PlanAirport { name: string; code: string }
+export interface PlanCarRental {
+  primary?: string // "Y" | "N"
+  details?: { rentalDuration?: string; byGroupSize?: { size: string; advice: string }[] }
+}
+
+/** The overview block (columns.md §1). */
+export interface PlanOverview {
+  title: string
+  /** Short hook shown on the cover card (independent of `description`). */
+  cover_tagline?: string
+  description?: string
+  available_period?: PlanPeriod
+  recommended_period?: PlanPeriod[] // one or more "best time to go" windows
+  area_code?: string
+  cover_images?: string[]
+  available_airports?: { major_hubs?: PlanAirport[] }
+  car_rental?: PlanCarRental
+  arrival_to_first_act_hrs?: number
+  arrival_to_departure_airport_hrs?: number
+  logistic_guide_en?: string; logistic_guide_th?: string
+  accommodation_guide_en?: string; accommodation_guide_th?: string
+  food_guide_en?: string; food_guide_th?: string
+  remark_en?: string; remark_th?: string
+  queue_guide_en?: string; queue_guide_th?: string
+}
+
+export interface HighlightV3 { name: string; description: string; level: string }
+
+export interface ItineraryV3 {
+  version: 3
+  // App-compat top-level (derived from overview at import time).
+  title: string
+  totalDays: number
+  season?: string
+  airports?: string[]
+  shareCode?: string | null
+  flight?: TripFlight
+  // Rich plan data (matches columns.md / the transformer JSON).
+  overview: PlanOverview
+  highlights?: HighlightV3[]
+  reference_date?: string
+  /** Source file this plan was transformed from — stable key for idempotent re-import. */
+  sourceFile?: string
+  days: DayV3[]
+}
+
+export type AnyItinerary = Itinerary | ItineraryV2 | ItineraryV3
 
 // ── Display helpers ──────────────────────────────────────────────────────────
 // Icon mapping is NOT here — it lives in the React component layer

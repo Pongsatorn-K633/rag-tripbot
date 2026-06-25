@@ -8,21 +8,27 @@ import NodePicker from './NodePicker'
 import RangeEditor from '@/app/components/RangeEditor'
 import CoverPicker from '@/app/components/CoverPicker'
 import { seasonsForRanges } from '@/lib/availability'
+import { AIRPORTS } from '@/lib/trips/itinerary-model'
 
 interface JpArea { code: string; name: string; nameTh: string | null; type: string; regionCode: string | null }
 const AREA_TYPE_TH: Record<string, string> = { prefecture: 'จังหวัด', region: 'ภูมิภาค', both: 'จังหวัด + ภูมิภาค' }
 const SEASON_EMOJI: Record<string, string> = { Winter: '❄️', Spring: '🌸', Summer: '☀️', Autumn: '🍁' }
 
-const MEALS: { key: 'breakfast' | 'lunch' | 'dinner'; label: string }[] = [
+const MEALS: { key: 'breakfast' | 'brunch' | 'lunch' | 'afternoon' | 'dinner' | 'latenight'; label: string }[] = [
   { key: 'breakfast', label: '🍳 เช้า' },
+  { key: 'brunch', label: '🥐 สาย' },
   { key: 'lunch', label: '🍱 กลางวัน' },
+  { key: 'afternoon', label: '🍵 บ่าย' },
   { key: 'dinner', label: '🍽️ เย็น' },
+  { key: 'latenight', label: '🌙 ดึก' },
 ]
 
 function newDay(day: number): DayV2 {
-  return { day, location: '', meals: { breakfast: null, lunch: null, dinner: null }, activities: [], accommodation: null, transport: [] }
+  return { day, location: '', meals: { breakfast: null, brunch: null, lunch: null, afternoon: null, dinner: null, latenight: null }, activities: [], accommodation: null, transport: [] }
 }
 const single = (node: NodeSnap): Slot => ({ kind: 'single', node })
+// Pick-one choice (no pre-selected option for a template — traveler picks later).
+const choice = (options: NodeSnap[]): Slot => ({ kind: 'choice', selected: null, options })
 
 export interface BuilderInitial {
   id: string
@@ -34,6 +40,7 @@ export interface BuilderInitial {
   published: boolean
   season: string | null
   availability: TripAvailability | null
+  airports: string[]
   days: DayV2[]
 }
 
@@ -53,6 +60,7 @@ export default function TripBuilder({ initial }: { initial?: BuilderInitial }) {
   const recSeasons = seasonsForRanges(recommended)
   const availSeasons = seasonsForRanges(available)
   const derivedSeason = recSeasons[0] ?? availSeasons[0] ?? null
+  const [airports, setAirports] = useState<string[]>(initial?.airports ?? [])
   const [days, setDays] = useState<DayV2[]>(initial?.days ?? [newDay(1)])
   const [areas, setAreas] = useState<JpArea[]>([])
   const [nextCode, setNextCode] = useState<string | null>(null)
@@ -98,7 +106,7 @@ export default function TripBuilder({ initial }: { initial?: BuilderInitial }) {
       if (areas.length > 0 && !pickedArea) { setError('รหัสจังหวัด/ภูมิภาคไม่ตรงกับรายการ — เลือกจากรายการที่มี'); return }
     }
     setSaving(true); setError('')
-    const itinerary: ItineraryV2 = { version: 2, title: title.trim(), totalDays: days.length, season: derivedSeason || undefined, description: description || undefined, days }
+    const itinerary: ItineraryV2 = { version: 2, title: title.trim(), totalDays: days.length, season: derivedSeason || undefined, description: description || undefined, airports: airports.length ? airports : undefined, days }
     const availability = available.length || recommended.length ? { available, recommended } : null
     try {
       // Edit → PATCH the existing template (keeps its shareCode + published state);
@@ -121,7 +129,7 @@ export default function TripBuilder({ initial }: { initial?: BuilderInitial }) {
 
   function reset() {
     setSaved(false); setSaving(false); setTitle(''); setProvinceCode(''); setDescription('')
-    setCoverImages([]); setAvailable([]); setRecommended([]); setDays([newDay(1)])
+    setCoverImages([]); setAvailable([]); setRecommended([]); setAirports([]); setDays([newDay(1)])
   }
 
   const inp = 'px-3 py-2 text-sm border border-zen-black/20 rounded-lg focus:outline-none focus:border-basel-brick bg-white'
@@ -205,6 +213,24 @@ export default function TripBuilder({ initial }: { initial?: BuilderInitial }) {
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-basel-brick mb-2">รูปปก · Cover images <span className="text-zen-black/40 normal-case tracking-normal">(สูงสุด 5 · swipe in preview)</span></p>
             <CoverPicker value={coverImages} onChange={setCoverImages} max={5} />
           </div>
+
+          {/* Airports — which serve this trip; drives the traveler's flight picker. */}
+          <div className="pt-3 border-t border-zen-black/10">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-basel-brick mb-2">สนามบิน · Airports <span className="text-zen-black/40 normal-case tracking-normal">(ที่ใช้เข้า-ออกทริปนี้)</span></p>
+            <div className="flex flex-wrap gap-1.5">
+              {Object.keys(AIRPORTS).map((code) => {
+                const on = airports.includes(code)
+                return (
+                  <button key={code} type="button"
+                    onClick={() => setAirports((prev) => on ? prev.filter((c) => c !== code) : [...prev, code])}
+                    className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all ${on ? 'border-basel-brick bg-basel-brick text-white' : 'border-zen-black/20 text-zen-black/60 hover:border-basel-brick'}`}>
+                    {AIRPORTS[code].label}
+                  </button>
+                )
+              })}
+            </div>
+            {airports.length === 0 && <p className="text-[10px] text-zen-black/40 mt-1.5">ไม่เลือก = แสดงทุกสนามบินตอนผู้ใช้กรอกเที่ยวบิน</p>}
+          </div>
         </div>
 
         {/* Availability — drives the /pre-planned date filter */}
@@ -241,10 +267,10 @@ export default function TripBuilder({ initial }: { initial?: BuilderInitial }) {
                 {/* Meals */}
                 <Section title="มื้ออาหาร · Meals">
                   {MEALS.map((m) => (
-                    <SlotRow key={m.key} label={m.label}
-                      slot={d.meals[m.key]}
-                      onSet={() => pick((n) => updateDay(i, (x) => ({ ...x, meals: { ...x.meals, [m.key]: single(n) } })))}
-                      onClear={() => updateDay(i, (x) => ({ ...x, meals: { ...x.meals, [m.key]: null } }))}
+                    <SlotEditor key={m.key} label={m.label}
+                      slot={d.meals[m.key] ?? null}
+                      onChange={(s) => updateDay(i, (x) => ({ ...x, meals: { ...x.meals, [m.key]: s } }))}
+                      pick={pick}
                     />
                   ))}
                 </Section>
@@ -269,9 +295,9 @@ export default function TripBuilder({ initial }: { initial?: BuilderInitial }) {
 
                 {/* Accommodation */}
                 <Section title="ที่พัก · Accommodation">
-                  <SlotRow label="🏨 พัก" slot={d.accommodation}
-                    onSet={() => pick((n) => updateDay(i, (x) => ({ ...x, accommodation: single(n) })))}
-                    onClear={() => updateDay(i, (x) => ({ ...x, accommodation: null }))}
+                  <SlotEditor label="🏨 พัก" slot={d.accommodation}
+                    onChange={(s) => updateDay(i, (x) => ({ ...x, accommodation: s }))}
+                    pick={pick}
                   />
                 </Section>
               </div>
@@ -306,20 +332,44 @@ function Section({ title, onAdd, children }: { title: string; onAdd?: () => void
   )
 }
 
-function SlotRow({ label, slot, onSet, onClear }: { label: string; slot: Slot | null; onSet: () => void; onClear: () => void }) {
-  const node = slot?.kind === 'single' ? slot.node : null
+// Single OR pick-one choice. 0 options = empty, 1 = single, 2+ = a choice the
+// traveler picks from (renders as the swipe carousel). No default is set (template).
+function SlotEditor({ label, slot, onChange, pick }: {
+  label: string
+  slot: Slot | null
+  onChange: (s: Slot | null) => void
+  pick: (onPick: (n: NodeSnap) => void) => void
+}) {
+  const options = slot ? (slot.kind === 'single' ? [slot.node] : slot.options) : []
+  const isChoice = slot?.kind === 'choice'
+
+  const addOption = () => pick((n) => {
+    const next = [...options, n]
+    onChange(next.length > 1 ? choice(next) : single(next[0]))
+  })
+  const removeOption = (idx: number) => {
+    const next = options.filter((_, k) => k !== idx)
+    onChange(next.length === 0 ? null : next.length === 1 ? single(next[0]) : choice(next))
+  }
+
   return (
-    <div className="flex items-center gap-2 text-sm">
-      <span className="w-20 text-[11px] font-bold text-zen-black/50 flex-shrink-0">{label}</span>
-      {node ? (
-        <span className="flex-1 flex items-center gap-1.5 min-w-0 bg-briefing-cream/60 rounded px-2 py-1">
-          <span>{node.emoji}</span><span className="truncate font-medium text-zen-black">{node.name}</span>
-          {node.cost && <span className="text-[11px] text-basel-brick font-bold ml-auto">{node.cost}</span>}
-          <button onClick={onClear} className="text-zen-black/30 hover:text-red-600 flex-shrink-0"><X size={14} /></button>
-        </span>
-      ) : (
-        <button onClick={onSet} className="flex-1 text-left text-zen-black/40 border border-dashed border-zen-black/20 rounded px-2 py-1 hover:border-basel-brick transition-colors">+ เลือกโหนด</button>
-      )}
+    <div className="flex items-start gap-2 text-sm">
+      <span className="w-20 text-[11px] font-bold text-zen-black/50 flex-shrink-0 pt-1.5">{label}</span>
+      <div className="flex-1 space-y-1 min-w-0">
+        {options.map((node, idx) => (
+          <span key={idx} className="flex items-center gap-1.5 min-w-0 bg-briefing-cream/60 rounded px-2 py-1">
+            {isChoice && <span className="text-[9px] font-black text-blue-500 flex-shrink-0 w-3">{idx + 1}</span>}
+            <span>{node.emoji}</span>
+            <span className="truncate font-medium text-zen-black">{node.name}</span>
+            {node.cost && <span className="text-[11px] text-basel-brick font-bold ml-auto whitespace-nowrap">{node.cost}</span>}
+            <button onClick={() => removeOption(idx)} className="text-zen-black/30 hover:text-red-600 flex-shrink-0"><X size={14} /></button>
+          </span>
+        ))}
+        <button onClick={addOption} className="w-full text-left text-zen-black/40 border border-dashed border-zen-black/20 rounded px-2 py-1 hover:border-basel-brick transition-colors text-[12px]">
+          {options.length === 0 ? '+ เลือกโหนด' : '+ เพิ่มตัวเลือก (ให้ผู้ใช้เลือก 1)'}
+        </button>
+        {isChoice && <p className="text-[10px] text-blue-500/80">เลือก 1 จาก {options.length} — แสดงเป็นการ์ดให้เลือก (swipe)</p>}
+      </div>
     </div>
   )
 }

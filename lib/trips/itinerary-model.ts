@@ -1,7 +1,9 @@
 import type {
-  Itinerary, ItineraryV2, AnyItinerary, Day, DayV2, Activity, Choice, ActivityCategory,
-  ActivityPriority, NodeSnap, Slot, Meals, FlightLeg, TripFlight,
+  Itinerary, ItineraryV2, ItineraryV3, AnyItinerary, Day, DayV2, DayV3, ActivityV3,
+  Activity, Choice, ActivityCategory, ActivityPriority, PlanPriority,
+  NodeSnap, Slot, Meals, FlightLeg, TripFlight,
 } from '@/lib/itinerary-types'
+import { PLAN_MEAL_SLOTS, PLAN_CHOOSABLE_SLOTS } from '@/lib/itinerary-types'
 
 /**
  * Itinerary compat layer (Phase N3 — docs/node-architecture-spec.md).
@@ -17,6 +19,10 @@ import type {
 
 export function isV2(itin: unknown): itin is ItineraryV2 {
   return !!itin && typeof itin === 'object' && (itin as { version?: number }).version === 2
+}
+
+export function isV3(itin: unknown): itin is ItineraryV3 {
+  return !!itin && typeof itin === 'object' && (itin as { version?: number }).version === 3
 }
 
 // ── category code ↔ v1 enum ──────────────────────────────────────────────────
@@ -50,8 +56,11 @@ function codeForCategory(cat: ActivityCategory | undefined): string {
 
 const MEAL = {
   breakfast: { emoji: '🍳', th: 'มื้อเช้า', en: 'Breakfast', kws: ['เช้า', 'breakfast', 'มื้อเช้า'] },
+  brunch: { emoji: '🥐', th: 'มื้อสาย', en: 'Brunch', kws: ['สาย', 'brunch', 'บรันช์', 'มื้อสาย'] },
   lunch: { emoji: '🍱', th: 'มื้อกลางวัน', en: 'Lunch', kws: ['กลางวัน', 'lunch', 'เที่ยง'] },
+  afternoon: { emoji: '🍵', th: 'มื้อบ่าย', en: 'Afternoon Meal', kws: ['บ่าย', 'afternoon', 'มื้อบ่าย', 'ของว่าง', 'snack'] },
   dinner: { emoji: '🍽️', th: 'มื้อเย็น', en: 'Dinner', kws: ['เย็น', 'dinner', 'ค่ำ', 'มื้อเย็น'] },
+  latenight: { emoji: '🌙', th: 'มื้อดึก', en: 'Latenight Meal', kws: ['ดึก', 'late', 'latenight', 'late night', 'supper', 'มื้อดึก'] },
 } as const
 type MealKey = keyof typeof MEAL
 
@@ -140,15 +149,126 @@ function v2DayToRenderDay(d: DayV2): Day {
   }
 }
 
-/** v1 days as-is; v2 days converted to the v1 render shape. Empty array if no days.
+// ── v3 → v1 render shape ─────────────────────────────────────────────────────
+// V3 is a flat per-day activity list tagged by `slot`. We re-derive the v1 render
+// shape: meals/Activity-N choice groups (adjacent same-slot runs) → choices,
+// Living → accommodation, everything else → the timeline. Rich V3 fields
+// (queue/booking/rating/links/guides) are NOT shown yet — that's Phase 4.
+
+const PLAN_MEAL_TO_KEY: Record<string, MealKey> = {
+  Breakfast: 'breakfast', Brunch: 'brunch', Lunch: 'lunch',
+  AfternoonMeal: 'afternoon', Dinner: 'dinner', LatenightMeal: 'latenight',
+}
+
+function planPriority(p?: PlanPriority | null): ActivityPriority | undefined {
+  return p === 'Must' ? 'mandatory' : p === 'Recommend' ? 'recommended' : p === 'Normal' ? 'optional' : undefined
+}
+
+function slotEmoji(slot: string): string | null {
+  const key = PLAN_MEAL_TO_KEY[slot]
+  if (key) return MEAL[key].emoji
+  if (slot === 'Living') return '🏨'
+  if (slot === 'Logistics') return '🚆'
+  if (slot === 'Admin & Services') return '🛂'
+  return null
+}
+
+function slotLabel(slot: string): string {
+  const key = PLAN_MEAL_TO_KEY[slot]
+  if (key) return `${MEAL[key].emoji} ${MEAL[key].th} · ${MEAL[key].en}`
+  return slot
+}
+
+function v3ToActivity(a: ActivityV3, opts?: { tag?: string }): Activity {
+  const desc = a.description?.th || a.description?.en || undefined
+  const notes = [opts?.tag, desc].filter(Boolean).join(' — ') || undefined
+  const l = a.links
+  return {
+    time: a.time ?? '',
+    name: a.name.en || a.name.th,
+    nameTh: a.name.th || null,
+    notes,
+    priority: planPriority(a.priority),
+    category: undefined,
+    emoji: slotEmoji(a.slot),
+    cost: a.cost ?? undefined,
+    duration: a.duration_min ? `${a.duration_min} นาที` : undefined,
+    mapUrl: l?.map ?? null,
+    isLogistics: a.slot === 'Logistics',
+    location: a.location ?? undefined,
+    rating: a.rating ?? undefined,
+    operatingHours: a.operating_hours ?? undefined,
+    queueTime: a.queue_time ?? undefined,
+    bookingPolicy: a.booking_policy ?? undefined,
+    howToBook: a.how_to_book ?? undefined,
+    remark: a.remark?.th || a.remark?.en || undefined,
+    walkingUrl: l?.walking_route ?? undefined,
+    social: l ? { ig: l.ig, fb: l.fb, tt: l.tt, website: l.website } : undefined,
+  }
+}
+
+function v3DayToRenderDay(day: DayV3): Day {
+  const acts = day.activities ?? []
+  const mealSet = new Set<string>(PLAN_MEAL_SLOTS)
+  const choosable = new Set<string>(PLAN_CHOOSABLE_SLOTS)
+
+  const activities: Activity[] = []
+  const choices: Choice[] = []
+  let accommodation: string | null = null
+  let accommodationChoices: Day['accommodationChoices']
+
+  // Walk in order, collapsing each run of adjacent same-slot rows.
+  let i = 0
+  while (i < acts.length) {
+    const slot = acts[i].slot
+    let j = i + 1
+    while (j < acts.length && acts[j].slot === slot) j++
+    const run = acts.slice(i, j)
+    i = j
+
+    if (slot === 'Living') {
+      if (run.length === 1) accommodation = run[0].name.en || run[0].name.th
+      else accommodationChoices = run.map((r) => ({
+        name: r.name.en || r.name.th,
+        cost: r.cost ?? undefined,
+        notes: (r.description?.th || r.description?.en) ?? undefined,
+      }))
+      continue
+    }
+
+    if (choosable.has(slot)) {
+      // Choosable slots ALWAYS render as a carousel — even a single option — and
+      // carry a time so they interleave into the timeline at their real spot.
+      const def = run.findIndex((r) => r.is_default) // is_default → admin's ⭐ recommended option
+      choices.push({
+        label: slotLabel(slot),
+        category: mealSet.has(slot) ? 'food' : undefined,
+        time: run[0].time ?? undefined,
+        recommended: def >= 0 ? def : undefined,
+        options: run.map((r) => v3ToActivity(r)),
+      })
+      continue
+    }
+
+    for (const r of run) activities.push(v3ToActivity(r))
+  }
+
+  activities.sort(byTime)
+  const location = acts[0]?.location || day.name.th || day.name.en || ''
+  return { day: day.day, location, activities, choices, accommodation, accommodationChoices, transport: '' }
+}
+
+/** v1 days as-is; v2/v3 days converted to the v1 render shape. Empty array if no days.
  *  Also injects the traveler's flight (arrival → day 1, departure → last day). */
 export function getRenderDays(itinerary: AnyItinerary | null | undefined): Day[] {
   if (!itinerary || typeof itinerary !== 'object') return []
-  const base = isV2(itinerary)
-    ? (itinerary.days ?? []).map(v2DayToRenderDay)
-    : Array.isArray((itinerary as Itinerary).days)
-      ? (itinerary as Itinerary).days
-      : []
+  const base = isV3(itinerary)
+    ? (itinerary.days ?? []).map(v3DayToRenderDay)
+    : isV2(itinerary)
+      ? (itinerary.days ?? []).map(v2DayToRenderDay)
+      : Array.isArray((itinerary as Itinerary).days)
+        ? (itinerary as Itinerary).days
+        : []
   return applyFlight(base, (itinerary as { flight?: TripFlight | null }).flight)
 }
 

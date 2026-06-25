@@ -77,11 +77,15 @@ function mapHeaders(header: string[]): ColMap {
 const TRUTHY = /^(y|yes|true|1|✓|✔|x|มี|ใช่)$/i
 const pad = (n: string | number) => String(n).padStart(2, '0')
 
-function slotKey(s: string): 'breakfast' | 'lunch' | 'dinner' | 'accommodation' | 'timeline' {
+type MealSlotKey = 'breakfast' | 'brunch' | 'lunch' | 'afternoon' | 'dinner' | 'latenight'
+function slotKey(s: string): MealSlotKey | 'accommodation' | 'timeline' {
   const n = s.toLowerCase()
   if (/break|เช้า/.test(n)) return 'breakfast'
+  if (/brunch|บรันช์|สาย/.test(n)) return 'brunch'
   if (/lunch|กลางวัน|เที่ยง/.test(n)) return 'lunch'
+  if (/afternoon|บ่าย|ของว่าง|snack/.test(n)) return 'afternoon'
   if (/dinner|เย็น|ค่ำ/.test(n)) return 'dinner'
+  if (/latenight|late|ดึก|supper/.test(n)) return 'latenight'
   if (/accom|stay|hotel|ที่พัก|พัก/.test(n)) return 'accommodation'
   return 'timeline'
 }
@@ -155,7 +159,10 @@ function buildSlot(rows: NodeRow[], defaultLabel?: string): Slot | null {
   }
 }
 
-const MEAL_LABEL = { breakfast: '🍳 มื้อเช้า', lunch: '🍱 มื้อกลางวัน', dinner: '🍽️ มื้อเย็น' } as const
+const MEAL_LABEL = {
+  breakfast: '🍳 มื้อเช้า', brunch: '🥐 มื้อสาย', lunch: '🍱 มื้อกลางวัน',
+  afternoon: '🍵 มื้อบ่าย', dinner: '🍽️ มื้อเย็น', latenight: '🌙 มื้อดึก',
+} as const
 
 // ── main parse ────────────────────────────────────────────────────────────────
 
@@ -178,7 +185,7 @@ export function parseTemplateWorkbook(wb: XLSX.WorkBook): { itinerary: Itinerary
   // Per-day accumulators (preserve row order for the timeline + choice options).
   interface DayAcc {
     day: number; location: string; free: boolean
-    meals: { breakfast: NodeRow[]; lunch: NodeRow[]; dinner: NodeRow[] }
+    meals: Record<MealSlotKey, NodeRow[]>
     accommodation: NodeRow[]; activities: ActivityV2[]
   }
   const byDay = new Map<number, DayAcc>()
@@ -195,7 +202,7 @@ export function parseTemplateWorkbook(wb: XLSX.WorkBook): { itinerary: Itinerary
     if (!acc) {
       acc = {
         day: curDay, location: '', free: false,
-        meals: { breakfast: [], lunch: [], dinner: [] }, accommodation: [], activities: [],
+        meals: { breakfast: [], brunch: [], lunch: [], afternoon: [], dinner: [], latenight: [] }, accommodation: [], activities: [],
       }
       byDay.set(curDay, acc)
     }
@@ -230,8 +237,11 @@ export function parseTemplateWorkbook(wb: XLSX.WorkBook): { itinerary: Itinerary
   const days: DayV2[] = ordered.map((acc, i) => {
     const meals: Meals = {
       breakfast: buildSlot(acc.meals.breakfast, MEAL_LABEL.breakfast),
+      brunch: buildSlot(acc.meals.brunch, MEAL_LABEL.brunch),
       lunch: buildSlot(acc.meals.lunch, MEAL_LABEL.lunch),
+      afternoon: buildSlot(acc.meals.afternoon, MEAL_LABEL.afternoon),
       dinner: buildSlot(acc.meals.dinner, MEAL_LABEL.dinner),
+      latenight: buildSlot(acc.meals.latenight, MEAL_LABEL.latenight),
     }
     const activities = [...acc.activities].sort((a, b) =>
       (a.time ?? '').localeCompare(b.time ?? '') || 0)

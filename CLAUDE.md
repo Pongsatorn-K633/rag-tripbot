@@ -20,14 +20,18 @@ Target stack: Next.js · Prisma · Neon (PostgreSQL + pgvector) · BGE-M3 · Gem
 
 ## Subagent Roster
 
+These are real Claude Code subagents (`.claude/agents/*.md`, with frontmatter) — invoke
+them with the Task/Agent tool (e.g. *"use the db-agent subagent to add a column"*), not by
+role-playing. Each file's body is the subagent's system prompt.
+
 | File | Agent | Owns |
 |---|---|---|
-| `agents/db-agent.md` | DB Agent | Prisma schema, Neon connection, pgvector table, seed scripts |
-| `agents/rag-agent.md` | RAG Agent | Embedder, retriever, block assembler, LLM prompt pipeline |
-| `agents/web-agent.md` | Web Agent | Next.js UI, API routes (chat, trips, activate), itinerary flow |
-| `agents/line-agent.md` | LINE Agent | Webhook handler, /activate command, context injection pipeline, LIFF itinerary view |
-| `agents/auth-admin-agent.md` | Auth/Admin Agent | NextAuth, RBAC, middleware guards, admin dashboard, user management, share-code + cover/profile pipelines |
-| `agents/security-agent.md` | Security Agent | Cross-cutting security audit + fixes (webhook, authz, upload, secrets, PII). Owns no directory — reads/audits all, writes fixes only |
+| `.claude/agents/db-agent.md` | DB Agent | Prisma schema, Neon connection, pgvector table, seed scripts |
+| `.claude/agents/rag-agent.md` | RAG Agent | Embedder, retriever, block assembler, LLM prompt pipeline |
+| `.claude/agents/web-agent.md` | Web Agent | Next.js UI, API routes (chat, trips, activate), itinerary flow |
+| `.claude/agents/line-agent.md` | LINE Agent | Webhook handler, /activate command, context injection pipeline, LIFF itinerary view |
+| `.claude/agents/auth-admin-agent.md` | Auth/Admin Agent | NextAuth, RBAC, middleware guards, admin dashboard, user management, share-code + cover/profile pipelines |
+| `.claude/agents/security-agent.md` | Security Agent | Cross-cutting security audit + fixes (webhook, authz, upload, secrets, PII). Owns no directory — reads/audits all, writes fixes only |
 
 ---
 
@@ -221,6 +225,12 @@ on **both** the website and the LINE LIFF — from one shared core. Full spec + 
 
 ## Itinerary JSON Contract (Agreed Shape)
 
+> **SSOT for the pre-planned trip plan JSON:** [`docs/pre-planned-trip/columns.md`](docs/pre-planned-trip/columns.md)
+> — the authoritative field-by-field schema (Excel columns ↔ JSON keys) **and** the bilingual
+> Thai/English style rules. When working with plan JSON (import, builder, Excel), read it first
+> and treat it as canonical. If the schema changes, update that file **and** the code together.
+> The V1 shape below is legacy (early seeds / doc-to-trip); the richer plan schema is V2→V3.
+
 All agents must use this exact shape. Do not deviate.
 
 ```json
@@ -248,8 +258,12 @@ All agents must use this exact shape. Do not deviate.
 
 ## How to Use This File in Claude Code
 
-When starting a session, tell Claude Code:
-> "Read CLAUDE.md and the relevant agent file in agents/. You are acting as [agent name]."
+The roster agents are real subagents in `.claude/agents/`. Delegate to one with the
+Task/Agent tool — Claude Code auto-selects by the subagent's `description`, or you can name it:
+> "Use the **db-agent** subagent to add the `Trip.notes` column and migrate."
 
-To run a full build from scratch:
-> "Read CLAUDE.md. Begin Phase 1 by acting as the DB Agent (agents/db-agent.md)."
+> "Use the **security-agent** subagent to audit the LINE webhook signature check."
+
+The orchestrator (this file) stays the delegation map: it enforces phase sequencing and the
+architectural rules below, and routes work to the right subagent rather than implementing
+directly.

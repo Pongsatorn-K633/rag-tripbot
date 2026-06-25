@@ -110,7 +110,8 @@ export default function PlanCard({
       </div>
       <h3 className={`text-2xl font-headline font-bold mb-2 ${c.title}`}>{tpl.title}</h3>
       {tpl.description && (
-        <p className={`text-sm font-sans leading-relaxed mb-4 ${c.desc}`}>{tpl.description}</p>
+        // Cover shows the tagline (Template.description); the full text lives in the preview.
+        <p className={`text-sm font-sans leading-relaxed mb-4 line-clamp-2 ${c.desc}`}>{tpl.description}</p>
       )}
 
       {/* Travel periods */}
