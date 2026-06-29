@@ -21,10 +21,11 @@ async function main() {
   // Safety: confirm which DB this is hitting (host only, no credentials).
   const host = process.env.DATABASE_URL?.match(/@([^/?]+)/)?.[1] ?? '(unknown)'
   console.log(`DB host: ${host}`)
-  if (host.includes('twilight-hall')) {
-    console.error('REFUSING: that is the PRODUCTION endpoint. Point .env.local at the dev branch first.')
+  if (host.includes('twilight-hall') && process.env.USE_PROD_DB !== '1') {
+    console.error('REFUSING: that is the PRODUCTION endpoint. To import to prod intentionally, run with USE_PROD_DB=1.')
     process.exit(1)
   }
+  if (process.env.USE_PROD_DB === '1') console.log('⚠️  TARGETING PRODUCTION DB (USE_PROD_DB=1)')
 
   const raw = JSON.parse(readFileSync(SRC, 'utf8'))
   const itinerary = importPlanJson(raw)

@@ -5,5 +5,11 @@
  * to `.env`. Import this instead of 'dotenv/config' in scripts that hit the DB.
  */
 import dotenv from 'dotenv'
-dotenv.config({ path: '.env.local' })
-dotenv.config()
+// USE_PROD_DB=1 → target the PRODUCTION DB (.env only). Otherwise .env.local
+// (the dev branch) wins. The prod path is for the rare, intentional migration.
+if (process.env.USE_PROD_DB === '1') {
+  dotenv.config() // .env = production
+} else {
+  dotenv.config({ path: '.env.local' })
+  dotenv.config()
+}
