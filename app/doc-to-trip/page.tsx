@@ -14,7 +14,9 @@ import ChoiceCarousel from '@/app/components/ChoiceCarousel'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-import type { Activity, Day, Itinerary, Choice, ActivityPriority } from '@/lib/itinerary-types'
+import type { Activity, Day, Itinerary, Choice, ActivityPriority, ItineraryV3, AnyItinerary } from '@/lib/itinerary-types'
+import { isV3 } from '@/lib/trips/itinerary-model'
+import DocToTripForm from '@/app/components/DocToTripForm'
 import { PRIORITY_LABEL } from '@/lib/itinerary-types'
 import CategoryIcon from '@/app/components/CategoryIcon'
 
@@ -48,7 +50,7 @@ export default function DocToTripPage() {
   // Upload state
   const [uploadState, setUploadState] = useState<UploadState>('idle')
   const [isDragging, setIsDragging] = useState(false)
-  const [uploadedItinerary, setUploadedItinerary] = useState<Itinerary | null>(null)
+  const [uploadedItinerary, setUploadedItinerary] = useState<AnyItinerary | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [uploadStartDate, setUploadStartDate] = useState('')
   const [uploadCoverImage, setUploadCoverImage] = useState<string | null>(null)
@@ -155,17 +157,17 @@ export default function DocToTripPage() {
     e.target.value = ''
   }
 
-  async function handleUploadConfirm() {
-    if (!uploadedItinerary) return
+  // Save the (possibly user-completed) itinerary as a Trip. Used by both the V3
+  // completion form (passes its edited itinerary) and the legacy read-only card.
+  async function doSave(itin: AnyItinerary) {
     setUploadState('saving')
-
     try {
       const saveRes = await fetch('/api/trips', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: uploadedItinerary.title,
-          itinerary: uploadedItinerary,
+          title: (itin as { title?: string }).title ?? 'Trip',
+          itinerary: itin,
           source: 'upload',
           startDate: uploadStartDate || undefined,
           coverImage: uploadCoverImage || undefined,
@@ -333,13 +335,6 @@ export default function DocToTripPage() {
                       >
                         SELECT FILES FROM DEVICE
                       </button>
-                      <a
-                        href="/dopamichi-itinerary-template.xlsx"
-                        download
-                        className="mt-5 text-[11px] font-bold uppercase tracking-widest text-basel-brick hover:text-zen-black underline underline-offset-4 transition-colors"
-                      >
-                        ↓ ดาวน์โหลดเทมเพลต Excel · Download Excel template (auto-imports, no AI needed)
-                      </a>
                     </>
                   )}
                   <input
@@ -415,11 +410,19 @@ export default function DocToTripPage() {
                       />
                     </div>
 
-                    <ItineraryCard
-                      itinerary={uploadedItinerary}
-                      onConfirm={handleUploadConfirm}
-                      confirmLoading={uploadState === 'saving'}
-                    />
+                    {isV3(uploadedItinerary) ? (
+                      <DocToTripForm
+                        initial={uploadedItinerary as ItineraryV3}
+                        saving={uploadState === 'saving'}
+                        onSave={doSave}
+                      />
+                    ) : (
+                      <ItineraryCard
+                        itinerary={uploadedItinerary as Itinerary}
+                        onConfirm={() => uploadedItinerary && doSave(uploadedItinerary)}
+                        confirmLoading={uploadState === 'saving'}
+                      />
+                    )}
                     <button
                       onClick={handleReUpload}
                       disabled={uploadState === 'saving'}

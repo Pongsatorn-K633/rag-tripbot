@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 import { generateText, generateFromFile } from '@/lib/llm/client'
-import { parseTemplateWorkbook } from '@/lib/trips/excel-template'
+import { importPlanJson } from '@/lib/trips/import-plan'
 import { auth } from '@/lib/auth'
 import { apiRateLimit, checkLimit, getClientIp } from '@/lib/rate-limit'
 
@@ -18,44 +18,66 @@ const ACCEPTED_IMAGE_MIME = new Set([
   'image/webp',
 ])
 
-// JSON Schema fed to Gemini's structured-output mode. Gemini constrains
-// generation to conform to this shape — no markdown fences, no missing
-// fields, no wrong types, and `name` cannot exceed 60 characters.
+// JSON Schema fed to Gemini's structured-output mode → the rich v3 shape
+// (see docs/pre-planned-trip/columns.md). Bilingual name/description; a coarse
+// slot category (the generic "Activity" is numbered into Activity N afterwards).
+const BILINGUAL = {
+  type: 'object',
+  properties: { en: { type: 'string' }, th: { type: 'string' } },
+  required: ['en', 'th'],
+} as const
+
+const SLOT_ENUM = ['Logistics', 'Living', 'Admin & Services', 'Breakfast', 'Brunch', 'Lunch', 'AfternoonMeal', 'Dinner', 'LatenightMeal', 'Activity']
+
 const ITINERARY_SCHEMA = {
   type: 'object',
   properties: {
     title: { type: 'string' },
+    description: { type: 'string' },
     totalDays: { type: 'integer' },
-    season: { type: 'string', enum: ['Winter', 'Spring', 'Summer', 'Autumn'] },
     days: {
       type: 'array',
       items: {
         type: 'object',
         properties: {
           day: { type: 'integer' },
-          location: { type: 'string' },
+          name: BILINGUAL,
           activities: {
             type: 'array',
             items: {
               type: 'object',
               properties: {
+                slot: { type: 'string', enum: SLOT_ENUM },
                 time: { type: 'string' },
-                name: { type: 'string', maxLength: 60 },
-                notes: { type: 'string' },
+                name: BILINGUAL,
+                description: BILINGUAL,
+                location: { type: 'string' },
+                cost: { type: 'string' },
+                priority: { type: 'string', enum: ['Must', 'Recommend', 'Normal'] },
               },
-              required: ['time', 'name'],
+              required: ['slot', 'name'],
             },
           },
-          accommodation: { type: 'string', nullable: true },
-          transport: { type: 'string' },
         },
-        required: ['day', 'location', 'activities'],
+        required: ['day', 'name', 'activities'],
       },
     },
-    shareCode: { type: 'string', nullable: true },
+    error: { type: 'string', nullable: true },
   },
-  required: ['title', 'totalDays', 'season', 'days'],
+  required: ['title', 'totalDays', 'days'],
 } as const
+
+/** Number the generic "Activity" slots per day (Activity 1, 2, …) then normalize
+ *  the VLM output into a canonical ItineraryV3 via the importer. */
+function vlmToV3(out: Record<string, unknown>, sourceFile: string) {
+  const days = (Array.isArray(out.days) ? out.days : []) as Record<string, unknown>[]
+  for (const d of days) {
+    let n = 0
+    const acts = (Array.isArray(d.activities) ? d.activities : []) as Record<string, unknown>[]
+    for (const a of acts) if (a.slot === 'Activity') a.slot = `Activity ${Math.min(++n, 8)}`
+  }
+  return importPlanJson({ source_file: sourceFile, overview: { title: out.title, description: out.description }, days })
+}
 
 const ACCEPTED_SHEET_MIME = new Set([
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
@@ -63,60 +85,44 @@ const ACCEPTED_SHEET_MIME = new Set([
 ])
 
 const EXTRACTION_PROMPT = (extra: string) => `\
-You are an itinerary extraction assistant for Japan travel planning.
-Extract a structured Japan travel itinerary from the provided source.
+You are an itinerary extraction assistant for Japan travel planning (Thai travelers).
+Extract a structured Japan travel itinerary from the source into the required JSON.
 
-Return ONLY valid JSON matching this exact structure — no explanation, no markdown fences:
-{
-  "title": "Trip title in English or Thai",
-  "totalDays": <number>,
-  "season": "Winter" | "Spring" | "Summer" | "Autumn",
-  "days": [
-    {
-      "day": <number>,
-      "location": "City name",
-      "activities": [
-        { "time": "HH:MM", "name": "Activity name", "notes": "Optional detail" }
-      ],
-      "accommodation": "Hotel or accommodation name",
-      "transport": "How to travel this day"
-    }
-  ],
-  "shareCode": null
-}
+BILINGUAL — every "name", "description", and day "name" has BOTH "en" and "th":
+- Fill both languages. If the source is in one language, translate to the other.
+- Keep PROPER NAMES (places, stations, districts, venues) in LATIN script in BOTH
+  en and th — e.g. th: "เดินเล่นใน Shinjuku", NOT "ชินจูกุ". Never transliterate
+  place/venue names into Thai script. Translate only the generic/action words.
 
-Rules:
-- "season" must be exactly one of: Winter, Spring, Summer, Autumn
-- "totalDays" must equal the number of items in "days"
-- "days" must be a sequential list: day 1, 2, 3, ... totalDays. NEVER repeat the same "day" number — merge all activities for the same calendar day into ONE day object. NEVER skip a day number.
-- Every day must have at least one activity
-- Preserve Thai text as-is when present
-- If the source is unreadable, not a travel itinerary, or not related to trip planning, you MUST return EXACTLY this error JSON instead of making up an itinerary:
-  {"error":"NOT_TRAVEL_RELATED","title":null,"totalDays":0,"season":null,"days":[]}
-  Do NOT hallucinate or invent activities. Only extract what is actually in the source document.
+SLOT — categorize each row into exactly one of these:
+- "Breakfast" / "Brunch" / "Lunch" / "AfternoonMeal" / "Dinner" / "LatenightMeal" = a meal
+- "Logistics" = transport/transit (train, bus, walking between places)
+- "Living" = accommodation / rest / check-out
+- "Admin & Services" = check-in, luggage drop, SIM, car rental, passes
+- "Activity" = sightseeing, landmarks, shopping, cafes, experiences (the default)
 
-FIELD DEFINITIONS — read carefully:
-- "name": ONLY the proper noun of the place, landmark, station, restaurant, or activity name. Keep it SHORT (max ~6 words). It must be the *thing*, not a sentence describing the visit. Strip leading verbs like "Visit", "Go to", "Explore", "Mid-morning visit to", etc.
-- "notes": all the descriptive detail — timing hints, photography tips, what to do there, why it's worth visiting. This is where long sentences belong. May be in Thai or English.
-- "time": "HH:MM" 24-hour format only.
-- "location": city or region (e.g. "Tokyo", "Nagano", "Kanagawa"), not a specific venue.
-- "accommodation": hotel name only, or null if none for that day.
-- "transport": short summary of how the traveler moves that day (e.g. "JR Yamanote Line + walk").
+FIELDS per activity:
+- "name": the SHORT proper noun (place/venue), bilingual. Strip leading verbs ("Visit","Go to","Explore").
+- "description": the descriptive detail (timing hints, tips, what to do there), bilingual.
+- "time": "HH:MM" 24-hour, when known.
+- "location": "City, District" when known (e.g. "Tokyo, Shinjuku").
+- "cost": the price if stated (e.g. "¥1,500"), otherwise omit.
+- "priority": "Must" (essential), "Recommend" (worth doing), or "Normal" (default).
 
-EXAMPLE — input source line:
-"Day 2, Attraction. Mid-morning visit to Shimoyoshida Honcho Street. The 23mm lens is perfect here for framing the retro street signs with Mount Fuji looming in the background. Activity: ถ่ายรูปมุมถนน Shimoyoshida Honcho."
+DAYS:
+- Each day has a sequential integer "day" (1,2,3 …) and a SHORT bilingual day "name" (a theme).
+- Merge all activities for the same calendar day into ONE day object; order activities by time.
 
-EXAMPLE — correct extraction:
-{
-  "time": "10:00",
-  "name": "Shimoyoshida Honcho Street",
-  "notes": "Mid-morning visit. 23mm lens is perfect for framing retro street signs with Mount Fuji in the background. ถ่ายรูปมุมถนน Shimoyoshida Honcho"
-}
+If the source is unreadable or not a travel itinerary, return EXACTLY:
+{"error":"NOT_TRAVEL_RELATED","title":null,"totalDays":0,"days":[]}
+Do NOT hallucinate — extract only what is actually in the source.
 
-WRONG — do NOT do this:
-{
-  "name": "Mid-morning visit to Shimoyoshida Honcho Street. The 23mm lens is perfect..."
-}
+EXAMPLE activity:
+{ "slot": "Activity", "time": "10:00", "location": "Yamanashi, Fujiyoshida",
+  "name": { "en": "Shimoyoshida Honcho Street", "th": "Shimoyoshida Honcho Street" },
+  "description": { "en": "Retro street signs framing Mount Fuji — great photo spot.",
+                   "th": "ถนนป้ายเรโทรมีวิว Mount Fuji เป็นฉากหลัง จุดถ่ายรูปเด็ด" },
+  "priority": "Recommend" }
 
 ${extra}
 
@@ -234,20 +240,8 @@ export async function POST(req: NextRequest) {
         { responseSchema: ITINERARY_SCHEMA },
       )
     } else {
-      // Spreadsheet: first try the deterministic dopamichi template parser
-      // (exact, instant, no LLM, returns the latest v2 node/slot shape). Any
-      // non-template sheet returns null → fall back to the Gemini path below.
-      const wb = XLSX.read(buffer, { type: 'buffer' })
-      const parsed = parseTemplateWorkbook(wb)
-      if (parsed) {
-        console.log('[/api/upload] matched dopamichi xlsx template → v2 (no LLM)')
-        return NextResponse.json({
-          itinerary: parsed.itinerary,
-          debug: { kind, fileName: file.name, fileType: file.type, fileSize: file.size, source: 'xlsx-template' },
-        })
-      }
-
-      // Otherwise: flatten cells to CSV and ask Gemini to normalize (v1 shape).
+      // Spreadsheet → flatten cells to CSV and ask Gemini to normalize into v3
+      // (same path as PDFs; the dopamichi authoring format is now JSON, not Excel).
       sheetText = spreadsheetToText(buffer)
       if (!sheetText.trim()) {
         return NextResponse.json({ error: 'ไฟล์ Excel ว่างเปล่า' }, { status: 400 })
@@ -286,14 +280,13 @@ export async function POST(req: NextRequest) {
       throw new Error('Gemini returned an empty response (possibly hit token limit or safety filter)')
     }
 
-    const itinerary = JSON.parse(clean)
+    const vlmOut = JSON.parse(clean)
 
     // Gemini signals "not a travel document" via the error field or empty days.
     if (
-      itinerary.error === 'NOT_TRAVEL_RELATED' ||
-      !itinerary.days ||
-      !Array.isArray(itinerary.days) ||
-      itinerary.days.length === 0
+      vlmOut.error === 'NOT_TRAVEL_RELATED' ||
+      !Array.isArray(vlmOut.days) ||
+      vlmOut.days.length === 0
     ) {
       return NextResponse.json(
         {
@@ -306,6 +299,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Normalize the VLM output into a canonical ItineraryV3.
+    const itinerary = vlmToV3(vlmOut, file.name)
     return NextResponse.json({ itinerary, debug })
   } catch (err) {
     console.error('[/api/upload] JSON parse error:', err)

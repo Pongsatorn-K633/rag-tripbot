@@ -8,8 +8,9 @@ import CoverPicker from '@/app/components/CoverPicker'
 import PlanPreviewModal from '@/app/components/PlanPreviewModal'
 import type { PlanTemplate } from '@/app/components/PlanCard'
 import { resolveCoverImage } from '@/lib/cover-image'
-import type { TripAvailability } from '@/lib/itinerary-types'
+import type { TripAvailability, ItineraryV3 } from '@/lib/itinerary-types'
 import { formatRanges } from '@/lib/availability'
+import { toAuthoringJson, blankPlanJson, downloadJson } from '@/lib/trips/plan-json'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -479,15 +480,14 @@ function TemplatesGrid({
   return (
     <div>
       <div className="flex justify-end gap-3 mb-6">
-        <a
-          href="/dopamichi-itinerary-template.xlsx"
-          download
+        <button
+          onClick={() => downloadJson('dopamichi-plan-blank.json', blankPlanJson())}
           className="inline-flex items-center gap-2 px-5 py-3 border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-white transition-all"
-          title="เทมเพลต Excel โครงสร้างเดียวกับ Trip Builder — กรอกแล้วอัปโหลดที่ Doc-to-Trip"
+          title="ดาวน์โหลด JSON เปล่า (โครงสร้าง v3) — กรอกแล้ว import ผ่านสคริปต์"
         >
           <Download size={14} strokeWidth={3} />
-          Excel template
-        </a>
+          Blank JSON
+        </button>
         <button
           onClick={onCleanupCovers}
           className="inline-flex items-center gap-2 px-5 py-3 border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-white transition-all"
@@ -563,6 +563,9 @@ function TemplatesGrid({
                 <span className="text-[9px] text-zen-black/40 truncate">{tpl.createdBy.email ?? 'system'}</span>
                 <div className="flex gap-1">
                   <button onClick={() => onTogglePublished(tpl)} title={tpl.published ? 'Unpublish' : 'Publish'} className="p-1.5 text-zen-black/60 hover:text-basel-brick transition-colors">{tpl.published ? <Eye size={14} /> : <EyeOff size={14} />}</button>
+                  {tpl.itinerary?.version === 3 && (
+                    <button onClick={() => downloadJson(`${tpl.shareCode ?? tpl.id}.json`, toAuthoringJson(tpl.itinerary as unknown as ItineraryV3))} title="Download JSON" className="p-1.5 text-zen-black/60 hover:text-basel-brick transition-colors"><Download size={14} /></button>
+                  )}
                   <Link href={`/admin/trip-builder/${tpl.id}`} title="Edit in builder" className="p-1.5 text-zen-black/60 hover:text-basel-brick transition-colors"><Edit2 size={14} /></Link>
                   <button onClick={() => onDelete(tpl.id)} title="Delete" className="p-1.5 text-zen-black/60 hover:text-red-600 transition-colors"><Trash2 size={14} /></button>
                 </div>

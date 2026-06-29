@@ -51,6 +51,5 @@ npm-debug.log*
 # Prisma generated
 node_modules/.prisma/
 
-# Excel files (local working drafts) — but keep the served download template
+# Excel files — local working drafts only (the dopamichi authoring format is now JSON)
 *.xlsx
-!public/dopamichi-itinerary-template.xlsx
