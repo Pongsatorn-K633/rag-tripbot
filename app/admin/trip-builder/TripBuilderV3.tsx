@@ -32,6 +32,10 @@ const LEVELS = ['😍', '⭐', '👌']
 const MEALS = new Set<string>(PLAN_MEAL_SLOTS)
 const inp = 'px-3 py-2 text-sm border border-zen-black/20 rounded-lg focus:outline-none focus:border-basel-brick bg-white w-full'
 
+// Subset of the /api/admin/maps `place` payload the builder consumes (current pull set).
+type MapsPlace = { placeId: string; rating?: number; openingHours?: string; googleMapsUri?: string; websiteUri?: string }
+type MapsField = 'rating' | 'hours' | 'map' | 'website'
+
 export interface V3Initial {
   id: string
   shareCode: string | null
@@ -300,7 +304,7 @@ export default function TripBuilderV3({ initial }: { initial?: V3Initial }) {
                   <input value={ov.car_rental?.details?.rentalDuration ?? ''} onChange={(e) => setCar({ details: { ...ov.car_rental?.details, rentalDuration: e.target.value } })} placeholder="ระยะเวลาเช่า เช่น 4 days" className={`${inp} py-1.5`} />
                   {carGroups.map((g, i) => (
                     <div key={i} className="flex items-center gap-2">
-                      <input value={g.size} onChange={(e) => setCarDetails(carGroups.map((x, j) => (j === i ? { ...x, size: e.target.value } : x)))} placeholder="กลุ่ม เช่น 1-2" className={`${inp} py-1.5 w-28`} />
+                      <input value={g.size} onChange={(e) => setCarDetails(carGroups.map((x, j) => (j === i ? { ...x, size: e.target.value } : x)))} placeholder="กลุ่ม เช่น 1-2" className={`${inp} py-1.5 w-28!`} />
                       <input value={g.advice} onChange={(e) => setCarDetails(carGroups.map((x, j) => (j === i ? { ...x, advice: e.target.value } : x)))} placeholder="คำแนะนำรถ" className={`${inp} py-1.5 flex-1`} />
                       <button onClick={() => setCarDetails(carGroups.filter((_, j) => j !== i))} className="text-zen-black/30 hover:text-red-600"><Trash2 size={14} /></button>
                     </div>
@@ -341,7 +345,7 @@ export default function TripBuilderV3({ initial }: { initial?: V3Initial }) {
                   <div key={i} className="flex items-start gap-2 border border-zen-black/10 rounded-lg p-2">
                     <div className="flex-1 space-y-2 min-w-0">
                       <div className="flex gap-2">
-                        <select value={h.level || '⭐'} onChange={(e) => setHi(i, { level: e.target.value })} className={`${inp} py-1.5 w-16`}>{LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}</select>
+                        <select value={h.level || '⭐'} onChange={(e) => setHi(i, { level: e.target.value })} className={`${inp} py-1.5 w-16! shrink-0`}>{LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}</select>
                         <input value={h.name} onChange={(e) => setHi(i, { name: e.target.value })} placeholder="ชื่อสถานที่" className={`${inp} py-1.5 flex-1`} />
                       </div>
                       <textarea value={h.description} onChange={(e) => setHi(i, { description: e.target.value })} rows={2} placeholder="คำอธิบาย" className={`${inp} py-1.5 resize-y`} />
@@ -453,6 +457,10 @@ function ActivityCard({ a, di, ai, open, onToggle, patch, remove }: {
   const remark = a.remark ?? { en: '', th: '' }
   const setLink = (k: keyof NonNullable<ActivityV3['links']>, v: string) => patch(di, ai, { links: { ...a.links, [k]: v || null } })
   const [mapsLoading, setMapsLoading] = useState(false)
+  // A pull no longer overwrites — it loads the Google result into a compare panel
+  // and lets the admin pick, per field, between the existing JSON value and Google's.
+  const [mapsResult, setMapsResult] = useState<MapsPlace | null>(null)
+  const [mapsPick, setMapsPick] = useState<Record<MapsField, boolean>>({ rating: false, hours: false, map: false, website: false })
   async function fetchMaps() {
     const q = [a.name?.en || a.name?.th, a.location, 'Japan'].filter(Boolean).join(' ')
     if (!q.trim()) return
@@ -462,17 +470,32 @@ function ActivityCard({ a, di, ai, open, onToggle, patch, remove }: {
       const data = await res.json()
       if (data.configured === false) { window.alert('ยังไม่ได้ตั้งค่า GOOGLE_MAPS_API_KEY ใน .env'); return }
       if (!res.ok) { window.alert(data.error ?? 'ดึงข้อมูลไม่สำเร็จ'); return }
-      const p = data.place
-      patch(di, ai, {
-        placeId: p.placeId || a.placeId,
-        rating: typeof p.rating === 'number' ? p.rating : a.rating,
-        operating_hours: p.openingHours || a.operating_hours,
-        maps_api_call: true,
-        links: { ...a.links, map: p.googleMapsUri || a.links?.map || null, website: p.websiteUri || a.links?.website || null },
+      const p = data.place as MapsPlace
+      setMapsResult(p)
+      // Default each field to Google ONLY when the current value is empty — a pull
+      // never clobbers curated data unless the admin opts in.
+      setMapsPick({
+        rating: a.rating == null,
+        hours: !a.operating_hours,
+        map: !a.links?.map,
+        website: !a.links?.website,
       })
     } finally {
       setMapsLoading(false)
     }
+  }
+  function applyMaps() {
+    const p = mapsResult
+    if (!p) return
+    const next: Partial<ActivityV3> = { placeId: p.placeId || a.placeId, maps_api_call: true }
+    if (mapsPick.rating && typeof p.rating === 'number') next.rating = p.rating
+    if (mapsPick.hours && p.openingHours) next.operating_hours = p.openingHours
+    const linkPatch = { ...a.links }
+    if (mapsPick.map && p.googleMapsUri) linkPatch.map = p.googleMapsUri
+    if (mapsPick.website && p.websiteUri) linkPatch.website = p.websiteUri
+    next.links = linkPatch
+    patch(di, ai, next)
+    setMapsResult(null)
   }
 
   return (
@@ -493,12 +516,12 @@ function ActivityCard({ a, di, ai, open, onToggle, patch, remove }: {
       {open && (
         <div className="px-3 pb-3 pt-1 space-y-2 border-t border-zen-black/10">
           <div className="flex items-center gap-2 flex-wrap">
-            <select value={a.slot} onChange={(e) => patch(di, ai, { slot: e.target.value })} className={`${inp} py-1 w-auto`}>
+            <select value={a.slot} onChange={(e) => patch(di, ai, { slot: e.target.value })} className={`${inp} py-1 w-auto!`}>
               {SLOTS.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
-            <input value={a.time ?? ''} onChange={(e) => patch(di, ai, { time: e.target.value || null })} placeholder="--:--" className={`${inp} py-1 w-[72px]`} />
-            <input value={a.duration_min ?? ''} onChange={(e) => patch(di, ai, { duration_min: e.target.value ? parseInt(e.target.value, 10) || null : null })} placeholder="นาที" type="number" className={`${inp} py-1 w-[72px]`} />
-            <select value={a.priority ?? ''} onChange={(e) => patch(di, ai, { priority: (e.target.value || null) as ActivityV3['priority'] })} className={`${inp} py-1 w-auto`}>
+            <input value={a.time ?? ''} onChange={(e) => patch(di, ai, { time: e.target.value || null })} placeholder="--:--" className={`${inp} py-1 w-[72px]!`} />
+            <input value={a.duration_min ?? ''} onChange={(e) => patch(di, ai, { duration_min: e.target.value ? parseInt(e.target.value, 10) || null : null })} placeholder="นาที" type="number" className={`${inp} py-1 w-[72px]!`} />
+            <select value={a.priority ?? ''} onChange={(e) => patch(di, ai, { priority: (e.target.value || null) as ActivityV3['priority'] })} className={`${inp} py-1 w-auto!`}>
               <option value="">— priority —</option>
               {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
@@ -525,11 +548,53 @@ function ActivityCard({ a, di, ai, open, onToggle, patch, remove }: {
           {more && (
             <div className="space-y-2 pt-1 border-t border-zen-black/10">
               <div className="flex items-center gap-2">
-                <button type="button" onClick={fetchMaps} disabled={mapsLoading} className="text-[11px] font-bold text-blue-600 hover:underline flex items-center gap-1 disabled:opacity-40">
+                <button type="button" onClick={fetchMaps} disabled={mapsLoading || !!mapsResult} className="text-[11px] font-bold text-blue-600 hover:underline flex items-center gap-1 disabled:opacity-40">
                   📍 {mapsLoading ? 'กำลังดึง…' : 'ดึงจาก Google Maps'}
                 </button>
                 {a.placeId && <span className="text-[9px] font-bold text-emerald-600">✓ linked</span>}
               </div>
+              {mapsResult && (() => {
+                // Only offer rows where Google actually returned a value to compare against.
+                const rows = ([
+                  { key: 'rating' as MapsField, label: '★ Rating', cur: a.rating != null ? String(a.rating) : '', goog: typeof mapsResult.rating === 'number' ? String(mapsResult.rating) : '' },
+                  { key: 'hours' as MapsField, label: 'Hours', cur: a.operating_hours ?? '', goog: mapsResult.openingHours ?? '' },
+                  { key: 'map' as MapsField, label: 'Map URL', cur: a.links?.map ?? '', goog: mapsResult.googleMapsUri ?? '' },
+                  { key: 'website' as MapsField, label: 'Website', cur: a.links?.website ?? '', goog: mapsResult.websiteUri ?? '' },
+                ]).filter((r) => r.goog)
+                return (
+                  <div className="rounded-lg border border-blue-300 bg-blue-50/60 p-2.5 space-y-2">
+                    <p className="text-[11px] font-bold text-blue-800">
+                      📍 ผลจาก Google Maps — เลือกข้อมูลที่จะใช้ทีละช่อง
+                    </p>
+                    {rows.length === 0 ? (
+                      <p className="text-[11px] text-zen-black/50">ไม่มีข้อมูลใหม่จาก Google Maps สำหรับช่องเหล่านี้ (จะลิงก์ placeId ให้)</p>
+                    ) : rows.map((r) => {
+                      const useGoogle = mapsPick[r.key]
+                      const pick = (g: boolean) => setMapsPick((m) => ({ ...m, [r.key]: g }))
+                      const cell = 'flex-1 flex items-start gap-1.5 p-1.5 rounded border cursor-pointer text-[11px] min-w-0'
+                      return (
+                        <div key={r.key} className="space-y-1">
+                          <span className="text-[10px] font-bold text-zen-black/60">{r.label}</span>
+                          <div className="flex gap-2">
+                            <label className={`${cell} ${!useGoogle ? 'border-basel-brick bg-white' : 'border-zen-black/15 bg-white/40'}`}>
+                              <input type="radio" name={`maps-${di}-${ai}-${r.key}`} checked={!useGoogle} onChange={() => pick(false)} className="mt-0.5 accent-basel-brick flex-shrink-0" />
+                              <span className="min-w-0 break-words"><span className="text-zen-black/40">ของเดิม · </span>{r.cur || <span className="italic text-zen-black/35">(ว่าง)</span>}</span>
+                            </label>
+                            <label className={`${cell} ${useGoogle ? 'border-blue-500 bg-white' : 'border-zen-black/15 bg-white/40'}`}>
+                              <input type="radio" name={`maps-${di}-${ai}-${r.key}`} checked={useGoogle} onChange={() => pick(true)} className="mt-0.5 accent-blue-600 flex-shrink-0" />
+                              <span className="min-w-0 break-words"><span className="text-blue-600/70">Google · </span>{r.goog}</span>
+                            </label>
+                          </div>
+                        </div>
+                      )
+                    })}
+                    <div className="flex items-center gap-2 pt-0.5">
+                      <button type="button" onClick={applyMaps} className="text-[11px] font-bold text-white bg-basel-brick rounded px-3 py-1 hover:opacity-90">ใช้ที่เลือก · Apply</button>
+                      <button type="button" onClick={() => setMapsResult(null)} className="text-[11px] font-bold text-zen-black/50 hover:underline">ยกเลิก · Cancel</button>
+                    </div>
+                  </div>
+                )
+              })()}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <input type="number" step="0.1" value={a.rating ?? ''} onChange={(e) => patch(di, ai, { rating: e.target.value ? parseFloat(e.target.value) : null })} placeholder="★ rating" className={`${inp} py-1.5`} />
                 <select value={a.queue_time ?? ''} onChange={(e) => patch(di, ai, { queue_time: (e.target.value || null) as ActivityV3['queue_time'] })} className={`${inp} py-1.5`}>

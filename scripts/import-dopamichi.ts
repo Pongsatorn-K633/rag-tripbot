@@ -34,14 +34,26 @@ async function main() {
 
   // Replace any prior import of THIS source file (+ bridge trips). Matching on the
   // stable sourceFile (not title) keeps re-import idempotent even if you edit the title.
+  // Capture the prior row's cover so a re-import doesn't wipe a cover set in the
+  // dashboard (it lives in DB columns, not the JSON — so we carry it forward).
+  let priorCover: string | null = null
+  let priorCoverImages: string[] = []
   const prior = await prisma.template.findMany({ where: { createdById: systemUserId } })
   for (const o of prior) {
     const src = (o.itinerary as { sourceFile?: string } | null)?.sourceFile
     if (src && src === itinerary.sourceFile) {
+      priorCover = o.coverImage ?? priorCover
+      if (Array.isArray(o.coverImages) && o.coverImages.length) priorCoverImages = o.coverImages
       await prisma.trip.deleteMany({ where: { templateId: o.id } })
       await prisma.template.delete({ where: { id: o.id } })
     }
   }
+
+  // The JSON never carries the single cover (set via the dashboard CoverPicker), so it
+  // always inherits from the prior row. The gallery comes from the JSON when present,
+  // else falls back to whatever the prior row had.
+  const jsonCoverImages = itinerary.overview.cover_images ?? []
+  const coverImages = jsonCoverImages.length ? jsonCoverImages : priorCoverImages
 
   const template = await prisma.template.create({
     data: {
@@ -50,7 +62,8 @@ async function main() {
       description: itinerary.overview.cover_tagline ?? itinerary.overview.description?.split('\n')[0] ?? null,
       totalDays: itinerary.totalDays,
       season: itinerary.season ?? null,
-      coverImages: itinerary.overview.cover_images ?? [],
+      coverImage: priorCover, // preserved from the prior import (dashboard-set; not in JSON)
+      coverImages,
       itinerary: itinerary as unknown as Prisma.InputJsonValue,
       availability: availability as unknown as Prisma.InputJsonValue,
       published: PUBLISH, // --publish → shows on /pre-planned (no login); else draft
