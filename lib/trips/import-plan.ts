@@ -3,6 +3,7 @@ import type {
   Bilingual, HighlightV3, PlanPriority, PlanQueueTime, PlanBookingPolicy,
   DateRange, TripAvailability,
 } from '@/lib/itinerary-types'
+import { safeHref } from '@/lib/url'
 
 /**
  * Import a transformer plan JSON (the shape defined by docs/pre-planned-trip/columns.md)
@@ -133,12 +134,13 @@ function normalizeActivity(a: unknown): ActivityV3 | null {
     notes: bilingual(o.notes),
     remark: bilingual(o.remark),
     links: l ? {
-      map: cleanStr(l.map) ?? null,
-      walking_route: cleanStr(l.walking_route) ?? null,
-      ig: cleanStr(l.ig) ?? null,
-      fb: cleanStr(l.fb) ?? null,
-      tt: cleanStr(l.tt) ?? null,
-      website: cleanStr(l.website) ?? null,
+      // safeHref drops javascript:/data: schemes — only http(s) links survive.
+      map: safeHref(cleanStr(l.map)) ?? null,
+      walking_route: safeHref(cleanStr(l.walking_route)) ?? null,
+      ig: safeHref(cleanStr(l.ig)) ?? null,
+      fb: safeHref(cleanStr(l.fb)) ?? null,
+      tt: safeHref(cleanStr(l.tt)) ?? null,
+      website: safeHref(cleanStr(l.website)) ?? null,
     } : null,
   }
 }

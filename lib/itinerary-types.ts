@@ -279,7 +279,8 @@ export interface PlanLinks {
 
 export interface ActivityV3 {
   slot: PlanSlot
-  is_default?: boolean | null
+  is_default?: boolean | null   // admin's ⭐ recommended option (within a meal choice)
+  selected?: boolean | null     // the traveler's picked option (set when customizing a copy)
   time?: string | null
   duration_min?: number | null
   priority?: PlanPriority | null
@@ -294,6 +295,7 @@ export interface ActivityV3 {
   booking_policy?: PlanBookingPolicy | null
   how_to_book?: string | null
   maps_api_call?: boolean | null
+  placeId?: string | null // resolved Google Place ID (for refreshing Maps data)
   notes?: Bilingual | null
   remark?: Bilingual | null
   links?: PlanLinks | null
@@ -333,7 +335,7 @@ export interface PlanOverview {
   queue_guide_en?: string; queue_guide_th?: string
 }
 
-export interface HighlightV3 { name: string; description: string; level: string }
+export interface HighlightV3 { name: string; description: string; level: string; image?: string | null }
 
 export interface ItineraryV3 {
   version: 3

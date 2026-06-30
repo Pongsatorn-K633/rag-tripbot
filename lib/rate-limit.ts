@@ -80,6 +80,23 @@ export const codeLookupRateLimit = redis
   : null
 
 /**
+ * `mapsBudget` — a MONTHLY call budget for the Google Places API (New) so the app
+ * never crosses the free 10K/month tier. Fixed 30-day window, keyed globally (one
+ * shared budget, not per-user). Default 1,000 (well under the 10K free tier — raise
+ * later via MAPS_MONTHLY_CAP). Best-effort only — it FAILS OPEN if Upstash is down,
+ * so a Billing budget alert / API quota in Google Cloud is the guaranteed backstop.
+ */
+const MAPS_CAP = Math.max(1, parseInt(process.env.MAPS_MONTHLY_CAP ?? '1000', 10) || 1000)
+export const mapsBudget = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.fixedWindow(MAPS_CAP, '30 d'),
+      analytics: true,
+      prefix: 'dopamichi:maps',
+    })
+  : null
+
+/**
  * Helper that checks a rate limiter and returns a typed result. Use in API
  * routes like:
  *

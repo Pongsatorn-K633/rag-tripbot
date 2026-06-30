@@ -179,15 +179,25 @@ function slotLabel(slot: string): string {
   return slot
 }
 
-function v3ToActivity(a: ActivityV3, opts?: { tag?: string }): Activity {
-  const desc = a.description?.th || a.description?.en || undefined
-  const notes = [opts?.tag, desc].filter(Boolean).join(' — ') || undefined
+// V3 category tag → emoji (the tags an admin picks in the editor dropdown).
+const CATEGORY_EMOJI: Record<string, string> = {
+  food: '🍴', cafe: '☕', shopping: '🛍️', nature: '🌿', temple: '⛩️',
+  landmark: '🗼', experience: '🎟️', nightlife: '🌃', transport: '🚆', stay: '🏨',
+}
+
+export type RenderLang = 'en' | 'th'
+/** Pick the chosen language from a bilingual value, falling back to the other. */
+function pickLang(b: { en?: string | null; th?: string | null } | null | undefined, lang: RenderLang): string {
+  return (lang === 'en' ? b?.en || b?.th : b?.th || b?.en) || ''
+}
+
+function v3ToActivity(a: ActivityV3, lang: RenderLang): Activity {
   const l = a.links
   return {
     time: a.time ?? '',
-    name: a.name.en || a.name.th,
-    nameTh: a.name.th || null,
-    notes,
+    name: pickLang(a.name, lang),
+    nameTh: null, // single language per the EN/TH toggle
+    notes: pickLang(a.description, lang) || undefined,
     priority: planPriority(a.priority),
     category: undefined,
     emoji: slotEmoji(a.slot),
@@ -196,18 +206,20 @@ function v3ToActivity(a: ActivityV3, opts?: { tag?: string }): Activity {
     mapUrl: l?.map ?? null,
     isLogistics: a.slot === 'Logistics',
     location: a.location ?? undefined,
+    // Activity slots have no slot-emoji → fall back to the category tag's emoji.
+    ...(a.category && CATEGORY_EMOJI[a.category] && !slotEmoji(a.slot) ? { emoji: CATEGORY_EMOJI[a.category] } : {}),
     rating: a.rating ?? undefined,
     operatingHours: a.operating_hours ?? undefined,
     queueTime: a.queue_time ?? undefined,
     bookingPolicy: a.booking_policy ?? undefined,
     howToBook: a.how_to_book ?? undefined,
-    remark: a.remark?.th || a.remark?.en || undefined,
+    remark: pickLang(a.remark, lang) || undefined,
     walkingUrl: l?.walking_route ?? undefined,
     social: l ? { ig: l.ig, fb: l.fb, tt: l.tt, website: l.website } : undefined,
   }
 }
 
-function v3DayToRenderDay(day: DayV3): Day {
+function v3DayToRenderDay(day: DayV3, lang: RenderLang): Day {
   const acts = day.activities ?? []
   const mealSet = new Set<string>(PLAN_MEAL_SLOTS)
   const choosable = new Set<string>(PLAN_CHOOSABLE_SLOTS)
@@ -227,11 +239,11 @@ function v3DayToRenderDay(day: DayV3): Day {
     i = j
 
     if (slot === 'Living') {
-      if (run.length === 1) accommodation = run[0].name.en || run[0].name.th
+      if (run.length === 1) accommodation = pickLang(run[0].name, lang)
       else accommodationChoices = run.map((r) => ({
-        name: r.name.en || r.name.th,
+        name: pickLang(r.name, lang),
         cost: r.cost ?? undefined,
-        notes: (r.description?.th || r.description?.en) ?? undefined,
+        notes: pickLang(r.description, lang) || undefined,
       }))
       continue
     }
@@ -239,31 +251,34 @@ function v3DayToRenderDay(day: DayV3): Day {
     if (choosable.has(slot)) {
       // Choosable slots ALWAYS render as a carousel — even a single option — and
       // carry a time so they interleave into the timeline at their real spot.
-      const def = run.findIndex((r) => r.is_default) // is_default → admin's ⭐ recommended option
+      const def = run.findIndex((r) => r.is_default) // admin's ⭐ recommended option
+      const sel = run.findIndex((r) => r.selected)   // traveler's picked option
       choices.push({
         label: slotLabel(slot),
         category: mealSet.has(slot) ? 'food' : undefined,
         time: run[0].time ?? undefined,
         recommended: def >= 0 ? def : undefined,
-        options: run.map((r) => v3ToActivity(r)),
+        selected: sel >= 0 ? sel : undefined,
+        options: run.map((r) => v3ToActivity(r, lang)),
       })
       continue
     }
 
-    for (const r of run) activities.push(v3ToActivity(r))
+    for (const r of run) activities.push(v3ToActivity(r, lang))
   }
 
   activities.sort(byTime)
-  const location = acts[0]?.location || day.name.th || day.name.en || ''
+  const location = acts[0]?.location || pickLang(day.name, lang)
   return { day: day.day, location, activities, choices, accommodation, accommodationChoices, transport: '' }
 }
 
 /** v1 days as-is; v2/v3 days converted to the v1 render shape. Empty array if no days.
- *  Also injects the traveler's flight (arrival → day 1, departure → last day). */
-export function getRenderDays(itinerary: AnyItinerary | null | undefined): Day[] {
+ *  `lang` selects EN/TH for v3 bilingual fields (default Thai). Also injects the
+ *  traveler's flight (arrival → day 1, departure → last day). */
+export function getRenderDays(itinerary: AnyItinerary | null | undefined, lang: RenderLang = 'th'): Day[] {
   if (!itinerary || typeof itinerary !== 'object') return []
   const base = isV3(itinerary)
-    ? (itinerary.days ?? []).map(v3DayToRenderDay)
+    ? (itinerary.days ?? []).map((d) => v3DayToRenderDay(d, lang))
     : isV2(itinerary)
       ? (itinerary.days ?? []).map(v2DayToRenderDay)
       : Array.isArray((itinerary as Itinerary).days)

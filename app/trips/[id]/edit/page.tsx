@@ -5,7 +5,9 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import ItineraryEditor from '@/app/components/ItineraryEditor'
-import type { Itinerary } from '@/lib/itinerary-types'
+import ItineraryEditorV3 from '@/app/components/ItineraryEditorV3'
+import { isV3 } from '@/lib/trips/itinerary-model'
+import type { Itinerary, ItineraryV3 } from '@/lib/itinerary-types'
 
 interface TripData {
   title: string
@@ -40,7 +42,7 @@ export default function EditTripPage() {
       .catch((e) => { setError(e.message); setLoading(false) })
   }, [id])
 
-  async function handleSave({ itinerary, startDate }: { itinerary: Itinerary; startDate: string }) {
+  async function handleSave({ itinerary, startDate }: { itinerary: Itinerary | ItineraryV3; startDate: string }) {
     setSaving(true)
     try {
       const res = await fetch(`/api/trips/${id}`, {
@@ -81,13 +83,23 @@ export default function EditTripPage() {
             </p>
           </header>
 
-          <ItineraryEditor
-            initialItinerary={trip.itinerary}
-            initialStartDate={toDateInput(trip.startDate)}
-            variant="light"
-            saving={saving}
-            onSave={handleSave}
-          />
+          {isV3(trip.itinerary) ? (
+            <ItineraryEditorV3
+              initialItinerary={trip.itinerary as unknown as ItineraryV3}
+              initialStartDate={toDateInput(trip.startDate)}
+              variant="light"
+              saving={saving}
+              onSave={handleSave}
+            />
+          ) : (
+            <ItineraryEditor
+              initialItinerary={trip.itinerary}
+              initialStartDate={toDateInput(trip.startDate)}
+              variant="light"
+              saving={saving}
+              onSave={handleSave}
+            />
+          )}
         </>
       )}
     </main>

@@ -9,7 +9,9 @@ import {
 } from 'lucide-react'
 import type { AnyItinerary, Day, Activity, ActivityPriority, ItineraryV3, HighlightV3 } from '@/lib/itinerary-types'
 import { PRIORITY_LABEL } from '@/lib/itinerary-types'
-import { getRenderDays, isV3 } from '@/lib/trips/itinerary-model'
+import { getRenderDays, isV3, type RenderLang } from '@/lib/trips/itinerary-model'
+import { resolveCoverImage } from '@/lib/cover-image'
+import { safeHref } from '@/lib/url'
 import QueueBookingBadge from '@/app/components/QueueBookingBadge'
 import CategoryIcon from '@/app/components/CategoryIcon'
 import ChoiceCarousel from '@/app/components/ChoiceCarousel'
@@ -79,13 +81,15 @@ export default function ItineraryView({
       next.has(d) ? next.delete(d) : next.add(d)
       return next
     })
+  // EN/TH toggle (v3 only — it has bilingual fields).
+  const [lang, setLang] = useState<RenderLang>('th')
   // Normalize v1 OR v2 OR v3 into the v1 render shape (lib/trips/itinerary-model.ts).
-  const days = getRenderDays(itinerary)
+  const days = getRenderDays(itinerary, lang)
   // V3 trips carry extra trip-level content (full description, highlights, guides).
   const v3 = isV3(itinerary) ? itinerary : null
   const description = v3?.overview.description ?? (itinerary as { description?: string }).description
   const highlights = v3?.highlights ?? []
-  const guides = v3 ? collectGuides(v3) : []
+  const guides = v3 ? collectGuides(v3, lang) : []
 
   return (
     <div>
@@ -114,6 +118,19 @@ export default function ItineraryView({
               {hero.title}
             </h1>
             <p className="text-briefing-cream/70 text-sm sm:text-base mt-2 font-medium">{hero.subtitle}</p>
+          </div>
+        </div>
+      )}
+
+      {v3 && (
+        <div className="flex justify-end mb-4">
+          <div className="inline-flex rounded-lg border border-zen-black/15 overflow-hidden text-[11px] font-black">
+            {(['th', 'en'] as const).map((lg) => (
+              <button key={lg} onClick={() => setLang(lg)}
+                className={`px-3 py-1.5 uppercase tracking-widest transition-colors ${lang === lg ? 'bg-basel-brick text-white' : `${t.text} hover:bg-zen-black/5`}`}>
+                {lg}
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -173,11 +190,17 @@ function HighlightsStrip({ highlights, t }: { highlights: HighlightV3[]; t: Toke
         <div className="flex gap-3 px-1">
           {highlights.map((h, i) => (
             <div key={i} className={`flex-[0_0_72%] sm:flex-[0_0_46%] min-w-0 border rounded-xl overflow-hidden ${t.card}`}>
-              {/* mock photo */}
-              <div className={`relative h-24 flex items-center justify-center ${MOCK_GRADIENT[i % MOCK_GRADIENT.length]}`}>
-                <span className="text-3xl opacity-90 leading-none">{h.level || '📍'}</span>
-                <span className="absolute top-1.5 right-2 text-[10px] font-bold text-zen-black/40">photo</span>
-              </div>
+              {/* photo (real if set, else a gradient placeholder) */}
+              {h.image ? (
+                <div className="relative h-24">
+                  <Image src={resolveCoverImage(h.image, h.name)} alt={h.name} fill className="object-cover" sizes="(max-width: 640px) 72vw, 240px" />
+                  <span className="absolute top-1.5 right-2 text-base leading-none drop-shadow">{h.level || '⭐'}</span>
+                </div>
+              ) : (
+                <div className={`relative h-24 flex items-center justify-center ${MOCK_GRADIENT[i % MOCK_GRADIENT.length]}`}>
+                  <span className="text-3xl opacity-90 leading-none">{h.level || '📍'}</span>
+                </div>
+              )}
               <div className="px-3 py-2.5">
                 <p className={`font-bold text-sm ${t.text}`}>{h.name}</p>
                 {h.description && <p className={`text-xs leading-relaxed mt-0.5 line-clamp-3 ${t.textMuted}`}>{h.description}</p>}
@@ -193,9 +216,9 @@ function HighlightsStrip({ highlights, t }: { highlights: HighlightV3[]; t: Toke
 // ── Guides accordion (V3) ────────────────────────────────────────────────────
 // Bilingual trip-level guides (logistics / food / accommodation / queue / remark).
 interface Guide { key: string; label: string; emoji: string; text: string }
-function collectGuides(v3: ItineraryV3): Guide[] {
+function collectGuides(v3: ItineraryV3, lang: RenderLang): Guide[] {
   const o = v3.overview
-  const pick = (en?: string, th?: string) => (th || en || '').trim()
+  const pick = (en?: string, th?: string) => ((lang === 'en' ? en || th : th || en) || '').trim()
   const defs: Guide[] = [
     { key: 'logistic', label: 'การเดินทาง · Logistics', emoji: '🚆', text: pick(o.logistic_guide_en, o.logistic_guide_th) },
     { key: 'food', label: 'อาหาร · Food', emoji: '🍜', text: pick(o.food_guide_en, o.food_guide_th) },
@@ -441,8 +464,8 @@ function ActivityItem({ activity, t, variant }: { activity: Activity; t: Tokens;
             <span className={`text-[11px] flex items-center gap-0.5 ${t.textFaint}`}><Timer size={10} strokeWidth={2} /> {activity.duration}</span>
           )}
           {activity.cost && <span className="text-[11px] font-bold text-basel-brick">{activity.cost}</span>}
-          {activity.mapUrl && (
-            <a href={activity.mapUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-500 hover:underline flex items-center gap-0.5">
+          {safeHref(activity.mapUrl) && (
+            <a href={safeHref(activity.mapUrl)} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-500 hover:underline flex items-center gap-0.5">
               <ExternalLink size={10} strokeWidth={2.5} /> Maps
             </a>
           )}
@@ -533,8 +556,10 @@ function hasSocial(s?: Activity['social']): boolean {
 }
 
 function LinkPill({ href, icon, label }: { href: string; icon?: ReactNode; label: string }) {
+  const safe = safeHref(href)
+  if (!safe) return null // drop javascript:/data:/garbage links
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="text-[11px] font-bold flex items-center gap-0.5 text-blue-500 hover:underline">
+    <a href={safe} target="_blank" rel="noopener noreferrer" className="text-[11px] font-bold flex items-center gap-0.5 text-blue-500 hover:underline">
       {icon} {label}
     </a>
   )

@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, Trash2, Save, X, ChevronLeft, ChevronRight, ChevronDown, Check, Circle } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Save, X, ChevronLeft, ChevronRight, ChevronDown, Check, Circle, Sparkles } from 'lucide-react'
 import type {
-  ItineraryV3, DayV3, ActivityV3, PlanOverview, PlanPeriod, PlanPriority, Bilingual,
+  ItineraryV3, DayV3, ActivityV3, PlanOverview, PlanPeriod, PlanPriority, Bilingual, PlanCarRental,
 } from '@/lib/itinerary-types'
 import { PLAN_MEAL_SLOTS } from '@/lib/itinerary-types'
 import { AIRPORTS } from '@/lib/trips/itinerary-model'
@@ -25,6 +25,10 @@ const SLOTS = [
   'Activity 1', 'Activity 2', 'Activity 3', 'Activity 4', 'Activity 5', 'Activity 6', 'Activity 7', 'Activity 8',
 ]
 const PRIORITIES: PlanPriority[] = ['Must', 'Recommend', 'Normal']
+const QUEUE_TIMES = ['Low', 'Mid', 'High', 'Reserve']
+const BOOKING_POLICIES = ['Walk-in Only', 'Same-Day Ticket', 'Optional', 'Recommended', 'Mandatory']
+const CATEGORY_TAGS = ['', 'food', 'cafe', 'shopping', 'nature', 'temple', 'landmark', 'experience', 'nightlife', 'transport', 'stay']
+const LEVELS = ['😍', '⭐', '👌']
 const MEALS = new Set<string>(PLAN_MEAL_SLOTS)
 const inp = 'px-3 py-2 text-sm border border-zen-black/20 rounded-lg focus:outline-none focus:border-basel-brick bg-white w-full'
 
@@ -50,6 +54,7 @@ export default function TripBuilderV3({ initial }: { initial?: V3Initial }) {
   const [dirty, setDirty] = useState(false)
   const [saving, setSaving] = useState(false)
   const [savedOk, setSavedOk] = useState(false)
+  const [translating, setTranslating] = useState(false)
   const [error, setError] = useState('')
 
   // ── mutation helpers (every edit marks the form dirty) ──────────────────────
@@ -86,6 +91,19 @@ export default function TripBuilderV3({ initial }: { initial?: V3Initial }) {
   const addPeriod = () => patchOverview({ recommended_period: [...periods, { primary: '', details: '' }] })
   const removePeriod = (i: number) => patchOverview({ recommended_period: periods.filter((_, j) => j !== i) })
 
+  // highlights
+  const highlights = itin.highlights ?? []
+  const setHi = (i: number, patch: Partial<(typeof highlights)[number]>) =>
+    update((p) => ({ ...p, highlights: (p.highlights ?? []).map((h, j) => (j === i ? { ...h, ...patch } : h)) }))
+  const addHi = () => update((p) => ({ ...p, highlights: [...(p.highlights ?? []), { name: '', description: '', level: '⭐' }] }))
+  const removeHi = (i: number) => update((p) => ({ ...p, highlights: (p.highlights ?? []).filter((_, j) => j !== i) }))
+
+  // car rental (+ group-size presets)
+  const setCar = (patch: Partial<PlanCarRental>) => patchOverview({ car_rental: { ...ov.car_rental, ...patch } })
+  const carGroups = ov.car_rental?.details?.byGroupSize ?? []
+  const setCarDetails = (groups: { size: string; advice: string }[]) =>
+    setCar({ details: { ...ov.car_rental?.details, byGroupSize: groups } })
+
   const toggleRow = (key: string) => setExpanded((s) => { const n = new Set(s); n.has(key) ? n.delete(key) : n.add(key); return n })
 
   // ── day navigation: ← → arrows (ignored while typing in a field) ────────────
@@ -108,6 +126,35 @@ export default function TripBuilderV3({ initial }: { initial?: V3Initial }) {
     window.addEventListener('beforeunload', h)
     return () => window.removeEventListener('beforeunload', h)
   }, [dirty])
+
+  // ✨ Fill empty TH from EN across day names + activity name/desc/notes/remark.
+  async function generateTh() {
+    type Tgt = { en: string; set: (th: string) => void }
+    const targets: Tgt[] = []
+    const need = (b?: { en?: string | null; th?: string | null } | null) => !!(b?.en?.trim() && !b.th?.trim())
+    itin.days.forEach((d, di) => {
+      if (need(d.name)) { const en = d.name.en; targets.push({ en, set: (th) => patchDay(di, { name: { en, th } }) }) }
+      d.activities.forEach((a, ai) => {
+        if (need(a.name)) { const en = a.name.en; targets.push({ en, set: (th) => patchAct(di, ai, { name: { en, th } }) }) }
+        if (need(a.description)) { const en = a.description!.en; targets.push({ en, set: (th) => patchAct(di, ai, { description: { en, th } }) }) }
+        if (need(a.notes)) { const en = a.notes!.en; targets.push({ en, set: (th) => patchAct(di, ai, { notes: { en, th } }) }) }
+        if (need(a.remark)) { const en = a.remark!.en; targets.push({ en, set: (th) => patchAct(di, ai, { remark: { en, th } }) }) }
+      })
+    })
+    if (targets.length === 0) { setError('ไม่มีช่อง EN ที่รอแปล (TH ว่าง)'); return }
+    setTranslating(true); setError('')
+    try {
+      const res = await fetch('/api/admin/translate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texts: targets.map((t) => t.en) }) })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'แปลไม่สำเร็จ')
+      const translations: string[] = data.translations ?? []
+      targets.forEach((t, i) => { if (translations[i]) t.set(translations[i]) })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'แปลไม่สำเร็จ')
+    } finally {
+      setTranslating(false)
+    }
+  }
 
   async function save() {
     if (!ov.title.trim()) { setError('กรุณาตั้งชื่อทริป'); setTab('info'); return }
@@ -229,6 +276,85 @@ export default function TripBuilderV3({ initial }: { initial?: V3Initial }) {
               </div>
               <p className="text-[10px] text-zen-black/40 mt-1.5">ตัวกรองวันที่หน้า /pre-planned คำนวณจากช่วงเหล่านี้อัตโนมัติ</p>
             </div>
+
+            {/* Arrival buffers */}
+            <div className="pt-3 border-t border-zen-black/10 grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-basel-brick mb-1.5">ถึง → กิจกรรมแรก (ชม.)</p>
+                <input type="number" step="0.5" value={ov.arrival_to_first_act_hrs ?? ''} onChange={(e) => patchOverview({ arrival_to_first_act_hrs: e.target.value ? parseFloat(e.target.value) : undefined })} placeholder="เช่น 2" className={`${inp} py-1.5`} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-basel-brick mb-1.5">ถึงสนามบินก่อนบินกลับ (ชม.)</p>
+                <input type="number" step="0.5" value={ov.arrival_to_departure_airport_hrs ?? ''} onChange={(e) => patchOverview({ arrival_to_departure_airport_hrs: e.target.value ? parseFloat(e.target.value) : undefined })} placeholder="เช่น 3" className={`${inp} py-1.5`} />
+              </div>
+            </div>
+
+            {/* Car rental */}
+            <div className="pt-3 border-t border-zen-black/10">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-basel-brick">เช่ารถ · Car rental</p>
+                <label className="flex items-center gap-1.5 text-[11px] text-zen-black/60"><input type="checkbox" checked={ov.car_rental?.primary === 'Y'} onChange={(e) => setCar({ primary: e.target.checked ? 'Y' : 'N' })} className="accent-basel-brick" /> มีเช่ารถ</label>
+              </div>
+              {ov.car_rental?.primary === 'Y' && (
+                <div className="space-y-2">
+                  <input value={ov.car_rental?.details?.rentalDuration ?? ''} onChange={(e) => setCar({ details: { ...ov.car_rental?.details, rentalDuration: e.target.value } })} placeholder="ระยะเวลาเช่า เช่น 4 days" className={`${inp} py-1.5`} />
+                  {carGroups.map((g, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <input value={g.size} onChange={(e) => setCarDetails(carGroups.map((x, j) => (j === i ? { ...x, size: e.target.value } : x)))} placeholder="กลุ่ม เช่น 1-2" className={`${inp} py-1.5 w-28`} />
+                      <input value={g.advice} onChange={(e) => setCarDetails(carGroups.map((x, j) => (j === i ? { ...x, advice: e.target.value } : x)))} placeholder="คำแนะนำรถ" className={`${inp} py-1.5 flex-1`} />
+                      <button onClick={() => setCarDetails(carGroups.filter((_, j) => j !== i))} className="text-zen-black/30 hover:text-red-600"><Trash2 size={14} /></button>
+                    </div>
+                  ))}
+                  <button onClick={() => setCarDetails([...carGroups, { size: '', advice: '' }])} className="text-[10px] font-black text-basel-brick hover:underline flex items-center gap-0.5"><Plus size={12} /> เพิ่มขนาดกลุ่ม</button>
+                </div>
+              )}
+            </div>
+
+            {/* Guides */}
+            <div className="pt-3 border-t border-zen-black/10">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-basel-brick mb-2">คู่มือทริป · Guides (EN / TH)</p>
+              <div className="space-y-2">
+                {([['logistic_guide', 'การเดินทาง'], ['accommodation_guide', 'ที่พัก'], ['food_guide', 'อาหาร'], ['queue_guide', 'คิว'], ['remark', 'หมายเหตุ']] as const).map(([key, label]) => {
+                  const o = ov as unknown as Record<string, string | undefined>
+                  return (
+                    <div key={key}>
+                      <p className="text-[10px] text-zen-black/50 mb-1">{label}</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <textarea value={o[`${key}_en`] ?? ''} onChange={(e) => patchOverview({ [`${key}_en`]: e.target.value } as Partial<PlanOverview>)} rows={2} placeholder={`${label} (EN)`} className={`${inp} py-1.5 resize-y`} />
+                        <textarea value={o[`${key}_th`] ?? ''} onChange={(e) => patchOverview({ [`${key}_th`]: e.target.value } as Partial<PlanOverview>)} rows={2} placeholder={`${label} (TH)`} className={`${inp} py-1.5 resize-y`} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Highlights */}
+            <div className="pt-3 border-t border-zen-black/10">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-basel-brick">ไฮไลต์ · Highlights</p>
+                <button onClick={addHi} className="text-[10px] font-black text-basel-brick hover:underline flex items-center gap-0.5"><Plus size={12} /> เพิ่ม</button>
+              </div>
+              <div className="space-y-3">
+                {highlights.length === 0 && <p className="text-xs text-zen-black/30">ยังไม่มีไฮไลต์</p>}
+                {highlights.map((h, i) => (
+                  <div key={i} className="flex items-start gap-2 border border-zen-black/10 rounded-lg p-2">
+                    <div className="flex-1 space-y-2 min-w-0">
+                      <div className="flex gap-2">
+                        <select value={h.level || '⭐'} onChange={(e) => setHi(i, { level: e.target.value })} className={`${inp} py-1.5 w-16`}>{LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}</select>
+                        <input value={h.name} onChange={(e) => setHi(i, { name: e.target.value })} placeholder="ชื่อสถานที่" className={`${inp} py-1.5 flex-1`} />
+                      </div>
+                      <textarea value={h.description} onChange={(e) => setHi(i, { description: e.target.value })} rows={2} placeholder="คำอธิบาย" className={`${inp} py-1.5 resize-y`} />
+                      <div>
+                        <p className="text-[10px] text-zen-black/40 mb-1">รูป (ไม่ระบุก็ได้)</p>
+                        <CoverPicker value={h.image ? [h.image] : []} onChange={(v) => setHi(i, { image: v[0] ?? null })} max={1} />
+                      </div>
+                    </div>
+                    <button onClick={() => removeHi(i)} className="text-zen-black/30 hover:text-red-600 mt-1 flex-shrink-0"><Trash2 size={15} /></button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -290,6 +416,10 @@ export default function TripBuilderV3({ initial }: { initial?: V3Initial }) {
       {/* Sticky save bar */}
       <div className="fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur border-t border-zen-black/10 px-6 py-3">
         <div className="max-w-3xl mx-auto flex items-center gap-4">
+          <button onClick={generateTh} disabled={translating || saving} title="เติมภาษาไทยจากภาษาอังกฤษ (AI)"
+            className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-basel-brick hover:text-zen-black disabled:opacity-40">
+            <Sparkles size={14} strokeWidth={2.5} /> {translating ? 'กำลังแปล…' : 'เติม TH'}
+          </button>
           <span className="text-[11px] font-bold flex items-center gap-1.5">
             {saving ? <span className="text-zen-black/50">กำลังบันทึก…</span>
               : dirty ? <span className="text-amber-600 flex items-center gap-1"><Circle size={8} fill="currentColor" /> ยังไม่บันทึก</span>
@@ -317,6 +447,33 @@ function ActivityCard({ a, di, ai, open, onToggle, patch, remove }: {
   const setName = (b: Bilingual) => patch(di, ai, { name: b })
   const setDesc = (b: Bilingual) => patch(di, ai, { description: b })
   const summary = name.th || name.en || '(ยังไม่มีชื่อ)'
+  const [more, setMore] = useState(false)
+  const links = a.links ?? {}
+  const notes = a.notes ?? { en: '', th: '' }
+  const remark = a.remark ?? { en: '', th: '' }
+  const setLink = (k: keyof NonNullable<ActivityV3['links']>, v: string) => patch(di, ai, { links: { ...a.links, [k]: v || null } })
+  const [mapsLoading, setMapsLoading] = useState(false)
+  async function fetchMaps() {
+    const q = [a.name?.en || a.name?.th, a.location, 'Japan'].filter(Boolean).join(' ')
+    if (!q.trim()) return
+    setMapsLoading(true)
+    try {
+      const res = await fetch('/api/admin/maps', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: q, placeId: a.placeId || undefined }) })
+      const data = await res.json()
+      if (data.configured === false) { window.alert('ยังไม่ได้ตั้งค่า GOOGLE_MAPS_API_KEY ใน .env'); return }
+      if (!res.ok) { window.alert(data.error ?? 'ดึงข้อมูลไม่สำเร็จ'); return }
+      const p = data.place
+      patch(di, ai, {
+        placeId: p.placeId || a.placeId,
+        rating: typeof p.rating === 'number' ? p.rating : a.rating,
+        operating_hours: p.openingHours || a.operating_hours,
+        maps_api_call: true,
+        links: { ...a.links, map: p.googleMapsUri || a.links?.map || null, website: p.websiteUri || a.links?.website || null },
+      })
+    } finally {
+      setMapsLoading(false)
+    }
+  }
 
   return (
     <div className="border border-zen-black/10 rounded-lg bg-briefing-cream/30 overflow-hidden">
@@ -361,6 +518,52 @@ function ActivityCard({ a, di, ai, open, onToggle, patch, remove }: {
             <input value={a.cost ?? ''} onChange={(e) => patch(di, ai, { cost: e.target.value || null })} placeholder="ราคา · Cost" className={`${inp} py-1.5`} />
             <input value={a.location ?? ''} onChange={(e) => patch(di, ai, { location: e.target.value || null })} placeholder="พื้นที่ · Location (City, District)" className={`${inp} py-1.5`} />
           </div>
+
+          <button type="button" onClick={() => setMore(!more)} className="text-[11px] font-bold text-basel-brick hover:underline flex items-center gap-1">
+            <ChevronDown size={12} className={`transition-transform ${more ? 'rotate-180' : ''}`} /> {more ? 'ซ่อนข้อมูลเพิ่มเติม' : 'ข้อมูลเพิ่มเติม · More (เรตติ้ง/คิว/ลิงก์/โน้ต)'}
+          </button>
+          {more && (
+            <div className="space-y-2 pt-1 border-t border-zen-black/10">
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={fetchMaps} disabled={mapsLoading} className="text-[11px] font-bold text-blue-600 hover:underline flex items-center gap-1 disabled:opacity-40">
+                  📍 {mapsLoading ? 'กำลังดึง…' : 'ดึงจาก Google Maps'}
+                </button>
+                {a.placeId && <span className="text-[9px] font-bold text-emerald-600">✓ linked</span>}
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <input type="number" step="0.1" value={a.rating ?? ''} onChange={(e) => patch(di, ai, { rating: e.target.value ? parseFloat(e.target.value) : null })} placeholder="★ rating" className={`${inp} py-1.5`} />
+                <select value={a.queue_time ?? ''} onChange={(e) => patch(di, ai, { queue_time: (e.target.value || null) as ActivityV3['queue_time'] })} className={`${inp} py-1.5`}>
+                  <option value="">— queue —</option>{QUEUE_TIMES.map((q) => <option key={q} value={q}>{q}</option>)}
+                </select>
+                <select value={a.booking_policy ?? ''} onChange={(e) => patch(di, ai, { booking_policy: (e.target.value || null) as ActivityV3['booking_policy'] })} className={`${inp} py-1.5`}>
+                  <option value="">— booking —</option>{BOOKING_POLICIES.map((b) => <option key={b} value={b}>{b}</option>)}
+                </select>
+                <select value={a.category ?? ''} onChange={(e) => patch(di, ai, { category: e.target.value || null })} className={`${inp} py-1.5`}>
+                  {CATEGORY_TAGS.map((c) => <option key={c} value={c}>{c || '— category —'}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input value={a.operating_hours ?? ''} onChange={(e) => patch(di, ai, { operating_hours: e.target.value || null })} placeholder="เวลาเปิด · Hours" className={`${inp} py-1.5`} />
+                <input value={a.how_to_book ?? ''} onChange={(e) => patch(di, ai, { how_to_book: e.target.value || null })} placeholder="วิธีจอง · How to book" className={`${inp} py-1.5`} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input value={notes.en} onChange={(e) => patch(di, ai, { notes: { ...notes, en: e.target.value } })} placeholder="โน้ต (EN)" className={`${inp} py-1.5`} />
+                <input value={notes.th} onChange={(e) => patch(di, ai, { notes: { ...notes, th: e.target.value } })} placeholder="โน้ต (TH)" className={`${inp} py-1.5`} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input value={remark.en} onChange={(e) => patch(di, ai, { remark: { ...remark, en: e.target.value } })} placeholder="ข้อควรรู้ (EN)" className={`${inp} py-1.5`} />
+                <input value={remark.th} onChange={(e) => patch(di, ai, { remark: { ...remark, th: e.target.value } })} placeholder="ข้อควรรู้ (TH)" className={`${inp} py-1.5`} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input value={links.map ?? ''} onChange={(e) => setLink('map', e.target.value)} placeholder="Map URL" className={`${inp} py-1.5`} />
+                <input value={links.walking_route ?? ''} onChange={(e) => setLink('walking_route', e.target.value)} placeholder="Walking route URL" className={`${inp} py-1.5`} />
+                <input value={links.website ?? ''} onChange={(e) => setLink('website', e.target.value)} placeholder="Website" className={`${inp} py-1.5`} />
+                <input value={links.ig ?? ''} onChange={(e) => setLink('ig', e.target.value)} placeholder="Instagram" className={`${inp} py-1.5`} />
+                <input value={links.fb ?? ''} onChange={(e) => setLink('fb', e.target.value)} placeholder="Facebook" className={`${inp} py-1.5`} />
+                <input value={links.tt ?? ''} onChange={(e) => setLink('tt', e.target.value)} placeholder="TikTok" className={`${inp} py-1.5`} />
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

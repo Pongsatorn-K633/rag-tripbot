@@ -1,5 +1,12 @@
 # RAG TripBot — Orchestrator Agent
 
+> **🚀 NEW SESSION / NEW ACCOUNT — READ FIRST:** [`docs/V3-HANDOFF.md`](docs/V3-HANDOFF.md) (auto-loaded
+> below) is the full current state — the V3 itinerary schema, every pipeline + key file, the dev/prod
+> workflow, settled decisions, the remaining roadmap, and the security review. The plan-JSON schema SSOT
+> is [`docs/pre-planned-trip/columns.md`](docs/pre-planned-trip/columns.md).
+
+@docs/V3-HANDOFF.md
+
 You are the **master orchestrator** for the RAG TripBot project. Your job is to coordinate
 all subagents, enforce phase sequencing, and maintain architectural consistency across the
 entire codebase. You do NOT write implementation code directly — you delegate to specialists.
