@@ -3,15 +3,10 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
-import { ArrowLeft, Check, Sun, Moon, Monitor } from 'lucide-react'
+import { ArrowLeft, Check } from 'lucide-react'
 import ProfilePictureUpload from '@/app/components/ProfilePictureUpload'
-import { useTheme } from '@/app/components/ThemeProvider'
-
-type Tab = 'general' | 'account'
 
 export default function SettingsPage() {
-  const [tab, setTab] = useState<Tab>('general')
-
   return (
     <main className="pt-[120px] pb-24 min-h-screen bg-briefing-cream px-8">
       <div className="max-w-lg mx-auto space-y-8">
@@ -29,106 +24,10 @@ export default function SettingsPage() {
           </h1>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-0 border-b-2 border-zen-black/10">
-          <TabButton active={tab === 'general'} onClick={() => setTab('general')}>
-            General
-          </TabButton>
-          <TabButton active={tab === 'account'} onClick={() => setTab('account')}>
-            Account
-          </TabButton>
-        </div>
-
-        {/* Tab content */}
-        {tab === 'general' ? <GeneralTab /> : <AccountTab />}
+        {/* Account settings (theme toggle removed — single palette) */}
+        <AccountTab />
       </div>
     </main>
-  )
-}
-
-function TabButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-6 py-3 text-xs font-black font-headline uppercase tracking-[0.2em] transition-all border-b-4 -mb-[2px] ${
-        active
-          ? 'text-basel-brick border-basel-brick'
-          : 'text-zen-black/40 border-transparent hover:text-zen-black'
-      }`}
-    >
-      {children}
-    </button>
-  )
-}
-
-// ── General Tab ──────────────────────────────────────────────────────────────
-
-function GeneralTab() {
-  const { theme, setTheme } = useTheme()
-
-  const options: Array<{ value: 'light' | 'dark'; label: string; labelTh: string; icon: React.ReactNode }> = [
-    {
-      value: 'light',
-      label: 'Light',
-      labelTh: 'สว่าง',
-      icon: <Sun size={20} strokeWidth={2} />,
-    },
-    {
-      value: 'dark',
-      label: 'Dark',
-      labelTh: 'มืด',
-      icon: <Moon size={20} strokeWidth={2} />,
-    },
-  ]
-
-  return (
-    <div className="space-y-8">
-      {/* Theme */}
-      <div>
-        <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-basel-brick mb-4">
-          Theme · ธีม
-        </label>
-        <div className="grid grid-cols-2 gap-3">
-          {options.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setTheme(opt.value)}
-              className={`flex items-center gap-3 p-4 border-2 transition-all ${
-                theme === opt.value
-                  ? 'border-basel-brick bg-basel-brick/5'
-                  : 'border-zen-black/10 hover:border-zen-black/30'
-              }`}
-            >
-              <div
-                className={`${
-                  theme === opt.value ? 'text-basel-brick' : 'text-zen-black/40'
-                }`}
-              >
-                {opt.icon}
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-bold text-zen-black">{opt.label}</p>
-                <p className="text-[10px] text-zen-black/50">{opt.labelTh}</p>
-              </div>
-              {theme === opt.value && (
-                <Check size={16} className="ml-auto text-basel-brick" strokeWidth={3} />
-              )}
-            </button>
-          ))}
-        </div>
-        <p className="text-[10px] text-zen-black/40 mt-3">
-          การตั้งค่าธีมจะถูกบันทึกในเบราว์เซอร์ของคุณ · Theme preference is saved in your browser
-        </p>
-      </div>
-    </div>
   )
 }
 

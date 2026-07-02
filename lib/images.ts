@@ -37,7 +37,9 @@ const CLD_TOKYONIGHT = 'https://res.cloudinary.com/dubett62q/image/upload/q_auto
  */
 export const IMG = {
   // ── Home page ──────────────────────────────────────────────────────────────
-  homeHero: CLD_TORII,
+  // Full-bleed hero photo (Mt. Fuji behind a Lawson at dusk). Local /public/
+  // file so it never expires and next/image can optimize it.
+  homeHero: '/japan-hero.jpg',
   homeTokyo: CLD_TOKYONIGHT,
   homeKyoto: CLD_KYOTO,
   homeFuji: CLD_FUJI,

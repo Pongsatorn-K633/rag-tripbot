@@ -1,39 +1,27 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
-
 @theme {
   --font-sans: "Inter", "Noto Sans Thai", ui-sans-serif, system-ui, sans-serif;
   --font-headline: "Manrope", "Noto Sans Thai", sans-serif;
 
-  /* Light mode (default) */
-  --color-basel-brick: #B43325;
-  --color-briefing-cream: #F8F7F4;
-  --color-zen-black: #231a0e;
-}
-
-/* Dark mode overrides — flips the semantic colors so every existing class
-   like bg-briefing-cream, text-zen-black etc. auto-adapts without any
-   component changes. The brand accent (basel-brick) stays the same. */
-.dark {
-  --color-briefing-cream: #1a1a1e;
-  --color-zen-black: #e8e6e3;
-  color-scheme: dark;
+  /* Dopamichi palette — clean 3-color cool scheme. Token names are kept as
+     semantic slots so every bg-/text- class adopts the palette app-wide. */
+  --color-zen-black: #122C4F;       /* Midnight — dark base + body text */
+  --color-briefing-cream: #F7F9FC;  /* Cloud — light background + text-on-dark */
+  --color-basel-brick: #5B88B2;     /* Ocean — the single accent (buttons/links/hover/active) */
+  --color-noir: #000000;            /* Noir — true black, for deep contrast moments */
 }
 
 @layer base {
   body {
-    @apply bg-briefing-cream text-zen-black font-sans antialiased transition-colors duration-300;
+    @apply bg-briefing-cream text-zen-black font-sans antialiased;
   }
 }
 
 @layer utilities {
   .glass {
     @apply bg-white/70 backdrop-blur-xl;
-  }
-  .glass:where(.dark *) {
-    @apply bg-white/10 backdrop-blur-xl;
   }
   .scrollbar-hide {
     -ms-overflow-style: none;

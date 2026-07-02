@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
@@ -9,7 +9,7 @@ import { useSession, signIn, signOut } from 'next-auth/react'
 import { IMG } from '@/lib/images'
 
 const TABS = [
-  { id: 'home', label: 'Home', href: '/' },
+  // Home link removed — the logo <Link href="/"> already goes home.
   { id: 'my-trip', label: 'My Trip', href: '/my-trip' },
   { id: 'pre-planned', label: 'Pre-planned', href: '/pre-planned' },
   { id: 'doc-to-trip', label: 'Doc-to-Trip', href: '/doc-to-trip' },
@@ -17,9 +17,63 @@ const TABS = [
   { id: 'chat', label: 'AI Chat', href: '/chat', disabled: true },
 ]
 
+/** The desktop nav links. `light` = white scheme (over the dark hero); otherwise
+ *  the dark scheme (on the Cloud pill / Cloud bar). Rendered in two spots that
+ *  share a Motion layoutId, so the group animates between them. */
+function NavTabs({ isActive, light }: { isActive: (href: string) => boolean; light: boolean }) {
+  return (
+    <>
+      {TABS.map((tab) =>
+        tab.disabled ? (
+          <span
+            key={tab.id}
+            title="Under maintenance · ปรับปรุงอยู่"
+            className={`relative cursor-not-allowed select-none ${light ? 'text-white/40' : 'text-zen-black/30'}`}
+          >
+            {tab.label}
+            <span className="ml-2 align-middle text-[8px] font-black uppercase tracking-widest bg-basel-brick text-white px-1.5 py-0.5 rounded-sm">
+              Soon
+            </span>
+          </span>
+        ) : (
+          <Link
+            key={tab.id}
+            href={tab.href}
+            className={[
+              'relative transition-colors duration-200',
+              "after:content-[''] after:absolute after:inset-x-0 after:-bottom-1 after:h-0.5 after:rounded-full after:transition-colors",
+              light
+                ? isActive(tab.href)
+                  ? 'text-white after:bg-white'
+                  : 'text-white/70 hover:text-basel-brick after:bg-transparent'
+                : isActive(tab.href)
+                  ? 'text-basel-brick after:bg-basel-brick'
+                  : 'text-zen-black opacity-70 hover:opacity-100 hover:text-basel-brick after:bg-transparent',
+            ].join(' ')}
+          >
+            {tab.label}
+          </Link>
+        )
+      )}
+    </>
+  )
+}
+
 export default function Navbar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+
+  // Home page only: the bar is transparent over the dark photo hero (white
+  // logo + links), fading to a dark blurred bar once scrolled past 40px. Other
+  // pages have light backgrounds, so they keep the solid cream bar + dark text.
+  const isHome = pathname === '/'
+  useEffect(() => {
+    const onScroll = () => setIsScrolled(window.scrollY > 40)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   // Hide on liff routes only
   if (pathname.startsWith('/liff')) {
@@ -31,61 +85,76 @@ export default function Navbar() {
     return pathname.startsWith(href)
   }
 
-  return (
-    <header className="fixed top-0 w-full z-50 bg-briefing-cream/80 backdrop-blur-md border-b border-zen-black/5">
-      <nav className="flex justify-between items-center px-8 py-6 w-full max-w-screen-2xl mx-auto">
-        <Link
-          href="/"
-          className="flex items-center gap-3"
-          onClick={() => setMobileOpen(false)}
-        >
-          <Image
-            src={IMG.logo}
-            alt="dopamichi logo"
-            width={32}
-            height={32}
-            className="h-8 w-8 object-contain"
-          />
-          <span className="text-2xl font-headline font-bold tracking-tighter text-zen-black">
-            dopamichi
-          </span>
-        </Link>
+  // Home is always transparent — the nav rides in a floating Cloud pill instead
+  // of a solid bar (no more dark sticky bar). Other pages keep the Cloud bar.
+  const headerClass = isHome
+    ? 'bg-transparent border-b border-transparent'
+    : 'bg-briefing-cream/80 backdrop-blur-md border-b border-zen-black/5'
 
-        {/* Desktop tabs */}
-        <div className="hidden md:flex items-center gap-8 font-headline tracking-tight font-bold text-lg">
-          {TABS.map((tab) =>
-            tab.disabled ? (
-              <span
-                key={tab.id}
-                title="Under maintenance · ปรับปรุงอยู่"
-                className="pb-1 border-b-2 border-transparent text-zen-black/30 cursor-not-allowed select-none"
-              >
-                {tab.label}
-                <span className="ml-2 align-middle text-[8px] font-black uppercase tracking-widest bg-basel-brick text-white px-1.5 py-0.5 rounded-sm">
-                  Soon
-                </span>
-              </span>
-            ) : (
-              <Link
-                key={tab.id}
-                href={tab.href}
-                className={[
-                  'transition-all duration-200 pb-1 border-b-2',
-                  isActive(tab.href)
-                    ? 'text-basel-brick border-basel-brick'
-                    : 'text-zen-black opacity-70 hover:opacity-100 hover:text-basel-brick border-transparent',
-                ].join(' ')}
-              >
-                {tab.label}
-              </Link>
-            )
-          )}
+  return (
+    <header className={`fixed top-0 w-full z-50 transition-colors duration-300 ${headerClass}`}>
+      <nav className="relative flex justify-between items-center px-8 lg:px-12 py-6 w-full">
+        {/* Left cluster = the Cloud pill. The nav UNFOLDS out of the logo via a
+            `grid-template-columns: 0fr → 1fr` transition — a real layout reflow,
+            so the pill stretches slowly AND stays pixel-crisp (no scale). */}
+        <div
+          className={`flex items-center rounded-full transition-[background-color,padding] duration-300 ${
+            isHome
+              ? isScrolled
+                ? 'bg-briefing-cream pl-3 pr-3 md:pr-6 py-1.5'
+                : 'bg-briefing-cream hover:bg-briefing-cream/90 px-3 py-1.5'
+              : ''
+          }`}
+        >
+          <Link
+            href="/"
+            className="flex items-center gap-3 shrink-0"
+            onClick={() => setMobileOpen(false)}
+          >
+            <Image
+              src={IMG.logo}
+              alt="dopamichi logo"
+              width={32}
+              height={32}
+              className="h-8 w-8 object-contain translate-y-[1.5px]"
+              unoptimized
+            />
+            <span className="text-2xl font-headline font-bold tracking-tighter text-zen-black">
+              dopamichi
+            </span>
+          </Link>
+
+          {/* Nav slot: collapsed (0fr) at the top, expands (1fr) on scroll. */}
+          <div
+            className="hidden md:grid transition-[grid-template-columns] duration-[1200ms] ease-in-out"
+            style={{ gridTemplateColumns: isHome && isScrolled ? '1fr' : '0fr' }}
+          >
+            <div className="overflow-hidden">
+              <div className="flex items-center gap-8 pl-8 font-headline tracking-tight font-bold text-lg whitespace-nowrap">
+                <NavTabs isActive={isActive} light={false} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Centered nav — over the hero at the top, and on non-home pages. Fades
+            out as the pill unfolds, so it reads as moving from center → left. */}
+        <div className="pointer-events-none absolute inset-0 hidden md:grid grid-cols-[1fr_auto_1fr] items-center px-8">
+          <div />
+          <div
+            className={`flex items-center gap-8 font-headline tracking-tight font-bold text-lg transition-opacity duration-[500ms] ease-in-out ${
+              isHome && isScrolled ? 'opacity-0' : 'opacity-100 pointer-events-auto'
+            }`}
+          >
+            <NavTabs isActive={isActive} light={isHome && !isScrolled} />
+          </div>
+          <div />
         </div>
 
         {/* Right side: user menu (desktop) + hamburger (mobile) */}
         <div className="flex items-center gap-3">
           <div className="hidden md:block">
-            <NavUserMenu />
+            <NavUserMenu light={isHome} pill={isHome && isScrolled} />
           </div>
           {/* Mobile: current page label + profile + hamburger */}
           <div className="flex md:hidden items-center gap-2">
@@ -93,7 +162,7 @@ export default function Navbar() {
             <MobileAvatar />
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="text-zen-black/70 hover:text-basel-brick transition-colors"
+              className={`transition-colors ${isHome ? 'text-white/80 hover:text-basel-brick' : 'text-zen-black/70 hover:text-basel-brick'}`}
               aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
             >
               {mobileOpen ? <X size={24} strokeWidth={2} /> : <Menu size={24} strokeWidth={2} />}
@@ -147,7 +216,7 @@ export default function Navbar() {
 
 // ── Desktop user menu ────────────────────────────────────────────────────────
 
-function NavUserMenu() {
+function NavUserMenu({ light = false, pill = false }: { light?: boolean; pill?: boolean }) {
   const { data: session, status } = useSession()
   const [dropdownOpen, setDropdownOpen] = useState(false)
 
@@ -159,10 +228,14 @@ function NavUserMenu() {
     return (
       <button
         onClick={() => signIn()}
-        className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-zen-black hover:text-basel-brick transition-colors"
+        className={`group flex items-center gap-2.5 rounded-full py-1 pl-1 pr-4 transition-colors ${
+          pill ? 'bg-black/20 hover:bg-black/30' : light ? 'hover:bg-white/10' : 'hover:bg-zen-black/5'
+        }`}
       >
-        <User size={20} strokeWidth={2} />
-        <span>Sign in</span>
+        <div className={`w-[34px] h-[34px] rounded-full flex items-center justify-center border-2 ${light ? 'border-white/40 bg-white/10' : 'border-zen-black/10 bg-zen-black/5'}`}>
+          <User size={16} className={light ? 'text-white/70' : 'text-zen-black/40'} strokeWidth={2} />
+        </div>
+        <span className={`text-xs font-bold ${light ? 'text-white' : 'text-zen-black'}`}>Sign in</span>
       </button>
     )
   }
@@ -170,36 +243,40 @@ function NavUserMenu() {
   const isAdmin = session.user.role === 'ADMIN' || session.user.role === 'SUPERADMIN'
   const displayName = session.user.name ?? session.user.email ?? 'User'
 
+  const avatarRing = light ? 'border-white/40' : 'border-zen-black/10'
+
   return (
     <div className="relative">
       {/* Profile button — click to toggle dropdown */}
       <button
         onClick={() => setDropdownOpen(!dropdownOpen)}
-        className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+        className={`group flex items-center gap-2.5 rounded-full py-1 pl-1 pr-2.5 transition-colors ${
+          pill ? 'bg-black/20 hover:bg-black/30' : light ? 'hover:bg-white/10' : 'hover:bg-zen-black/5'
+        }`}
       >
         {session.user.image ? (
           <Image
             src={session.user.image}
             alt={displayName}
-            width={32}
-            height={32}
-            className="w-8 h-8 rounded-full object-cover border-2 border-zen-black/10"
+            width={34}
+            height={34}
+            className={`w-[34px] h-[34px] rounded-full object-cover border-2 ${avatarRing}`}
             unoptimized={session.user.image.includes('res.cloudinary.com')}
           />
         ) : (
-          <div className="w-8 h-8 rounded-full bg-zen-black/5 flex items-center justify-center border-2 border-zen-black/10">
-            <User size={16} className="text-zen-black/40" strokeWidth={2} />
+          <div className={`w-[34px] h-[34px] rounded-full flex items-center justify-center border-2 ${avatarRing} ${light ? 'bg-white/10' : 'bg-zen-black/5'}`}>
+            <User size={16} className={light ? 'text-white/70' : 'text-zen-black/40'} strokeWidth={2} />
           </div>
         )}
-        <div className="flex flex-col items-start leading-tight">
-          <span className="text-xs font-bold text-zen-black">{displayName}</span>
-          <span className="text-[8px] font-black uppercase tracking-widest text-zen-black/40">
+        <div className="hidden lg:flex flex-col items-start leading-tight">
+          <span className={`text-xs font-bold ${light ? 'text-white' : 'text-zen-black'}`}>{displayName}</span>
+          <span className={`text-[8px] font-black uppercase tracking-[0.18em] ${light ? 'text-white/60' : 'text-zen-black/40'}`}>
             {session.user.role}
           </span>
         </div>
         <ChevronDown
           size={14}
-          className={`text-zen-black/40 transition-transform duration-200 ${
+          className={`transition-transform duration-200 ${light ? 'text-white/60' : 'text-zen-black/40'} ${
             dropdownOpen ? 'rotate-180' : ''
           }`}
         />
@@ -213,19 +290,35 @@ function NavUserMenu() {
             className="fixed inset-0 z-40"
             onClick={() => setDropdownOpen(false)}
           />
-          <div className="absolute right-0 top-full mt-2 z-50 w-56 bg-briefing-cream border border-zen-black/10 shadow-xl py-2">
+          <div className="absolute right-0 top-full mt-3 z-50 w-64 bg-briefing-cream border border-zen-black/10 rounded-2xl shadow-2xl overflow-hidden">
             {/* User info header */}
-            <div className="px-4 py-3 border-b border-zen-black/5">
-              <p className="text-xs font-bold text-zen-black truncate">{displayName}</p>
-              <p className="text-[10px] text-zen-black/50 truncate">{session.user.email}</p>
+            <div className="flex items-center gap-3 px-4 py-4 bg-zen-black/[0.03] border-b border-zen-black/5">
+              {session.user.image ? (
+                <Image
+                  src={session.user.image}
+                  alt={displayName}
+                  width={40}
+                  height={40}
+                  className="w-10 h-10 rounded-full object-cover border-2 border-zen-black/10 flex-shrink-0"
+                  unoptimized={session.user.image.includes('res.cloudinary.com')}
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-zen-black/5 flex items-center justify-center border-2 border-zen-black/10 flex-shrink-0">
+                  <User size={18} className="text-zen-black/40" strokeWidth={2} />
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-zen-black truncate">{displayName}</p>
+                <p className="text-[10px] text-zen-black/50 truncate">{session.user.email}</p>
+              </div>
             </div>
 
             {/* Menu items */}
-            <div className="py-1">
+            <div className="py-1.5">
               <Link
                 href="/saved"
                 onClick={() => setDropdownOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-zen-black/70 hover:bg-briefing-cream hover:text-zen-black transition-colors"
+                className="flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-zen-black/70 hover:bg-zen-black/[0.04] hover:text-zen-black transition-colors"
               >
                 <Heart size={14} strokeWidth={2} />
                 แพลนที่คุณชอบ · Your Saved
@@ -234,7 +327,7 @@ function NavUserMenu() {
               <Link
                 href="/settings"
                 onClick={() => setDropdownOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-zen-black/70 hover:bg-briefing-cream hover:text-zen-black transition-colors"
+                className="flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-zen-black/70 hover:bg-zen-black/[0.04] hover:text-zen-black transition-colors"
               >
                 <Settings size={14} strokeWidth={2} />
                 Settings · ตั้งค่า
@@ -244,7 +337,7 @@ function NavUserMenu() {
                 <Link
                   href="/admin/dashboard"
                   onClick={() => setDropdownOpen(false)}
-                  className="flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-basel-brick hover:bg-briefing-cream transition-colors"
+                  className="flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-basel-brick hover:bg-basel-brick/10 transition-colors"
                 >
                   <Shield size={14} strokeWidth={2} />
                   Admin Dashboard
@@ -253,10 +346,10 @@ function NavUserMenu() {
             </div>
 
             {/* Sign out */}
-            <div className="border-t border-zen-black/5 pt-1">
+            <div className="border-t border-zen-black/5 py-1.5">
               <button
                 onClick={() => { signOut({ callbackUrl: '/' }); setDropdownOpen(false) }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-zen-black/50 hover:bg-briefing-cream hover:text-zen-black transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-zen-black/50 hover:bg-zen-black/[0.04] hover:text-zen-black transition-colors"
               >
                 <LogOut size={14} strokeWidth={2} />
                 Sign out
