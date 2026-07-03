@@ -65,7 +65,7 @@ const NUMERIC_CODE_RE = /^([A-Z]{2,4})-(\d+)$/
 /**
  * Mint an INCREMENTAL, human-friendly template code like `KYO-001` / `HOK-001`
  * (province prefix + zero-padded running number). Template codes point at PUBLIC
- * curated content (browsable on /pre-planned), so they don't need the high
+ * curated content (browsable on /discover), so they don't need the high
  * entropy of personal codes — short + sequential is fine and admin-readable.
  * The next number is max(existing numeric codes for this prefix) + 1.
  */

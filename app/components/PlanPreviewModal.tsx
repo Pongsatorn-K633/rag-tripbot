@@ -38,7 +38,7 @@ function dayCount(from: Date, to: Date): number {
 
 /**
  * Preview + duplicate modal for a pre-planned trip. Self-contained: owns its own
- * save state and posts a Trip copy to /api/trips. Shared by /pre-planned + /saved.
+ * save state and posts a Trip copy to /api/trips. Shared by /discover + /saved.
  *
  * Flow: preview → REQUIRED travel-date RANGE step → save + auto-mint code → done.
  * The user picks a start AND end (pre-filled from the page's filter window when

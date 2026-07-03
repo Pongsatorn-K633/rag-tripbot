@@ -204,7 +204,7 @@ export default function AdminDashboard({ currentUser }: { currentUser: CurrentUs
         <div className="grid grid-cols-2 md:grid-cols-5 gap-0 mb-12 border border-zen-black">
           <StatCard icon={FileText} label="Total Trips" value={stats.totalTrips} />
           <StatCard icon={Users} label="Unique Users" value={stats.uniqueUsers} />
-          <StatCard icon={BookOpen} label="Pre-planned" value={stats.totalTemplates} />
+          <StatCard icon={BookOpen} label="Discover" value={stats.totalTemplates} />
           <StatCard icon={TrendingUp} label="Published" value={stats.publishedTemplates} />
           <StatCard icon={Boxes} label="Library Nodes" value={nodesCount} last />
         </div>
@@ -215,7 +215,7 @@ export default function AdminDashboard({ currentUser }: { currentUser: CurrentUs
             All Trips ({trips.length})
           </TabButton>
           <TabButton active={tab === 'templates'} onClick={() => setTab('templates')}>
-            Pre-planned ({templates.length})
+            Discover ({templates.length})
           </TabButton>
           <Link
             href="/admin/trip-builder"
@@ -260,7 +260,7 @@ export default function AdminDashboard({ currentUser }: { currentUser: CurrentUs
           />
         )}
 
-        {/* Preview modal — same component travelers use on /pre-planned */}
+        {/* Preview modal — same component travelers use on /discover */}
         <PlanPreviewModal
           template={(templates.find((t) => t.id === viewId) ?? null) as unknown as PlanTemplate | null}
           callbackUrl="/admin/dashboard"
@@ -507,7 +507,7 @@ function TemplatesGrid({
 
       {templates.length === 0 ? (
         <div className="border-2 border-dashed border-zen-black/10 p-16 text-center">
-          <p className="text-zen-black/40 font-sans text-lg mb-1">No pre-planned trips yet.</p>
+          <p className="text-zen-black/40 font-sans text-lg mb-1">No plans yet.</p>
           <p className="text-zen-black/30 text-sm">Use <span className="text-basel-brick font-bold">Build New Trip</span> to create one.</p>
         </div>
       ) : (
@@ -675,7 +675,7 @@ function PromoteModal({
             onChange={(e) => setPublished(e.target.value === 'yes')}
             className="input"
           >
-            <option value="yes">Yes — live on /pre-planned</option>
+            <option value="yes">Yes — live on /discover</option>
             <option value="no">No — save as draft</option>
           </select>
         </Field>

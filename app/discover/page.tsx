@@ -38,10 +38,10 @@ function toISODate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-export default function PrePlannedPage() {
+export default function DiscoverPage() {
   const [templates, setTemplates] = useState<PlanTemplate[]>([])
   const [loading, setLoading] = useState(true)
-  const { savedIds, pending, toggleHeart } = useSavedTemplates('/pre-planned')
+  const { savedIds, pending, toggleHeart } = useSavedTemplates('/discover')
 
   // ── Optional date filter ──────────────────────────────────────────────────────
   const [range, setRange] = useState<DateRange | undefined>()
@@ -188,7 +188,7 @@ export default function PrePlannedPage() {
       <div className="flex flex-col md:flex-row justify-between md:items-end mb-12 gap-4 md:gap-6 border-b-2 border-zen-black/5 pb-8">
         <div>
           <span className="text-basel-brick font-extrabold text-sm uppercase tracking-[0.3em] mb-4 block font-headline">
-            {filterActive ? `Matching your dates · ${matched.length}` : 'All pre-planned trips'}
+            {filterActive ? `Matching your dates · ${matched.length}` : 'All plans'}
           </span>
           <h2 className="text-2xl md:text-4xl font-headline font-black tracking-tighter text-zen-black">
             {filterActive
@@ -279,7 +279,7 @@ export default function PrePlannedPage() {
         template={selectedTemplate}
         defaultStartDate={startD ? toISODate(startD) : ''}
         defaultEndDate={endD ? toISODate(endD) : ''}
-        callbackUrl="/pre-planned"
+        callbackUrl="/discover"
         onClose={() => setSelectedId(null)}
       />
     </main>

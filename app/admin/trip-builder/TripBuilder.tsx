@@ -144,8 +144,8 @@ export default function TripBuilder({ initial }: { initial?: BuilderInitial }) {
           <h2 className="font-headline font-black text-2xl italic text-zen-black mb-2">{isEdit ? 'บันทึกการแก้ไขแล้ว!' : 'บันทึกแล้ว!'}</h2>
           <p className="text-sm text-zen-black/60 leading-relaxed mb-6">
             {isEdit
-              ? <>อัปเดตแพลนเรียบร้อย — ดูได้ที่ Dashboard แท็บ <b>Pre-planned</b></>
-              : <>ทริปถูกบันทึกเป็น <b>แบบร่าง (ยังไม่เผยแพร่)</b> — ดูและกด “เผยแพร่” ได้ที่ Dashboard แท็บ <b>Pre-planned</b></>}
+              ? <>อัปเดตแพลนเรียบร้อย — ดูได้ที่ Dashboard แท็บ <b>Discover</b></>
+              : <>ทริปถูกบันทึกเป็น <b>แบบร่าง (ยังไม่เผยแพร่)</b> — ดูและกด “เผยแพร่” ได้ที่ Dashboard แท็บ <b>Discover</b></>}
           </p>
           <div className="flex gap-3">
             <Link href="/admin/dashboard" className="flex-1 py-3 rounded-lg bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all">
@@ -230,12 +230,12 @@ export default function TripBuilder({ initial }: { initial?: BuilderInitial }) {
           </div>
         </div>
 
-        {/* Availability — drives the /pre-planned date filter */}
+        {/* Availability — drives the /discover date filter */}
         <div className="bg-white border border-zen-black/10 rounded-xl p-4 mb-6 space-y-4">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-basel-brick">ช่วงเวลาเที่ยว · Travel availability</p>
             <p className="text-[11px] text-zen-black/50 mt-1 leading-relaxed">
-              ใช้กรองในหน้า /pre-planned — เว้น “Available” ว่าง = เที่ยวได้ทั้งปี · วันที่เป็นแบบไม่ระบุปี (เดือน-วัน)
+              ใช้กรองในหน้า /discover — เว้น “Available” ว่าง = เที่ยวได้ทั้งปี · วันที่เป็นแบบไม่ระบุปี (เดือน-วัน)
             </p>
           </div>
           <RangeEditor label="Available (open) windows" hint="เปิดให้เที่ยว · open" ranges={available} onChange={setAvailable} />

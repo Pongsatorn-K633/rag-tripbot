@@ -76,7 +76,7 @@ export default function SavedPage() {
             กดรูปหัวใจบนแพลนที่ชอบเพื่อเก็บไว้ที่นี่ · Heart a trip to save it here
           </p>
           <Link
-            href="/pre-planned"
+            href="/discover"
             className="inline-block px-6 py-3 bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all"
           >
             เลือกแพลนพร้อมเที่ยว

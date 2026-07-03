@@ -115,7 +115,7 @@ export interface Day {
 // ── Availability ──────────────────────────────────────────────────────────────
 // Seasonal availability for a pre-planned trip. Day-precise but YEAR-AGNOSTIC:
 // dates are stored as "MM-DD" strings so a window applies to every year.
-// Drives the /pre-planned date filter (see lib/availability.ts).
+// Drives the /discover date filter (see lib/availability.ts).
 
 /**
  * A year-agnostic date range, inclusive on both ends, as "MM-DD" strings.

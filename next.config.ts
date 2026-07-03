@@ -18,27 +18,14 @@ const nextConfig: NextConfig = {
         destination: '/maintenance',
         permanent: false,
       },
-      // ── RENAME: Templates → Pre-planned ─────────────────────────────────
-      // The gallery moved from /templates to /pre-planned. Keep old links,
-      // bookmarks, and shared URLs working. (API routes under /api/templates
-      // are unchanged — this only affects the user-facing page.)
+      // ── RENAME: /pre-planned → /discover ────────────────────────────────
+      // The curated gallery's route has changed a few times; only /pre-planned
+      // is kept as a redirect since it may have been shared publicly / is the
+      // LIFF-adjacent name. (/templates & /plan redirects dropped — pre-launch,
+      // no traffic. /api/templates backend is unchanged.)
       {
-        source: '/templates',
-        destination: '/pre-planned',
-        permanent: true,
-      },
-      // ── RENAME: Go! → My Trip ───────────────────────────────────────────
-      {
-        source: '/go',
-        destination: '/my-trip',
-        permanent: true,
-      },
-      // ── RENAME: Gallery → Doc-to-Trip ───────────────────────────────────
-      // The doc-upload (VLM extraction) page moved from /gallery. Keep old
-      // links/bookmarks working.
-      {
-        source: '/gallery',
-        destination: '/doc-to-trip',
+        source: '/pre-planned',
+        destination: '/discover',
         permanent: true,
       },
     ]

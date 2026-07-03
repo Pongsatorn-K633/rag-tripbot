@@ -34,6 +34,16 @@ export default function Home() {
           }}
         />
 
+        {/* Bottom fade — dissolves the photo into the dark section below so there's
+            no seam. Ends on EXACTLY #0A1B33, the top color of the next section. */}
+        <div
+          className="absolute inset-x-0 bottom-0 z-10 h-[18%] pointer-events-none"
+          style={{
+            background:
+              'linear-gradient(180deg, rgba(10,27,51,0) 0%, rgba(10,27,51,0.25) 50%, rgba(10,27,51,0.8) 82%, #0A1B33 100%)',
+          }}
+        />
+
         {/* Center content: giant JAPAN wordmark + Start Journey */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -47,13 +57,14 @@ export default function Home() {
               WebkitTextStroke: '1.4px rgba(255,255,255,0.5)',
               textShadow: '0 0 36px rgba(255,255,255,0.18), 0 6px 48px rgba(0,0,0,0.28)',
               opacity: 0.94,
+              transform: 'translateY(-10%)',
             }}
           >
             JAPAN
           </h1>
           <button
             onClick={scrollToPathways}
-            className="pointer-events-auto relative z-20 mt-[clamp(28px,4vh,52px)] inline-flex items-center justify-center rounded-full border-2 border-white/90 bg-white/25 text-white font-headline font-bold uppercase tracking-[0.18em] text-[clamp(15px,1.15vw,19px)] px-[clamp(48px,5vw,160px)] py-[clamp(16px,1.8vh,22px)] hover:bg-[#5B88B2]/25 transition-colors duration-300 cursor-pointer"
+            className="pointer-events-auto relative z-20 -translate-y-[22%] mt-[clamp(28px,4vh,52px)] inline-flex items-center justify-center rounded-full border-2 border-white/90 bg-white/25 text-white font-headline font-bold uppercase tracking-[0.18em] text-[clamp(15px,1.15vw,19px)] px-[clamp(40px,4vw,90px)] py-[clamp(16px,1.8vh,22px)] hover:bg-basel-brick/50 hover:border-basel-brick transition-colors duration-300 cursor-pointer"
           >
             Start Journey
           </button>
@@ -136,9 +147,9 @@ export default function Home() {
               </div>
             </Link>
 
-            {/* Option B: Pre-planned */}
+            {/* Option B: Plan */}
             <Link
-              href="/pre-planned"
+              href="/discover"
               className="group p-12 border-b md:border-b-0 md:border-r border-briefing-cream/15 hover:bg-basel-brick hover:text-briefing-cream transition-all duration-300 cursor-pointer"
             >
               <BookOpen className="w-10 h-10 mb-8" strokeWidth={1.5} />
@@ -150,9 +161,9 @@ export default function Home() {
               </div>
             </Link>
 
-            {/* Option C: Doc-to-Trip (upload) */}
+            {/* Option C: AI Scanner (upload) */}
             <Link
-              href="/doc-to-trip"
+              href="/ai-scanner"
               className="group p-12 hover:bg-basel-brick hover:text-briefing-cream transition-all duration-300 cursor-pointer"
             >
               <Upload className="w-10 h-10 mb-8" strokeWidth={1.5} />

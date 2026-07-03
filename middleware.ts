@@ -9,7 +9,7 @@ const { auth } = NextAuth(authConfig)
 /**
  * Route guards for the dopamichi app.
  *
- * - Public pages (/, /chat, /pre-planned, /doc-to-trip, /about, /privacy, /terms,
+ * - Public pages (/, /chat, /discover, /create, /ai-scanner, /about, /privacy, /terms,
  *   /support, /maintenance, /liff/*, /auth/*) are accessible to everyone
  * - /admin/* requires ADMIN or SUPERADMIN
  * - /admin/users/* requires SUPERADMIN

@@ -278,7 +278,7 @@ export default function TripBuilderV3({ initial }: { initial?: V3Initial }) {
                   </div>
                 ))}
               </div>
-              <p className="text-[10px] text-zen-black/40 mt-1.5">ตัวกรองวันที่หน้า /pre-planned คำนวณจากช่วงเหล่านี้อัตโนมัติ</p>
+              <p className="text-[10px] text-zen-black/40 mt-1.5">ตัวกรองวันที่หน้า /discover คำนวณจากช่วงเหล่านี้อัตโนมัติ</p>
             </div>
 
             {/* Arrival buffers */}

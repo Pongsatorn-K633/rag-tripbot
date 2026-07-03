@@ -1,9 +1,9 @@
 /**
  * Import a transformer plan JSON into a draft pre-planned Template (V3 itinerary).
  * Idempotent: replaces any prior import with the same title. Saves as a DRAFT
- * (published:false) so it shows in Admin → Dashboard → Pre-planned, not to the public.
+ * (published:false) so it shows in Admin → Dashboard → Plan, not to the public.
  *
- *   npx tsx scripts/import-dopamichi.ts [path/to/plan.json]
+ *   npx tsx scripts/import-dopamichi.ts [path/to/discover.json]
  */
 import './load-env.js' // .env.local (dev branch) wins over .env — never import to prod by accident
 import { readFileSync } from 'fs'
@@ -13,7 +13,7 @@ import { generateShareCodeForTemplate, getSystemUserId } from '../lib/share-code
 import { importPlanJson, deriveAvailability } from '../lib/trips/import-plan.js'
 
 const args = process.argv.slice(2)
-const PUBLISH = args.includes('--publish') // publish so it shows on /pre-planned (no login)
+const PUBLISH = args.includes('--publish') // publish so it shows on /discover (no login)
 const SRC = args.find((a) => !a.startsWith('--')) ?? 'docs/pre-planned-trip/Dopamichi-update.json'
 const PREFIX = 'TKY' // area_code is "(fill in app)" in the source; admin sets the real one later
 
@@ -66,7 +66,7 @@ async function main() {
       coverImages,
       itinerary: itinerary as unknown as Prisma.InputJsonValue,
       availability: availability as unknown as Prisma.InputJsonValue,
-      published: PUBLISH, // --publish → shows on /pre-planned (no login); else draft
+      published: PUBLISH, // --publish → shows on /discover (no login); else draft
       createdById: systemUserId,
     },
   })
@@ -77,8 +77,8 @@ async function main() {
   console.log(`  → ${code} · ${itinerary.totalDays} days · ${acts} activities · airports ${JSON.stringify(itinerary.airports)}`)
   console.log(`  availability: ${JSON.stringify(availability)}`)
   console.log(PUBLISH
-    ? `  PUBLISHED — open /pre-planned (no login needed) to view.`
-    : `  draft (published:false) — open Admin → Dashboard → Pre-planned to view/publish.`)
+    ? `  PUBLISHED — open /discover (no login needed) to view.`
+    : `  draft (published:false) — open Admin → Dashboard → Plan to view/publish.`)
 }
 
 main()

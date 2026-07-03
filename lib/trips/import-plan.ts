@@ -204,7 +204,7 @@ export function importPlanJson(raw: unknown): ItineraryV3 {
   }
 }
 
-// ── availability (derive the /pre-planned date filter from the period strings) ──
+// ── availability (derive the /discover date filter from the period strings) ──
 
 const MONTHS: Record<string, number> = {
   jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
@@ -229,7 +229,7 @@ export function parsePeriod(s?: string): DateRange | null {
 }
 
 /** Best-effort TripAvailability from a V3 overview's period strings — drives the
- *  /pre-planned date filter + the card's "เปิดให้เที่ยว" line. */
+ *  /discover date filter + the card's "เปิดให้เที่ยว" line. */
 export function deriveAvailability(itin: ItineraryV3): TripAvailability {
   const avail = parsePeriod(itin.overview.available_period?.primary)
   const rec = (itin.overview.recommended_period ?? [])

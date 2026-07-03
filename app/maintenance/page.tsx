@@ -39,10 +39,10 @@ export default function MaintenancePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
-              href="/pre-planned"
+              href="/discover"
               className="px-6 py-3 bg-zen-black text-briefing-cream font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-basel-brick transition-all"
             >
-              Browse Pre-planned · แพลนพร้อมเที่ยว
+              Browse Plan · แพลนพร้อมเที่ยว
             </Link>
             <Link
               href="/"

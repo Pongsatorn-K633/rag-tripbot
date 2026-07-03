@@ -8,7 +8,7 @@ import { formatRanges } from '@/lib/availability'
 import type { TripAvailability } from '@/lib/itinerary-types'
 import { type Itinerary } from '@/app/components/TemplateCard'
 
-/** The shape both /pre-planned and /saved fetch from GET /api/templates. */
+/** The shape both /discover and /saved fetch from GET /api/templates. */
 export interface PlanTemplate {
   id: string
   title: string

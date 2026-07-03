@@ -9,12 +9,11 @@ import { useSession, signIn, signOut } from 'next-auth/react'
 import { IMG } from '@/lib/images'
 
 const TABS = [
-  // Home link removed — the logo <Link href="/"> already goes home.
+  // Home is intentionally omitted — the logo + "dopamichi" wordmark link home.
+  { id: 'discover', label: 'Discover', href: '/discover' },
   { id: 'my-trip', label: 'My Trip', href: '/my-trip' },
-  { id: 'pre-planned', label: 'Pre-planned', href: '/pre-planned' },
-  { id: 'doc-to-trip', label: 'Doc-to-Trip', href: '/doc-to-trip' },
-  // AI Chat is under maintenance — disabled in nav, /chat redirects to /maintenance
-  { id: 'chat', label: 'AI Chat', href: '/chat', disabled: true },
+  // Create = the hub that fans out to AI Chat + AI Scanner (see /create)
+  { id: 'create', label: 'Create', href: '/create' },
 ]
 
 /** The desktop nav links. `light` = white scheme (over the dark hero); otherwise
@@ -23,38 +22,24 @@ const TABS = [
 function NavTabs({ isActive, light }: { isActive: (href: string) => boolean; light: boolean }) {
   return (
     <>
-      {TABS.map((tab) =>
-        tab.disabled ? (
-          <span
-            key={tab.id}
-            title="Under maintenance · ปรับปรุงอยู่"
-            className={`relative cursor-not-allowed select-none ${light ? 'text-white/40' : 'text-zen-black/30'}`}
-          >
-            {tab.label}
-            <span className="ml-2 align-middle text-[8px] font-black uppercase tracking-widest bg-basel-brick text-white px-1.5 py-0.5 rounded-sm">
-              Soon
-            </span>
-          </span>
-        ) : (
-          <Link
-            key={tab.id}
-            href={tab.href}
-            className={[
-              'relative transition-colors duration-200',
-              "after:content-[''] after:absolute after:inset-x-0 after:-bottom-1 after:h-0.5 after:rounded-full after:transition-colors",
-              light
-                ? isActive(tab.href)
-                  ? 'text-white after:bg-white'
-                  : 'text-white/70 hover:text-basel-brick after:bg-transparent'
-                : isActive(tab.href)
-                  ? 'text-basel-brick after:bg-basel-brick'
-                  : 'text-zen-black opacity-70 hover:opacity-100 hover:text-basel-brick after:bg-transparent',
-            ].join(' ')}
-          >
-            {tab.label}
-          </Link>
-        )
-      )}
+      {TABS.map((tab) => (
+        <Link
+          key={tab.id}
+          href={tab.href}
+          className={[
+            'transition-colors duration-200',
+            light
+              ? isActive(tab.href)
+                ? 'text-white'
+                : 'text-white/70 hover:text-basel-brick'
+              : isActive(tab.href)
+                ? 'text-basel-brick'
+                : 'text-zen-black opacity-70 hover:opacity-100 hover:text-basel-brick',
+          ].join(' ')}
+        >
+          {tab.label}
+        </Link>
+      ))}
     </>
   )
 }
@@ -94,61 +79,64 @@ export default function Navbar() {
   return (
     <header className={`fixed top-0 w-full z-50 transition-colors duration-300 ${headerClass}`}>
       <nav className="relative flex justify-between items-center px-8 lg:px-12 py-6 w-full">
-        {/* Left cluster = the Cloud pill. The nav UNFOLDS out of the logo via a
-            `grid-template-columns: 0fr → 1fr` transition — a real layout reflow,
-            so the pill stretches slowly AND stays pixel-crisp (no scale). */}
-        <div
-          className={`flex items-center rounded-full transition-[background-color,padding] duration-300 ${
-            isHome
-              ? isScrolled
-                ? 'bg-briefing-cream pl-3 pr-3 md:pr-6 py-1.5'
-                : 'bg-briefing-cream hover:bg-briefing-cream/90 px-3 py-1.5'
-              : ''
-          }`}
-        >
+        {/* Left cluster — logo + wordmark, always visible. Kept OUT of the nav
+            pill (which now lives in the center and grows from the middle). */}
+        <div className="relative flex items-center shrink-0">
           <Link
             href="/"
-            className="flex items-center gap-3 shrink-0"
+            className="group relative flex items-center rounded-full h-[46px] pl-1 pr-4"
             onClick={() => setMobileOpen(false)}
           >
-            <Image
-              src={IMG.logo}
-              alt="dopamichi logo"
-              width={32}
-              height={32}
-              className="h-8 w-8 object-contain translate-y-[1.5px]"
-              unoptimized
-            />
-            <span className="text-2xl font-headline font-bold tracking-tighter text-zen-black">
+            {/* Dark pill — blooms from the center on scroll, same as the nav oval. */}
+            {isHome && (
+              <span
+                aria-hidden
+                className="absolute left-0 top-1/2 -translate-y-1/2 rounded-full bg-black/20 group-hover:bg-black/30 transition-[width,height] duration-[700ms] ease-in-out"
+                style={{
+                  width: isScrolled ? '100%' : '0%',
+                  height: isScrolled ? '46px' : '0px',
+                }}
+              />
+            )}
+            {/* Mascot in a Cloud circle (home) so the white logo reads on the hero. */}
+            <span className={`relative inline-flex items-center justify-center w-[34px] h-[34px] rounded-full ${isHome ? 'bg-briefing-cream' : ''}`}>
+              <Image
+                src={IMG.logo}
+                alt="dopamichi logo"
+                width={32}
+                height={32}
+                className="h-6 w-6 object-contain"
+                unoptimized
+              />
+            </span>
+            <span className={`relative ml-3 text-2xl font-headline font-bold tracking-tighter ${isHome ? 'text-white' : 'text-zen-black'}`}>
               dopamichi
             </span>
           </Link>
-
-          {/* Nav slot: collapsed (0fr) at the top, expands (1fr) on scroll. */}
-          <div
-            className="hidden md:grid transition-[grid-template-columns] duration-[1200ms] ease-in-out"
-            style={{ gridTemplateColumns: isHome && isScrolled ? '1fr' : '0fr' }}
-          >
-            <div className="overflow-hidden">
-              <div className="flex items-center gap-8 pl-8 font-headline tracking-tight font-bold text-lg whitespace-nowrap">
-                <NavTabs isActive={isActive} light={false} />
-              </div>
-            </div>
-          </div>
         </div>
 
-        {/* Centered nav — over the hero at the top, and on non-home pages. Fades
-            out as the pill unfolds, so it reads as moving from center → left. */}
-        <div className="pointer-events-none absolute inset-0 hidden md:grid grid-cols-[1fr_auto_1fr] items-center px-8">
-          <div />
-          <div
-            className={`flex items-center gap-8 font-headline tracking-tight font-bold text-lg transition-opacity duration-[500ms] ease-in-out ${
-              isHome && isScrolled ? 'opacity-0' : 'opacity-100 pointer-events-auto'
-            }`}
-          >
-            <NavTabs isActive={isActive} light={isHome && !isScrolled} />
+        {/* Centered nav — always centered in the bar. On the home hero it's white
+            text on the transparent bar; on scroll a Cloud oval STRETCHES OUT OF
+            THE MIDDLE to wrap the items (Home … Create). Other pages sit on the
+            solid Cloud bar, so no oval is needed. */}
+        <div className="pointer-events-none absolute inset-0 hidden md:flex items-center justify-center">
+          <div className="relative flex items-center pointer-events-auto">
+            {/* Cloud oval — width 0 → 100% AND height 0 → 52px, both centered, so
+                it blooms from the middle point outward (left, right, top, bottom). */}
+            {isHome && (
+              <span
+                aria-hidden
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-briefing-cream shadow-sm transition-[width,height] duration-[700ms] ease-in-out"
+                style={{
+                  width: isScrolled ? '100%' : '0%',
+                  height: isScrolled ? '46px' : '0px',
+                }}
+              />
+            )}
+            <div className="relative flex items-center gap-8 px-8 font-headline tracking-tight font-bold text-lg whitespace-nowrap">
+              <NavTabs isActive={isActive} light={isHome && !isScrolled} />
+            </div>
           </div>
-          <div />
         </div>
 
         {/* Right side: user menu (desktop) + hamburger (mobile) */}
@@ -176,32 +164,20 @@ export default function Navbar() {
         <div className="md:hidden border-t border-zen-black/5 bg-briefing-cream/95 backdrop-blur-md">
           <div className="px-8 py-6 space-y-4">
             {/* Nav links */}
-            {TABS.map((tab) =>
-              tab.disabled ? (
-                <div
-                  key={tab.id}
-                  className="flex items-center justify-between py-2 text-zen-black/30"
-                >
-                  <span className="font-headline font-bold text-lg">{tab.label}</span>
-                  <span className="text-[8px] font-black uppercase tracking-widest bg-basel-brick text-white px-1.5 py-0.5 rounded-sm">
-                    Soon
-                  </span>
-                </div>
-              ) : (
-                <Link
-                  key={tab.id}
-                  href={tab.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={`block py-2 font-headline font-bold text-lg transition-colors ${
-                    isActive(tab.href)
-                      ? 'text-basel-brick'
-                      : 'text-zen-black/70 hover:text-basel-brick'
-                  }`}
-                >
-                  {tab.label}
-                </Link>
-              )
-            )}
+            {TABS.map((tab) => (
+              <Link
+                key={tab.id}
+                href={tab.href}
+                onClick={() => setMobileOpen(false)}
+                className={`block py-2 font-headline font-bold text-lg transition-colors ${
+                  isActive(tab.href)
+                    ? 'text-basel-brick'
+                    : 'text-zen-black/70 hover:text-basel-brick'
+                }`}
+              >
+                {tab.label}
+              </Link>
+            ))}
 
             {/* Divider */}
             <div className="border-t border-zen-black/10 pt-4">
@@ -228,14 +204,22 @@ function NavUserMenu({ light = false, pill = false }: { light?: boolean; pill?: 
     return (
       <button
         onClick={() => signIn()}
-        className={`group flex items-center gap-2.5 rounded-full py-1 pl-1 pr-4 transition-colors ${
-          pill ? 'bg-black/20 hover:bg-black/30' : light ? 'hover:bg-white/10' : 'hover:bg-zen-black/5'
+        className={`group relative flex items-center gap-2.5 rounded-full h-[46px] pl-1 pr-4 transition-colors ${
+          light ? (pill ? '' : 'hover:bg-white/10') : 'hover:bg-zen-black/5'
         }`}
       >
-        <div className={`w-[34px] h-[34px] rounded-full flex items-center justify-center border-2 ${light ? 'border-white/40 bg-white/10' : 'border-zen-black/10 bg-zen-black/5'}`}>
+        {/* Home: dark pill blooms from the center on scroll, same as the nav oval. */}
+        {light && (
+          <span
+            aria-hidden
+            className="absolute left-0 top-1/2 -translate-y-1/2 rounded-full bg-black/20 group-hover:bg-black/30 transition-[width,height] duration-[700ms] ease-in-out"
+            style={{ width: pill ? '100%' : '0%', height: pill ? '46px' : '0px' }}
+          />
+        )}
+        <div className={`relative w-[34px] h-[34px] rounded-full flex items-center justify-center border-2 ${light ? 'border-white/40 bg-white/10' : 'border-zen-black/10 bg-zen-black/5'}`}>
           <User size={16} className={light ? 'text-white/70' : 'text-zen-black/40'} strokeWidth={2} />
         </div>
-        <span className={`text-xs font-bold ${light ? 'text-white' : 'text-zen-black'}`}>Sign in</span>
+        <span className={`relative text-xs font-bold ${light ? 'text-white' : 'text-zen-black'}`}>Sign in</span>
       </button>
     )
   }
@@ -250,25 +234,33 @@ function NavUserMenu({ light = false, pill = false }: { light?: boolean; pill?: 
       {/* Profile button — click to toggle dropdown */}
       <button
         onClick={() => setDropdownOpen(!dropdownOpen)}
-        className={`group flex items-center gap-2.5 rounded-full py-1 pl-1 pr-2.5 transition-colors ${
-          pill ? 'bg-black/20 hover:bg-black/30' : light ? 'hover:bg-white/10' : 'hover:bg-zen-black/5'
+        className={`group relative flex items-center gap-2.5 rounded-full h-[46px] pl-1 pr-2.5 transition-colors ${
+          light ? (pill ? '' : 'hover:bg-white/10') : 'hover:bg-zen-black/5'
         }`}
       >
+        {/* Home: dark pill blooms from the center on scroll, same as the nav oval. */}
+        {light && (
+          <span
+            aria-hidden
+            className="absolute left-0 top-1/2 -translate-y-1/2 rounded-full bg-black/20 group-hover:bg-black/30 transition-[width,height] duration-[700ms] ease-in-out"
+            style={{ width: pill ? '100%' : '0%', height: pill ? '46px' : '0px' }}
+          />
+        )}
         {session.user.image ? (
           <Image
             src={session.user.image}
             alt={displayName}
             width={34}
             height={34}
-            className={`w-[34px] h-[34px] rounded-full object-cover border-2 ${avatarRing}`}
+            className={`relative w-[34px] h-[34px] rounded-full object-cover border-2 ${avatarRing}`}
             unoptimized={session.user.image.includes('res.cloudinary.com')}
           />
         ) : (
-          <div className={`w-[34px] h-[34px] rounded-full flex items-center justify-center border-2 ${avatarRing} ${light ? 'bg-white/10' : 'bg-zen-black/5'}`}>
+          <div className={`relative w-[34px] h-[34px] rounded-full flex items-center justify-center border-2 ${avatarRing} ${light ? 'bg-white/10' : 'bg-zen-black/5'}`}>
             <User size={16} className={light ? 'text-white/70' : 'text-zen-black/40'} strokeWidth={2} />
           </div>
         )}
-        <div className="hidden lg:flex flex-col items-start leading-tight">
+        <div className="relative hidden lg:flex flex-col items-start leading-tight">
           <span className={`text-xs font-bold ${light ? 'text-white' : 'text-zen-black'}`}>{displayName}</span>
           <span className={`text-[8px] font-black uppercase tracking-[0.18em] ${light ? 'text-white/60' : 'text-zen-black/40'}`}>
             {session.user.role}
@@ -276,7 +268,7 @@ function NavUserMenu({ light = false, pill = false }: { light?: boolean; pill?: 
         </div>
         <ChevronDown
           size={14}
-          className={`transition-transform duration-200 ${light ? 'text-white/60' : 'text-zen-black/40'} ${
+          className={`relative transition-transform duration-200 ${light ? 'text-white/60' : 'text-zen-black/40'} ${
             dropdownOpen ? 'rotate-180' : ''
           }`}
         />
