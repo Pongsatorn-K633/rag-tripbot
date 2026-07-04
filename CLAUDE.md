@@ -25,6 +25,54 @@ Target stack: Next.js · Prisma · Neon (PostgreSQL + pgvector) · BGE-M3 · Gem
 
 ---
 
+## Current Route Map (post-2026-07 UI pass)
+
+The July 2026 homepage/navbar redesign renamed several **user-facing** routes. **Backend/API
+names are unchanged** — still the `Template` model, `/api/templates`, `/api/upload`, the
+`DocToTripForm`/`PlanCard` components, and `lib/trips/plan-json.ts` (the word "plan" as a
+*concept*, not a route). Old routes permanent-redirect per `next.config.ts` where noted.
+
+| Route | Purpose | Former name(s) |
+|---|---|---|
+| `/` | Photo hero landing | — |
+| `/discover` | Curated pre-planned trip gallery | `/templates` → `/pre-planned` → `/plan` (all redirect; only `/pre-planned` kept) |
+| `/my-trip` | The user's saved / activated trips + ✏️ edit | `/go` |
+| `/create` | Hub → fans out to AI Chat + AI Scanner | (new) |
+| `/ai-scanner` | Upload PDF/image → VLM → editable V3 trip | `/doc-to-trip` (was `/gallery`) |
+| `/chat` | RAG chat — **under maintenance**, redirects to `/maintenance` | — |
+| `/liff/pre-planned` | LINE LIFF twin — **do NOT rename** (tied to LINE console + `LIFF_PREPLANNED_URL`) | — |
+
+Navbar tabs are **Discover · My Trip · Create** — Home was dropped; the logo + "dopamichi"
+wordmark link home.
+
+## UI / Design Conventions (alignment anchor for new UI/motion)
+
+Quick-ref for generating or aligning any UI (e.g. Kimi-authored motion). Token values live in
+`app/globals.css` `@theme`. **Full detail — hero z-layer anatomy, the bottom-fade seam, per-feature
+motion recipes (parallax, navbar), and a pre-integration review checklist — is the SSOT at
+[`docs/ui-alignment.md`](docs/ui-alignment.md).** Feed that file (+ `globals.css` + `Navbar.tsx` +
+`page.tsx`) to any external UI tool.
+
+- **Palette — cool, single scheme, NO dark mode.** Use Tailwind tokens, never raw hex:
+  - `zen-black` `#122C4F` (Midnight — dark base + body text)
+  - `briefing-cream` `#F7F9FC` (Cloud — light bg + text-on-dark)
+  - `basel-brick` `#5B88B2` (Ocean — the **single** accent: buttons/links/hover/active). **No red anywhere.**
+  - `noir` `#000000` (true black, deep-contrast moments)
+- **No theme switching.** Light is the only scheme. Do **not** add `dark:` variants or hardcoded
+  `bg-white`. There is no theme provider — dark mode was removed entirely.
+- **Fonts:** `font-headline` (Manrope) for display/UI, Inter for body, Noto Sans Thai for Thai.
+  Thai headers scale `text-3xl md:text-5xl`.
+- **Motion:** `motion/react` (Framer Motion) for entrance; CSS transitions for scroll/hover.
+  Prefer real layout props (`width`/`height`, `grid-template-columns`) over `scale` transforms —
+  scaling pixelates bitmaps and distorts border-radii.
+- **Responsive sizing:** fluid `clamp(min, vw, max)` for hero type/padding; a `sizes` prop on
+  every `next/image`.
+- **Signature motion** (navbar bloom pills, hero seam, parallax): see the recipes in
+  [`docs/ui-alignment.md`](docs/ui-alignment.md) — reuse that vocabulary, don't reinvent it.
+- **Links in prose/docs:** always markdown `[file](path)` (IDE-clickable), not backticks.
+
+---
+
 ## Subagent Roster
 
 These are real Claude Code subagents (`.claude/agents/*.md`, with frontmatter) — invoke
@@ -115,7 +163,7 @@ for the full implementation guide and `eaaefbc` / `5b7d73e` for the final commit
 - [x] Hardcoded templates migrated to `Template` table
 - [x] `GET /api/templates` public, `POST/DELETE /api/templates/[id]/save` member-only
 - [x] Heart icon save/unsave with optimistic updates + rollback
-- [x] "Your Saved" section on `/templates` (above Curated Collections)
+- [x] "Your Saved" section on the gallery (`/discover`, above Curated Collections)
 
 **Phase E — Admin dashboard + cover system + share code unification:**
 - [x] `/admin/dashboard` with Trips and Templates tabs
@@ -159,11 +207,10 @@ for the full implementation guide and `eaaefbc` / `5b7d73e` for the final commit
 - [x] AI extraction rejects non-trip files (returns 422 with bilingual message instead of hallucinating a fake itinerary)
 - [x] New user onboarding flow (`/onboarding`) — display name + profile picture upload with circular crop
 - [x] Profile picture upload with `react-easy-crop` (drag to reposition + zoom) → cropped to 512×512 JPEG → Cloudinary `dopamichi/profiles` folder via separate upload preset
-- [x] Settings page (`/settings`) with two tabs: General (theme toggle) + Account (edit profile)
-- [x] Dark mode infrastructure — CSS variable swap on `.dark` class, `ThemeProvider` context, localStorage persistence. Light is default; dark needs further UI polish on some pages.
+- [x] Settings page (`/settings`) — Account tab (edit profile). *(General/theme-toggle tab removed in the 2026-07 UI pass — single palette now.)*
+- [x] ~~Dark mode infrastructure~~ — **REMOVED (2026-07).** Now a single cool palette: no `.dark` variant in `globals.css`, no theme toggle. `ThemeProvider` was **deleted** (`providers.tsx` now wraps only `SessionProvider`).
 - [x] Navbar profile dropdown menu (desktop) + profile picture next to hamburger (mobile)
 - [x] Logo migrated from expired Google Aida URL to local `/public/android-chrome-192x192.png`
-- [ ] Dark mode UI polish — some components still use hardcoded `bg-white` that doesn't adapt
 - [ ] Chat re-enable — deferred; `/chat → /maintenance` redirect still active
 
 ### Auth system quick reference
@@ -176,7 +223,7 @@ for the full implementation guide and `eaaefbc` / `5b7d73e` for the final commit
 - **Share code data flow:** `Template.shareCode` canonical; promoting a Trip reuses its shareCode; otherwise `generateShareCodeForTemplate()` creates a system-owned bridge Trip (see `lib/share-code.ts`)
 - **Cover image pipeline:** `Template.coverImage` / `Trip.coverImage` stores IMG key or Cloudinary URL; `resolveCoverImage()` in `lib/cover-image.ts` normalizes; Cloudinary URLs get `c_fill,g_auto,ar_4:5,f_auto,q_auto` transformations injected at render time
 - **Profile picture pipeline:** `ProfilePictureUpload` component uses `react-easy-crop` for circular crop → canvas → 512×512 JPEG blob → uploaded to Cloudinary via separate `NEXT_PUBLIC_CLOUDINARY_PROFILE_PRESET` preset (folder: `dopamichi/profiles`)
-- **Theme system:** CSS variables in `globals.css` swap via `.dark` class on `<html>`. `ThemeProvider` context in `app/components/ThemeProvider.tsx` manages state + localStorage persistence. Light default, dark opt-in via `/settings`
+- **Theme system:** ~~dark mode~~ **removed (2026-07)** — single cool palette (Midnight/Cloud/Ocean + Noir) in `globals.css` `@theme`. No `.dark` variant, no toggle, no `ThemeProvider` (deleted). Tokens are in the "UI / Design Conventions" section above.
 - **Onboarding:** New magic-link users (`isOnboarded: false`) are redirected to `/onboarding` by middleware. Google OAuth users are auto-marked onboarded (they already have a name). Form: display name + profile picture upload. Completes via `PATCH /api/auth/onboarding` + `session.update()`
 
 ### Phase 6 — Testing + QA (PLANNED, not started)
@@ -208,7 +255,7 @@ on **both** the website and the LINE LIFF — from one shared core. Full spec + 
 **`docs/duplicate-edit-feature.md`**.
 
 - [x] **Phase A** — shared edit core (`lib/trips/edit.ts`) + `GET`/`PATCH /api/trips/[id]`
-- [x] **Phase B** — shared `app/components/ItineraryEditor.tsx` + `app/trips/[id]/edit` + `/go` ✏️ button + `Choice.selected`
+- [x] **Phase B** — shared `app/components/ItineraryEditor.tsx` + `app/trips/[id]/edit` + `/my-trip` ✏️ button + `Choice.selected`
 - [ ] **Phase C** — LIFF identity (`User.lineUserId`, `@line/liff`, `lib/line/liff-auth.ts`),
   `lib/trips/duplicate.ts`, `/api/liff/duplicate` + `/api/liff/trip`, `/liff/edit` reusing the editor
 - [ ] **Phase D** — hardening (rate-limit duplicate, "my LINE trips", security review)

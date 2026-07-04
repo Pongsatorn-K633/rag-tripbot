@@ -5,6 +5,14 @@
 > **Status as of this handoff:** the V3 migration is feature-complete across admin authoring,
 > user editing, rendering, bilingual, and Google Maps. All `tsc` + `lint` + `next build` clean.
 > Work is **uncommitted on `main`** (owner commits themselves).
+>
+> **Update — 2026-07 UI pass:** a homepage/navbar redesign landed on top of V3. **User-facing
+> routes were renamed** (full table in `CLAUDE.md` → "Current Route Map"): `/pre-planned`→`/discover`,
+> `/go`→`/my-trip`, `/doc-to-trip`→`/ai-scanner`, plus a new **`/create`** hub. **Dark mode was
+> removed** — single cool palette (Midnight/Cloud/Ocean + Noir); `ThemeProvider` was deleted.
+> Backend/API names are unchanged. **UI/motion SSOT:** [`docs/ui-alignment.md`](ui-alignment.md)
+> (palette, hero anatomy, motion recipes, parallax guardrails, review checklist) — also summarized
+> in `CLAUDE.md` → "UI / Design Conventions".
 
 ---
 
@@ -43,7 +51,7 @@ Three versions coexist; the renderer normalizes them:
 | Shared renderer (cards, preview, LIFF) | `app/components/ItineraryView.tsx` (EN/TH toggle, highlights carousel, guides accordion, rich cards) |
 | **Admin V3 builder/editor** | `app/admin/trip-builder/TripBuilderV3.tsx` (+ `AreaCombobox.tsx`); route `app/admin/trip-builder/[id]/page.tsx` branches v3→V3 editor, v1/v2→legacy `TripBuilder.tsx` |
 | **User duplicate→edit** | `app/components/ItineraryEditorV3.tsx`; route `app/trips/[id]/edit/page.tsx` |
-| **Doc-to-Trip** (upload→V3 + completion form) | `app/api/upload/route.ts` (VLM→V3), `app/components/DocToTripForm.tsx`, `app/doc-to-trip/page.tsx` |
+| **AI Scanner** (upload→V3 + completion form; route `/ai-scanner`, was Doc-to-Trip) | `app/api/upload/route.ts` (VLM→V3), `app/components/DocToTripForm.tsx`, `app/ai-scanner/page.tsx` |
 | ✨ Generate-TH (EN→TH) | `app/api/admin/translate/route.ts` (Gemini + thai-style) |
 | Google Maps (Places New) | `lib/maps/places.ts`, `app/api/admin/maps/route.ts`, budget in `lib/rate-limit.ts` (`mapsBudget`) |
 | Dashboard (JSON download buttons) | `app/admin/dashboard/AdminDashboard.tsx` |
@@ -79,7 +87,7 @@ Three versions coexist; the renderer normalizes them:
 **Recommended next:**
 - **Phase 6 — Testing/QA:** no automated suite yet (only `tsc`/lint/build + manual). Biggest stability gap. Add Vitest (lib/) + Playwright (auth, trips, LINE webhook) + CI; then create a Test/QA agent.
 - **Phase 7 C/D — LIFF duplicate/edit:** LINE identity (`User.lineUserId`, `@line/liff`), `/liff/edit`, "my LINE trips", rate-limit duplicate. Spec: `docs/duplicate-edit-feature.md`.
-**Smaller:** per-activity **user notes** in `ItineraryEditorV3` (deferred) · `area_code` edit in the V3 builder · **chat re-enable** (`/chat → /maintenance` redirect still on) · dark-mode polish.
+**Smaller:** per-activity **user notes** in `ItineraryEditorV3` (deferred) · `area_code` edit in the V3 builder · **chat re-enable** (`/chat → /maintenance` redirect still on).
 **Deferred design docs:** `docs/phase2-v3-builder-plan.md` (full V3 builder plan + decisions), `docs/single-source-of-truth-plan.md` (vocab consolidation).
 
 ## 8. Security review (new V3 surfaces) — done at handoff
@@ -100,7 +108,7 @@ Audited via the security-agent. **Fixed** this session; **open** items are low-r
 
 ## 9. First steps for a new session
 1. Read this doc → `CLAUDE.md` → `docs/pre-planned-trip/columns.md`.
-2. Confirm `.env.local` points at the `dev` Neon branch; `npm run dev`; open `/pre-planned` (TKY-001 is the demo V3 trip).
+2. Confirm `.env.local` points at the `dev` Neon branch; `npm run dev`; open `/discover` (TKY-001 is the demo V3 trip).
 3. To author: Dashboard → ⬇ JSON → edit → `npx tsx scripts/import-dopamichi.ts <file> --publish` → refresh.
 4. Run `npx tsc --noEmit` + `npx next lint` before changes; `npx next build` to verify.
 5. Pick up the roadmap (§7), starting with Testing/QA or LIFF.

@@ -55,7 +55,7 @@ app/
 
 **Shared (coordinate, do not unilaterally rewrite):** `app/components/Navbar.tsx`
 (session-aware `NavUserMenu` lives here, but the Web Agent owns the nav shell),
-`app/layout.tsx`, `app/providers.tsx`, `app/components/ThemeProvider.tsx`.
+`app/layout.tsx`, `app/providers.tsx`.
 
 **Do NOT touch:** `lib/rag/`, `lib/llm/`, `lib/line/`, `prisma/schema.prisma`
 (request schema changes from the DB Agent), `app/api/chat/`, `app/api/line/`,

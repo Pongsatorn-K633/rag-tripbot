@@ -409,9 +409,9 @@ Branded HTML email template for magic links (bilingual, brand colors). Custom
 | Trip lock detection | `lib/trip-lock.ts` — `getTripLockInfo`, `getLockedTripIds` |
 | Auth pages | `app/auth/signin` · `verify-request` · `error` |
 | Onboarding | `app/onboarding/page.tsx` — new magic-link users set name + profile picture |
-| Settings | `app/settings/page.tsx` — General (theme toggle) + Account (edit profile) |
+| Settings | `app/settings/page.tsx` — Account (edit profile). Theme toggle removed (2026-07, single palette) |
 | Profile picture crop | `app/components/ProfilePictureUpload.tsx` — `react-easy-crop` circular crop → canvas → Cloudinary |
-| Theme system | `app/components/ThemeProvider.tsx` — `.dark` class toggle on `<html>`, localStorage persistence |
+| ~~Theme system~~ | Removed (2026-07) — single cool palette in `globals.css` `@theme`; no `ThemeProvider`, no `.dark` |
 | Admin pages | `app/admin/dashboard` · `app/admin/users` |
 
 ---
