@@ -121,3 +121,23 @@ Before integrating any externally-generated UI:
 - [ ] `next/image` has a `sizes` prop; fluid `clamp()` sizing where relevant.
 - [ ] Fonts via `font-headline` / Inter / Noto Sans Thai; Thai headers `text-3xl md:text-5xl`.
 - [ ] Prose/doc links are markdown `[file](path)`, not backticks.
+
+---
+
+## 7. Brand assets — logo & favicons (two SEPARATE sources)
+
+Updating one does **not** update the other — a mascot change must touch both:
+
+- **Navbar logo:** `public/android-chrome-192x192.png` (+ `-512x512.png`), used in
+  `app/components/Navbar.tsx` via `IMG.logo`.
+- **Browser-tab favicons:** `public/favicon.ico`, `favicon-16x16.png`, `favicon-32x32.png`,
+  `apple-touch-icon.png` — wired in `app/layout.tsx` `metadata.icons`. **Filenames are fixed**
+  (referenced by `layout.tsx`); replace their *contents*, never rename them.
+
+**When the mascot changes, regenerate the favicons from the 512 master** (they're not
+auto-derived): resize `android-chrome-512x512.png` → 16/32 PNGs + a 180 `apple-touch-icon.png`,
+and assemble a multi-size `favicon.ico` (via `sharp`, already a dependency). Browsers cache
+favicons aggressively — hard-refresh (Ctrl+Shift+R) / bust the CDN cache to see the change.
+
+*History — 2026-07-05:* the favicons had lagged behind the navbar logo (still the old magnifier)
+and were regenerated (contents only, no renames) from the current shinkansen-bird mascot.
