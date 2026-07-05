@@ -1,10 +1,11 @@
 # Landing Frontend Dump — foundation for external UI/motion tools (Kimi)
 
-> **Generated snapshot (2026-07-06).** Exact contents of the current landing page + app shell +
-> design tokens, concatenated for handing to an external UI tool. The source files in the repo
-> remain the SSOT — regenerate this dump if they change.
+> **Generated snapshot (2026-07-06).** The current landing page + app shell + design tokens,
+> concatenated as a **reference so new UI fits the codebase — NOT a spec to reproduce.**
+> **Implement the user's requested change in full**; you only need to keep the *hard invariants*
+> in `docs/ui-alignment.md` §0. Source files remain the SSOT — regenerate this dump when they change.
 
-## Read this first — stack & rules (or generated code will drift)
+## Read this first — stack facts (so new code fits, not so you copy it)
 
 - **Stack:** Next 15.5 (App Router) · React 19 · **`motion` v12.38, imported as `motion/react`** (NOT `framer-motion`) · Tailwind **v4.2** · `lucide-react` icons.
 - **Tailwind v4 is CSS-first — there is NO `tailwind.config.js`.** All tokens live in `app/globals.css` `@theme`; utilities like `font-headline`, `bg-basel-brick`, `text-zen-black` are generated from the `--font-*` / `--color-*` vars.
@@ -34,9 +35,8 @@ The landing page — hero layers, JAPAN wordmark, Start Journey, bottom-fade sea
 ```tsx
 'use client'
 
-import Link from 'next/link'
 import Image from 'next/image'
-import { MessageSquare, BookOpen, Upload, ArrowRight, Compass } from 'lucide-react'
+import { Compass } from 'lucide-react'
 import { motion } from 'motion/react'
 import { IMG } from '@/lib/images'
 
@@ -157,60 +157,14 @@ export default function Home() {
       {/* Continuous Midnight gradient — one background for the whole lower page
           (pathways → content grid), not split per section. */}
       <div style={{ background: 'linear-gradient(180deg,#0A1B33 0%,#122C4F 100%)' }}>
-        {/* Main Interaction Hub: Pathway Cards */}
+        {/* Pathway cards removed — space reserved for the upcoming landing section (Kimi).
+            The #pathways id + padding stay so Start Journey / Learn More still scroll here. */}
         <section
           id="pathways"
           className="px-8 py-24 scroll-mt-24 text-briefing-cream"
         >
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-briefing-cream/15">
-            {/* Option A: Chat — UNDER MAINTENANCE (redirects to /maintenance) */}
-            <Link
-              href="/maintenance"
-              className="group relative p-12 border-b md:border-b-0 md:border-r border-briefing-cream/15 bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300 cursor-not-allowed"
-            >
-              <div className="absolute top-4 right-4 bg-basel-brick text-white text-[9px] font-black uppercase tracking-widest px-2 py-1">
-                Maintenance
-              </div>
-              <MessageSquare className="w-10 h-10 mb-8 opacity-40" strokeWidth={1.5} />
-              <h3 className="text-3xl font-headline font-bold mb-6 opacity-50">วางแผนการเดินทาง</h3>
-              <p className="mb-10 text-lg opacity-40">AI Concierge กำลังงีบอยู่ที่เกียวโต 🍵 เดี๋ยวตื่นมาจะรีบกลับมาช่วยวางแผนให้นะคะ</p>
-              <div className="flex items-center font-bold uppercase tracking-widest text-sm opacity-50">
-                <span>Temporarily Offline</span>
-                <ArrowRight className="ml-2 w-4 h-4" />
-              </div>
-            </Link>
-
-            {/* Option B: Plan */}
-            <Link
-              href="/discover"
-              className="group p-12 border-b md:border-b-0 md:border-r border-briefing-cream/15 hover:bg-basel-brick hover:text-briefing-cream transition-all duration-300 cursor-pointer"
-            >
-              <BookOpen className="w-10 h-10 mb-8" strokeWidth={1.5} />
-              <h3 className="text-3xl font-headline font-bold mb-6">แพลนพร้อมเที่ยว</h3>
-              <p className="mb-10 text-lg opacity-80">รวมแผนเที่ยวสุดฮิตที่คัดสรรมาแล้วจากกูรู เลือกวันเดินทางแล้วเจอเฉพาะแพลนที่เที่ยวได้จริง ไม่เจอสถานที่ปิด</p>
-              <div className="flex items-center font-bold uppercase tracking-widest text-sm">
-                <span>View Catalog</span>
-                <ArrowRight className="ml-2 w-4 h-4" />
-              </div>
-            </Link>
-
-            {/* Option C: AI Scanner (upload) */}
-            <Link
-              href="/ai-scanner"
-              className="group p-12 hover:bg-basel-brick hover:text-briefing-cream transition-all duration-300 cursor-pointer"
-            >
-              <Upload className="w-10 h-10 mb-8" strokeWidth={1.5} />
-              <h3 className="text-3xl font-headline font-bold mb-6">มีแผนอยู่แล้ว? อัปโหลดที่นี่</h3>
-              <p className="mb-10 text-lg opacity-80">เพียงอัปโหลดไฟล์ PDF หรือรูปภาพแผนเดิมของคุณ ให้ AI ช่วยวิเคราะห์ ปรับปรุง และจองตั๋วให้ง่ายขึ้น</p>
-              <div className="flex items-center font-bold uppercase tracking-widest text-sm">
-                <span>Upload File</span>
-                <ArrowRight className="ml-2 w-4 h-4" />
-              </div>
-            </Link>
-          </div>
-        </div>
-      </section>
+          <div className="max-w-7xl mx-auto min-h-[860px]" />
+        </section>
 
       {/* Content Preview Grid */}
       <section className="px-4 sm:px-8 py-12 sm:py-24 max-w-7xl mx-auto">
