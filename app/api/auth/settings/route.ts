@@ -21,13 +21,20 @@ export async function PATCH(req: NextRequest) {
   const data: Record<string, unknown> = {}
 
   if (typeof name === 'string') {
-    if (name.trim().length < 1) {
+    const trimmed = name.trim()
+    if (trimmed.length < 1) {
       return NextResponse.json(
         { error: 'กรุณากรอกชื่อ · Name cannot be empty' },
         { status: 400 }
       )
     }
-    data.name = name.trim()
+    if (trimmed.length > 10) {
+      return NextResponse.json(
+        { error: 'ชื่อต้องไม่เกิน 10 ตัวอักษร · Name must be 10 characters or fewer' },
+        { status: 400 }
+      )
+    }
+    data.name = trimmed
   }
 
   if (image !== undefined) {

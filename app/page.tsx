@@ -105,7 +105,7 @@ export default function Home() {
           alt="Mt. Fuji rising behind a Lawson convenience store at dusk"
           fill
           priority
-          className="object-cover object-[center_42%] z-0"
+          className="object-cover object-[60%_42%] md:object-[center_42%] z-0"
           sizes="100vw"
         />
 

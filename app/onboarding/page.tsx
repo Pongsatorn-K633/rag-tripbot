@@ -93,12 +93,12 @@ export default function OnboardingPage() {
               onChange={(e) => setName(e.target.value)}
               placeholder="Your Username"
               required
-              maxLength={50}
+              maxLength={10}
               disabled={saving}
               className="w-full bg-transparent border-b-2 border-zen-black py-3 font-medium text-lg focus:outline-none focus:border-basel-brick transition-colors disabled:opacity-40 placeholder:text-zen-black/30"
             />
             <p className="text-[10px] text-zen-black/40 mt-2">
-              ชื่อนี้จะแสดงใน Navbar และหน้าแอดมิน · This name will be shown across the app
+              ชื่อนี้จะแสดงใน Navbar และหน้าแอดมิน · Shown across the app · max 10 characters
             </p>
           </div>
 

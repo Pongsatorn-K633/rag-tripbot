@@ -21,9 +21,16 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json()
   const { name, image } = body as { name?: string; image?: string }
 
-  if (!name || typeof name !== 'string' || name.trim().length < 1) {
+  const trimmed = typeof name === 'string' ? name.trim() : ''
+  if (!trimmed) {
     return NextResponse.json(
       { error: 'กรุณากรอกชื่อ · Name is required' },
+      { status: 400 }
+    )
+  }
+  if (trimmed.length > 10) {
+    return NextResponse.json(
+      { error: 'ชื่อต้องไม่เกิน 10 ตัวอักษร · Name must be 10 characters or fewer' },
       { status: 400 }
     )
   }
@@ -31,7 +38,7 @@ export async function PATCH(req: NextRequest) {
   const updated = await prisma.user.update({
     where: { id: session.user.id },
     data: {
-      name: name.trim(),
+      name: trimmed,
       image: image || null,
       isOnboarded: true,
     },
