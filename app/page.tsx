@@ -1,20 +1,105 @@
 'use client'
 
+import { useRef, useState, useEffect } from 'react'
+import Link from 'next/link'
 import Image from 'next/image'
-import { Compass } from 'lucide-react'
-import { motion } from 'motion/react'
+import { Compass, ArrowRight } from 'lucide-react'
+import { motion, useScroll, useTransform, useMotionTemplate, useReducedMotion, type MotionValue } from 'motion/react'
 import { IMG } from '@/lib/images'
+import PlanCard, { type PlanTemplate } from '@/app/components/PlanCard'
+import PlanPreviewModal from '@/app/components/PlanPreviewModal'
+import { useSavedTemplates } from '@/app/hooks/useSavedTemplates'
+
+// ── JAPAN scroll-dissolve ────────────────────────────────────────────────────
+// Each letter scatters horizontally, rotates, drifts up, blurs and fades as you
+// scroll through the hero — staggered per letter. Tuning ported from the Kimi build.
+const HERO_LETTERS = [
+  { char: 'J', rot: -6, xScatter: -80, stagger: 0, drift: 1 },
+  { char: 'A', rot: 5, xScatter: 60, stagger: 0.015, drift: 1.3 },
+  { char: 'P', rot: -4, xScatter: -50, stagger: 0.03, drift: 0.9 },
+  { char: 'A', rot: 7, xScatter: 70, stagger: 0.01, drift: 1.1 },
+  { char: 'N', rot: -5, xScatter: -65, stagger: 0.025, drift: 1.2 },
+] as const
+
+function HeroLetter({
+  char, rot, xScatter, stagger, drift, progress, reduced,
+}: {
+  char: string; rot: number; xScatter: number; stagger: number; drift: number
+  progress: MotionValue<number>; reduced: boolean
+}) {
+  const start = 0.15 + stagger
+  const end = 0.45 + stagger
+  const opacity = useTransform(progress, [0, start, end], reduced ? [0.94, 0.94, 0.94] : [0.94, 0.94, 0])
+  const y = useTransform(progress, [0, start, end], reduced ? ['0%', '0%', '0%'] : ['0%', `${-20 * drift}%`, `${-85 * drift}%`])
+  const x = useTransform(progress, [0, start, end], reduced ? [0, 0, 0] : [0, 0.25 * xScatter, xScatter])
+  const rotate = useTransform(progress, [0, start, end], reduced ? [0, 0, 0] : [0, 0.4 * rot, rot])
+  const blurPx = useTransform(progress, [0, 0.2 + stagger, end], reduced ? [0, 0, 0] : [0, 3, 14])
+  const filter = useMotionTemplate`blur(${blurPx}px)`
+  return (
+    <motion.span className="inline-block will-change-transform" style={{ opacity, y, x, rotate, filter }}>
+      {char}
+    </motion.span>
+  )
+}
+
+// Custom smooth-scroll (easeInOutCubic, 1200ms) — ported from the Kimi build.
+// Falls back to an instant jump under prefers-reduced-motion.
+function smoothScrollTo(id: string, duration = 1200) {
+  const el = document.getElementById(id)
+  if (!el) return
+  const startY = window.scrollY
+  const delta = el.getBoundingClientRect().top
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    window.scrollTo(0, startY + delta)
+    return
+  }
+  const startT = performance.now()
+  const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
+  requestAnimationFrame(function step(now: number) {
+    const p = Math.min((now - startT) / duration, 1)
+    window.scrollTo(0, startY + delta * easeInOutCubic(p))
+    if (p < 1) requestAnimationFrame(step)
+  })
+}
 
 export default function Home() {
   const scrollToPathways = (e?: { preventDefault: () => void }) => {
     e?.preventDefault()
-    document.getElementById('pathways')?.scrollIntoView({ behavior: 'smooth' })
+    smoothScrollTo('pathways', 1200)
   }
+
+  // Scroll-linked hero animation — tied to the hero section's own scroll progress,
+  // fully disabled under prefers-reduced-motion.
+  const heroRef = useRef<HTMLElement>(null)
+  const reduced = useReducedMotion() ?? false
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
+  const btnOpacity = useTransform(scrollYProgress, [0, 0.2, 0.45], reduced ? [1, 1, 1] : [1, 1, 0])
+  const btnY = useTransform(scrollYProgress, [0, 0.2, 0.45], reduced ? ['0%', '0%', '0%'] : ['0%', '-40%', '-120%'])
+  const btnScale = useTransform(scrollYProgress, [0, 0.2, 0.45], reduced ? [1, 1, 1] : [1, 0.92, 0.75])
+
+  // Featured trips (second viewport) — newest published templates, opened via the
+  // same PlanPreviewModal as /discover.
+  const [templates, setTemplates] = useState<PlanTemplate[]>([])
+  const [tripsLoading, setTripsLoading] = useState(true)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const selectedTemplate = selectedId ? templates.find((t) => t.id === selectedId) ?? null : null
+  const featured = [...templates].slice(-3).reverse() // newest 3 (API is createdAt asc)
+  const { savedIds, pending, toggleHeart } = useSavedTemplates('/')
+
+  useEffect(() => {
+    let active = true
+    fetch('/api/templates')
+      .then((r) => (r.ok ? r.json() : { templates: [] }))
+      .then((d) => { if (active) setTemplates(d.templates ?? []) })
+      .catch(() => {})
+      .finally(() => { if (active) setTripsLoading(false) })
+    return () => { active = false }
+  }, [])
 
   return (
     <main className="bg-zen-black">
       {/* Full-bleed photo hero */}
-      <section className="relative w-full h-screen min-h-[660px] overflow-hidden bg-zen-black">
+      <section ref={heroRef} className="relative w-full h-screen min-h-[660px] overflow-hidden bg-zen-black">
         <Image
           src={IMG.homeHero}
           alt="Mt. Fuji rising behind a Lawson convenience store at dusk"
@@ -55,18 +140,22 @@ export default function Home() {
             style={{
               WebkitTextStroke: '1.4px rgba(255,255,255,0.5)',
               textShadow: '0 0 36px rgba(255,255,255,0.18), 0 6px 48px rgba(0,0,0,0.28)',
-              opacity: 0.94,
               transform: 'translateY(-10%)',
             }}
           >
-            JAPAN
+            {HERO_LETTERS.map((l, i) => (
+              <HeroLetter key={i} {...l} progress={scrollYProgress} reduced={reduced} />
+            ))}
           </h1>
-          <button
-            onClick={scrollToPathways}
-            className="pointer-events-auto relative z-20 -translate-y-[22%] mt-[clamp(28px,4vh,52px)] inline-flex items-center justify-center rounded-full border-2 border-white/90 bg-white/25 text-white font-headline font-bold uppercase tracking-[0.18em] text-[clamp(15px,1.15vw,19px)] px-[clamp(40px,4vw,90px)] py-[clamp(16px,1.8vh,22px)] hover:bg-basel-brick/50 hover:border-basel-brick transition-colors duration-300 cursor-pointer"
-          >
-            Start Journey
-          </button>
+          <div className="-translate-y-[22%] mt-[clamp(28px,4vh,52px)]">
+            <motion.button
+              onClick={scrollToPathways}
+              style={{ opacity: btnOpacity, y: btnY, scale: btnScale }}
+              className="pointer-events-auto relative z-20 inline-flex items-center justify-center rounded-full border-2 border-white/90 bg-white/25 text-white font-headline font-bold uppercase tracking-[0.18em] text-[clamp(15px,1.15vw,19px)] px-[clamp(40px,4vw,90px)] py-[clamp(16px,1.8vh,22px)] hover:bg-basel-brick/50 hover:border-basel-brick transition-colors duration-300 cursor-pointer will-change-transform"
+            >
+              Start Journey
+            </motion.button>
+          </div>
         </motion.div>
 
         {/* Learn More cue (bottom-left) */}
@@ -119,16 +208,54 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Continuous Midnight gradient — one background for the whole lower page
-          (pathways → content grid), not split per section. */}
-      <div style={{ background: 'linear-gradient(180deg,#0A1B33 0%,#122C4F 100%)' }}>
-        {/* Pathway cards removed — space reserved for the upcoming landing section (Kimi).
-            The #pathways id + padding stay so Start Journey / Learn More still scroll here. */}
+      {/* Continuous gradient for the whole lower page (pathways → content grid),
+          fading from the hero's Midnight seam (#0A1B33) down to Cloud (#F7F9FC)
+          so it blends into the light footer. */}
+      <div style={{ background: 'linear-gradient(180deg,#0A1B33 0%,#F7F9FC 100%)' }}>
+        {/* Second viewport — Featured trips. Newest published templates, opened via
+            the shared PlanPreviewModal (same as /discover). Keeps the #pathways id so
+            Start Journey / Learn More still scroll here. */}
         <section
           id="pathways"
-          className="px-8 py-24 scroll-mt-24 text-briefing-cream"
+          className="px-8 py-24 scroll-mt-24 min-h-screen flex flex-col justify-center text-briefing-cream"
         >
-          <div className="max-w-7xl mx-auto min-h-[860px]" />
+          <div className="max-w-[1536px] mx-auto w-full">
+            <div className="mb-10">
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="font-headline font-bold text-3xl md:text-5xl tracking-tight">Featured Trips</h2>
+                <Link
+                  href="/discover"
+                  className="group shrink-0 font-headline font-bold uppercase tracking-widest text-sm text-briefing-cream/80 hover:text-basel-brick transition-colors flex items-center gap-2"
+                >
+                  View all
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+              <p className="mt-3 text-briefing-cream/70 font-sans">Hand-picked Japan itineraries, ready to go.</p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-6 md:gap-8">
+              {tripsLoading
+                ? Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="w-full sm:w-[340px] h-[460px] rounded-xl bg-white/5 border border-white/10 animate-pulse" />
+                  ))
+                : featured.length > 0
+                  ? featured.map((tpl) => (
+                      <div key={tpl.id} className="w-full sm:w-[340px]">
+                        <PlanCard
+                          tpl={tpl}
+                          variant="light"
+                          isSaved={savedIds.has(tpl.id)}
+                          isPending={pending.has(tpl.id)}
+                          onOpen={() => setSelectedId(tpl.id)}
+                          onHeart={(e) => toggleHeart(tpl.id, e)}
+                        />
+                      </div>
+                    ))
+                  : (
+                    <p className="w-full text-center text-briefing-cream/50 font-sans">No featured trips yet.</p>
+                  )}
+            </div>
+          </div>
         </section>
 
       {/* Content Preview Grid */}
@@ -182,6 +309,13 @@ export default function Home() {
         </div>
       </section>
       </div>
+
+      {/* Preview + duplicate modal — same component /discover uses to "open" a trip. */}
+      <PlanPreviewModal
+        template={selectedTemplate}
+        callbackUrl="/"
+        onClose={() => setSelectedId(null)}
+      />
     </main>
   )
 }

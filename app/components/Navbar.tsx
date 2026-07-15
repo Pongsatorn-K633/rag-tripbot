@@ -91,7 +91,7 @@ export default function Navbar() {
             {isHome && (
               <span
                 aria-hidden
-                className="absolute left-0 top-1/2 -translate-y-1/2 rounded-full bg-black/20 group-hover:bg-black/30 transition-[width,height] duration-[700ms] ease-in-out"
+                className="absolute left-0 top-1/2 -translate-y-1/2 rounded-full bg-black/20 group-hover:bg-black/30 transition-[width,height] duration-[400ms] ease-in-out"
                 style={{
                   width: isScrolled ? '100%' : '0%',
                   height: isScrolled ? '46px' : '0px',
@@ -126,7 +126,7 @@ export default function Navbar() {
             {isHome && (
               <span
                 aria-hidden
-                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-briefing-cream shadow-sm transition-[width,height] duration-[700ms] ease-in-out"
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-briefing-cream shadow-sm transition-[width,height] duration-[400ms] ease-in-out"
                 style={{
                   width: isScrolled ? '100%' : '0%',
                   height: isScrolled ? '46px' : '0px',
@@ -212,7 +212,7 @@ function NavUserMenu({ light = false, pill = false }: { light?: boolean; pill?: 
         {light && (
           <span
             aria-hidden
-            className="absolute left-0 top-1/2 -translate-y-1/2 rounded-full bg-black/20 group-hover:bg-black/30 transition-[width,height] duration-[700ms] ease-in-out"
+            className="absolute left-0 top-1/2 -translate-y-1/2 rounded-full bg-black/20 group-hover:bg-black/30 transition-[width,height] duration-[400ms] ease-in-out"
             style={{ width: pill ? '100%' : '0%', height: pill ? '46px' : '0px' }}
           />
         )}
@@ -242,7 +242,7 @@ function NavUserMenu({ light = false, pill = false }: { light?: boolean; pill?: 
         {light && (
           <span
             aria-hidden
-            className="absolute left-0 top-1/2 -translate-y-1/2 rounded-full bg-black/20 group-hover:bg-black/30 transition-[width,height] duration-[700ms] ease-in-out"
+            className="absolute left-0 top-1/2 -translate-y-1/2 rounded-full bg-black/20 group-hover:bg-black/30 transition-[width,height] duration-[400ms] ease-in-out"
             style={{ width: pill ? '100%' : '0%', height: pill ? '46px' : '0px' }}
           />
         )}
