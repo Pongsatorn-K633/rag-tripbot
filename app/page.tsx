@@ -7,6 +7,7 @@ import { Compass, ArrowRight } from 'lucide-react'
 import { motion, useScroll, useTransform, useMotionTemplate, useReducedMotion, type MotionValue } from 'motion/react'
 import { IMG } from '@/lib/images'
 import PlanCard, { type PlanTemplate } from '@/app/components/PlanCard'
+import TripDeck, { DECK_CARD_W, DECK_CARD_H } from '@/app/components/TripDeck'
 import PlanPreviewModal from '@/app/components/PlanPreviewModal'
 import { useSavedTemplates } from '@/app/hooks/useSavedTemplates'
 
@@ -244,7 +245,29 @@ export default function Home() {
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
-            <div className="flex flex-wrap justify-center gap-6 md:gap-8">
+            {/* Mobile — swipeable deck (design + motion ported from the Kimi build) */}
+            <div className="md:hidden">
+              {tripsLoading ? (
+                <div
+                  style={{ width: DECK_CARD_W, height: DECK_CARD_H }}
+                  className="mx-auto animate-pulse rounded-[20px] border border-white/10 bg-white/5"
+                />
+              ) : featured.length > 0 ? (
+                <TripDeck
+                  key={featured.map((t) => t.id).join('|')}
+                  templates={featured}
+                  savedIds={savedIds}
+                  pending={pending}
+                  onOpen={(id) => setSelectedId(id)}
+                  onHeart={(id, e) => toggleHeart(id, e)}
+                />
+              ) : (
+                <p className="text-center text-briefing-cream/50 font-sans">No featured trips yet.</p>
+              )}
+            </div>
+
+            {/* Desktop — the existing card row */}
+            <div className="hidden md:flex flex-wrap justify-center gap-6 md:gap-8">
               {tripsLoading
                 ? Array.from({ length: 3 }).map((_, i) => (
                     <div key={i} className="w-full sm:w-[340px] h-[460px] rounded-xl bg-white/5 border border-white/10 animate-pulse" />
