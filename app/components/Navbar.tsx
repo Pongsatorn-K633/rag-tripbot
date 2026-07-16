@@ -109,7 +109,7 @@ export default function Navbar() {
         <NavUserMenu light={isHome} />
       </div>
     )}
-    <header className={`fixed top-0 w-full z-50 transition-colors duration-300 ${isHome ? 'pointer-events-none' : ''} ${headerClass}`}>
+    <header className={`fixed top-0 w-full z-50 transition-colors duration-300 [transform:translateZ(0)] [backface-visibility:hidden] ${isHome ? 'pointer-events-none' : ''} ${headerClass}`}>
       <nav className="relative flex justify-between items-center px-8 lg:px-12 py-6 w-full">
         {/* Left cluster — the fixed bar's logo. Invisible on home (the page-layer
             logo above is shown instead) but keeps the layout slot. */}
