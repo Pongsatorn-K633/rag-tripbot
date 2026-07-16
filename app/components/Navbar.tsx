@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { User, LogOut, Menu, X, Settings, ChevronDown, Shield, Heart } from 'lucide-react'
 import { useSession, signIn, signOut } from 'next-auth/react'
+import { motion, AnimatePresence } from 'motion/react'
 import { IMG } from '@/lib/images'
 
 const TABS = [
@@ -147,19 +148,27 @@ export default function Navbar() {
           </div>
           {/* Mobile: page label + profile + hamburger. Hidden while the menu is
               open — the connected menu below provides its own X close tab. */}
-          <div className="flex md:hidden items-center gap-2 pointer-events-auto">
+          <div className="flex md:hidden items-center pointer-events-auto">
             {!mobileOpen && (
-              <>
+              <div
+                className={`flex items-center gap-2 rounded-full px-2.5 py-1.5 transition-colors duration-300 ${
+                  isHome && isScrolled ? 'bg-briefing-cream shadow-md' : ''
+                }`}
+              >
                 <MobilePageLabel />
                 <MobileAvatar />
                 <button
                   onClick={() => setMobileOpen(true)}
-                  className={`transition-colors ${isHome ? 'text-white/80 hover:text-basel-brick' : 'text-zen-black/70 hover:text-basel-brick'}`}
+                  className={`transition-colors ${
+                    isHome && !isScrolled
+                      ? 'text-white/80 hover:text-basel-brick'
+                      : 'text-zen-black/70 hover:text-basel-brick'
+                  }`}
                   aria-label="Open menu"
                 >
                   <Menu size={24} strokeWidth={2} />
                 </button>
-              </>
+              </div>
             )}
           </div>
         </div>
@@ -168,51 +177,66 @@ export default function Navbar() {
       {/* Mobile menu — CONNECTED to the X: a Cloud close-tab (rounded top) merges
           into the menu card via an inverted-radius concave corner, so the button
           and panel read as one continuous surface. */}
-      {mobileOpen && (
-        <div className="md:hidden absolute top-3 right-4 z-50 flex flex-col items-end pointer-events-auto drop-shadow-[0_16px_24px_rgba(0,0,0,0.3)]">
-          {/* Close tab — sits where the hamburger was; flat bottom joins the card.
-              -mb-px overlaps it into the card so there's no hairline seam. */}
-          <button
-            onClick={() => setMobileOpen(false)}
-            aria-label="Close menu"
-            className="relative z-10 -mb-px flex items-center justify-center w-12 h-12 bg-briefing-cream text-zen-black rounded-t-2xl"
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            key="mobile-menu"
+            className="md:hidden absolute top-[23px] right-[30px] z-50 flex flex-col items-end pointer-events-auto drop-shadow-[0_16px_24px_rgba(0,0,0,0.3)]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
           >
-            <X size={22} strokeWidth={2} />
-          </button>
+            {/* Close tab — sits where the hamburger was; flat bottom joins the card.
+                -mb-px overlaps it into the card so there's no hairline seam. */}
+            <button
+              onClick={() => setMobileOpen(false)}
+              aria-label="Close menu"
+              className="relative z-10 -mb-px flex items-center justify-center w-12 h-12 bg-briefing-cream text-zen-black rounded-t-2xl"
+            >
+              <X size={22} strokeWidth={2} />
+            </button>
 
-          {/* Inverted-radius corner joining the tab's left side to the card top */}
-          <span
-            aria-hidden
-            className="absolute right-11 top-[32px] z-0 h-4 w-5"
-            style={{ background: 'radial-gradient(circle at top left, transparent 15.5px, var(--color-briefing-cream) 16px)' }}
-          />
+            {/* Inverted-radius corner joining the tab's left side to the card top */}
+            <span
+              aria-hidden
+              className="absolute right-11 top-[32px] z-0 h-4 w-5"
+              style={{ background: 'radial-gradient(circle at top left, transparent 15.5px, var(--color-briefing-cream) 16px)' }}
+            />
 
-          {/* Card — top-right square so it butts flush against the tab */}
-          <div className="relative w-fit min-w-[8rem] bg-briefing-cream rounded-2xl rounded-tr-none overflow-hidden">
-            <div className="p-2.5 space-y-1">
-              {TABS.map((tab) => (
-                <Link
-                  key={tab.id}
-                  href={tab.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={`block px-3 py-2 rounded-lg font-headline font-bold text-lg transition-colors ${
-                    isActive(tab.href)
-                      ? 'text-basel-brick bg-basel-brick/10'
-                      : 'text-zen-black/80 hover:bg-zen-black/5 hover:text-basel-brick'
-                  }`}
-                >
-                  {tab.label}
-                </Link>
-              ))}
+            {/* Card — rolls down (height 0 → auto) from the tab. Top-right square. */}
+            <motion.div
+              initial={{ height: 0 }}
+              animate={{ height: 'auto' }}
+              exit={{ height: 0 }}
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              className="relative w-fit min-w-[8rem] bg-briefing-cream rounded-2xl rounded-tr-none overflow-hidden"
+            >
+              <div className="p-2.5 space-y-1">
+                {TABS.map((tab) => (
+                  <Link
+                    key={tab.id}
+                    href={tab.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={`block px-3 py-2 rounded-lg font-headline font-bold text-lg transition-colors ${
+                      isActive(tab.href)
+                        ? 'text-basel-brick bg-basel-brick/10'
+                        : 'text-zen-black/80 hover:bg-zen-black/5 hover:text-basel-brick'
+                    }`}
+                  >
+                    {tab.label}
+                  </Link>
+                ))}
 
-              {/* Divider + user menu */}
-              <div className="border-t border-zen-black/10 mt-3 pt-3">
-                <MobileUserMenu onClose={() => setMobileOpen(false)} />
+                {/* Divider + user menu */}
+                <div className="border-t border-zen-black/10 mt-3 pt-3">
+                  <MobileUserMenu onClose={() => setMobileOpen(false)} />
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
     </>
   )
