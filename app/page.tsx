@@ -217,21 +217,32 @@ export default function Home() {
             Start Journey / Learn More still scroll here. */}
         <section
           id="pathways"
-          className="px-8 py-24 scroll-mt-24 min-h-screen flex flex-col justify-center text-briefing-cream"
+          className="px-8 py-12 md:py-24 scroll-mt-24 min-h-screen flex flex-col justify-start md:justify-center text-briefing-cream"
         >
           <div className="max-w-[1536px] mx-auto w-full">
             <div className="mb-10">
-              <div className="flex items-center justify-between gap-4">
-                <h2 className="font-headline font-bold text-3xl md:text-5xl tracking-tight">Featured Trips</h2>
+              <div className="md:flex md:items-center md:justify-between md:gap-4">
+                <div>
+                  <h2 className="font-headline font-bold text-3xl md:text-5xl tracking-tight">Featured Trips</h2>
+                  <p className="mt-3 text-briefing-cream/70 font-sans">Ready-to-go Japan itineraries.</p>
+                </div>
+                {/* Desktop: View all centered vertically against the title + subtitle block */}
                 <Link
                   href="/discover"
-                  className="group shrink-0 font-headline font-bold uppercase tracking-widest text-sm text-briefing-cream/80 hover:text-basel-brick transition-colors flex items-center gap-2"
+                  className="group shrink-0 hidden md:flex items-center gap-2 font-headline font-bold uppercase tracking-widest text-sm text-briefing-cream/80 hover:text-basel-brick transition-colors"
                 >
                   View all
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </div>
-              <p className="mt-3 text-briefing-cream/70 font-sans">Hand-picked Japan itineraries, ready to go.</p>
+              {/* Mobile: View all sits below the subtitle so it clears the top-right nav pill */}
+              <Link
+                href="/discover"
+                className="group md:hidden mt-4 inline-flex items-center gap-2 font-headline font-bold uppercase tracking-widest text-xs text-briefing-cream/70 hover:text-basel-brick transition-colors"
+              >
+                View all
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </Link>
             </div>
             <div className="flex flex-wrap justify-center gap-6 md:gap-8">
               {tripsLoading
