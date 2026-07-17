@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { Compass, ArrowRight } from 'lucide-react'
 import { motion, useScroll, useTransform, useMotionTemplate, useReducedMotion, type MotionValue } from 'motion/react'
 import { IMG } from '@/lib/images'
+import { smoothScrollTo } from '@/lib/smooth-scroll'
 import PlanCard, { type PlanTemplate } from '@/app/components/PlanCard'
 import TripDeck, { DECK_CARD_W, DECK_CARD_H } from '@/app/components/TripDeck'
 import PlanPreviewModal from '@/app/components/PlanPreviewModal'
@@ -43,30 +44,14 @@ function HeroLetter({
   )
 }
 
-// Custom smooth-scroll (easeInOutCubic, 1200ms) — ported from the Kimi build.
-// Falls back to an instant jump under prefers-reduced-motion.
-function smoothScrollTo(id: string, duration = 1200) {
-  const el = document.getElementById(id)
-  if (!el) return
-  const startY = window.scrollY
-  const delta = el.getBoundingClientRect().top
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    window.scrollTo(0, startY + delta)
-    return
-  }
-  const startT = performance.now()
-  const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
-  requestAnimationFrame(function step(now: number) {
-    const p = Math.min((now - startT) / duration, 1)
-    window.scrollTo(0, startY + delta * easeInOutCubic(p))
-    if (p < 1) requestAnimationFrame(step)
-  })
-}
+// How far PAST the Featured Trips top edge the hero cues land. Bump this to sink
+// the landing lower into the section; 0 puts the section's top at the viewport top.
+const PATHWAYS_OFFSET = 30
 
 export default function Home() {
   const scrollToPathways = (e?: { preventDefault: () => void }) => {
     e?.preventDefault()
-    smoothScrollTo('pathways', 1200)
+    smoothScrollTo('pathways', 1200, PATHWAYS_OFFSET)
   }
 
   // Scroll-linked hero animation — tied to the hero section's own scroll progress,
@@ -149,13 +134,51 @@ export default function Home() {
             ))}
           </h1>
           <div className="-translate-y-[22%] mt-[clamp(28px,4vh,52px)]">
-            <motion.button
-              onClick={scrollToPathways}
+            {/* Two layers on purpose: this motion.div owns the scroll-driven
+                transforms, the button owns the hover transform in CSS. Putting a
+                whileHover scale on the same element as style={{ scale }} would give
+                two systems one property — they fight and the value gets stranded. */}
+            {/* `group` lives HERE, not on the button: the hover target must be an
+                element the hover itself doesn't move. If the button judged its own
+                hover, the 3px lift would carry it off the cursor at the edges —
+                hover ends, it drops back on, and it shakes in a feedback loop. */}
+            <motion.div
               style={{ opacity: btnOpacity, y: btnY, scale: btnScale }}
-              className="pointer-events-auto relative z-20 inline-flex items-center justify-center rounded-full border-2 border-white/90 bg-white/25 text-white font-headline font-bold uppercase tracking-[0.18em] text-[clamp(15px,1.15vw,19px)] px-[clamp(40px,4vw,90px)] py-[clamp(16px,1.8vh,22px)] hover:bg-basel-brick/50 hover:border-basel-brick transition-colors duration-300 cursor-pointer will-change-transform"
+              className="group pointer-events-auto will-change-transform"
             >
-              Start Journey
-            </motion.button>
+              <button
+                onClick={scrollToPathways}
+                style={{
+                  // Glass rim: a flat border reads as a translucent rectangle. Real
+                  // glass catches light unevenly around its edge, so the border is a
+                  // gradient — bright at the top-left and bottom-right, dim between.
+                  // Needs a transparent border + two backgrounds clipped differently.
+                  border: '1.5px solid transparent',
+                  background:
+                    'linear-gradient(180deg, rgba(255,255,255,0.13), rgba(255,255,255,0.05)) padding-box, ' +
+                    'linear-gradient(150deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.22) 38%, rgba(255,255,255,0.1) 56%, rgba(255,255,255,0.75) 100%) border-box',
+                }}
+                // Hover = the slamm-ai hero-link recipe (quick 3px rise + brighten,
+                // 220ms), re-skinned to glass: their orange border/tint becomes a
+                // brighter white rim. backdrop-blur-md, not -xl: blur cost scales
+                // with radius, and this repaints on every hero scroll frame.
+                className="pointer-events-auto relative z-20 inline-flex items-center justify-center rounded-full backdrop-blur-md text-white font-headline font-bold uppercase tracking-[0.18em] text-[clamp(15px,1.15vw,19px)] px-[clamp(40px,4vw,90px)] py-[clamp(16px,1.8vh,22px)] shadow-[0_8px_32px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.35)] transition-[transform,box-shadow] duration-[220ms] group-hover:-translate-y-[3px] group-hover:shadow-[0_16px_40px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.5)] cursor-pointer"
+              >
+                {/* Hover brighten: gradients can't transition (they snap), so a
+                    brighter copy of the fill+rim crossfades in via opacity. */}
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 rounded-full opacity-0 transition-opacity duration-[220ms] group-hover:opacity-100"
+                  style={{
+                    border: '1.5px solid transparent',
+                    background:
+                      'linear-gradient(180deg, rgba(255,255,255,0.2), rgba(255,255,255,0.09)) padding-box, ' +
+                      'linear-gradient(150deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.45) 38%, rgba(255,255,255,0.3) 56%, rgba(255,255,255,0.9) 100%) border-box',
+                  }}
+                />
+                <span className="relative">Start Journey</span>
+              </button>
+            </motion.div>
           </div>
         </motion.div>
 
@@ -239,7 +262,7 @@ export default function Home() {
               {/* Mobile: View all sits below the subtitle so it clears the top-right nav pill */}
               <Link
                 href="/discover"
-                className="group md:hidden mt-4 inline-flex items-center gap-2 font-headline font-bold uppercase tracking-widest text-xs text-briefing-cream/70 hover:text-basel-brick transition-colors"
+                className="group md:hidden mt-4 flex w-fit items-center gap-2 font-headline font-bold uppercase tracking-widest text-xs text-briefing-cream/70 hover:text-basel-brick transition-colors"
               >
                 View all
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />

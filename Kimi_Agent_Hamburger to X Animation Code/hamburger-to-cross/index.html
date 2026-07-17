@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hamburger → Cross</title>
+<style>
+  :root {
+    --stroke: #916974;          /* measured from the video: rgb(145,105,116) */
+    --duration: 200ms;          /* measured transition length (~12 frames @ 60fps) */
+    --ease: cubic-bezier(.33, 1, .68, 1);  /* snappy ease-out, matches the video */
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 48px;
+    background: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #4a3a40;
+  }
+  h1 {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: .04em;
+  }
+  .compare {
+    display: flex;
+    align-items: center;
+    gap: 64px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+  .cell .tag {
+    font-size: 12px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #b79aa4;
+  }
+  video {
+    width: 254px;
+    height: 250px;
+    display: block;
+    border-radius: 8px;
+  }
+  .stage {
+    width: 254px;
+    height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ---------- the recreated icon ---------- */
+  .icon {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .icon .bar {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 60px;
+    height: 5px;
+    margin-top: -2.5px;
+    border-radius: 2.5px;
+    background: var(--stroke);
+    transition:
+      transform var(--duration) var(--ease),
+      opacity   var(--duration) linear;
+    will-change: transform, opacity;
+  }
+  /* closed (hamburger): bars 25px apart, no rotation */
+  .icon .b1 { transform: translateY(-25px) rotate(0deg); }
+  .icon .b2 { transform: translateY(0)     rotate(0deg); opacity: 1; }
+  .icon .b3 { transform: translateY(25px)  rotate(0deg); }
+  /* open (cross): outer bars move to center while rotating ∓45°,
+     middle bar fades out — matching lists keep rotation centered */
+  .icon.open .b1 { transform: translateY(0) rotate(-45deg); }
+  .icon.open .b2 { transform: translateY(0) rotate(0deg); opacity: 0; }
+  .icon.open .b3 { transform: translateY(0) rotate(45deg); }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .controls button {
+    font: inherit;
+    font-size: 13px;
+    color: var(--stroke);
+    background: #fff;
+    border: 1.5px solid #e3cfd6;
+    border-radius: 999px;
+    padding: 8px 18px;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  .controls button:hover { background: #faf3f5; border-color: var(--stroke); }
+  .controls label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    color: #8a6f79;
+    cursor: pointer;
+    user-select: none;
+  }
+  .controls input[type="checkbox"] { accent-color: var(--stroke); }
+
+  .hint { font-size: 13px; color: #b79aa4; }
+  .spec {
+    font-size: 12px;
+    color: #c9b3bb;
+    letter-spacing: .03em;
+  }
+</style>
+</head>
+<body>
+
+  <h1>Hamburger &rarr; Cross</h1>
+
+  <div class="compare">
+    <div class="cell">
+      <video src="original.mp4" autoplay muted loop playsinline></video>
+      <span class="tag">Original video</span>
+    </div>
+    <div class="cell">
+      <div class="stage">
+        <button class="icon" id="icon" aria-label="Toggle menu" aria-expanded="false">
+          <span class="bar b1"></span>
+          <span class="bar b2"></span>
+          <span class="bar b3"></span>
+        </button>
+      </div>
+      <span class="tag">Recreation &mdash; click it</span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button id="replay">Replay video sequence</button>
+    <label><input type="checkbox" id="slowmo"> Slow motion &times;5</label>
+  </div>
+
+  <p class="spec">60 &times; 5 px bars &middot; 25 px spacing &middot; #916974 on white &middot; 200 ms ease-out</p>
+
+<script>
+  const icon    = document.getElementById('icon');
+  const replay  = document.getElementById('replay');
+  const slowmo  = document.getElementById('slowmo');
+
+  // Click toggles hamburger <-> cross
+  icon.addEventListener('click', () => {
+    icon.classList.toggle('open');
+    icon.setAttribute('aria-expanded', icon.classList.contains('open'));
+  });
+
+  // Recreate the video's timing: hold hamburger ~1.3s, then morph
+  function playSequence() {
+    icon.classList.remove('open');
+    setTimeout(() => icon.classList.add('open'), 1300);
+  }
+  replay.addEventListener('click', playSequence);
+  window.addEventListener('load', playSequence);
+
+  // Slow motion for inspecting the motion
+  slowmo.addEventListener('change', () => {
+    document.documentElement.style.setProperty('--duration', slowmo.checked ? '1000ms' : '200ms');
+  });
+</script>
+
+</body>
+</html>
