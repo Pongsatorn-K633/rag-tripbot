@@ -67,6 +67,8 @@ be a token.
 - `briefing-cream` `#F7F9FC` — Cloud: light background + text-on-dark
 - `basel-brick` `#5B88B2` — Ocean: **the single accent** (buttons / links / hover / active). **No red anywhere.**
 - `noir` `#000000` — true black, for deep-contrast moments
+- `graphite` `#334155` — cool dark grey (Midnight's hue, desaturated): text on light glass/milk surfaces
+- `hinomaru` `#D80027` — Japan-flag red. **Content color only** (the flag badge) — never a UI accent; the no-red rule stands
 
 **No theme switching.** Light is the only scheme. Do **not** add `dark:` variants or hardcoded
 `bg-white`. There is no `ThemeProvider` — dark mode was removed entirely (2026-07).

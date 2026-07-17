@@ -58,6 +58,8 @@ motion recipes (parallax, navbar), and a pre-integration review checklist — is
   - `briefing-cream` `#F7F9FC` (Cloud — light bg + text-on-dark)
   - `basel-brick` `#5B88B2` (Ocean — the **single** accent: buttons/links/hover/active). **No red anywhere.**
   - `noir` `#000000` (true black, deep-contrast moments)
+  - `graphite` `#334155` (cool dark grey — text on light glass/milk surfaces)
+  - `hinomaru` `#D80027` (Japan-flag red — **content only**, e.g. the flag badge; never a UI accent)
 - **No theme switching.** Light is the only scheme. Do **not** add `dark:` variants or hardcoded
   `bg-white`. There is no theme provider — dark mode was removed entirely.
 - **Fonts:** `font-headline` (Manrope) for display/UI, Inter for body, Noto Sans Thai for Thai.

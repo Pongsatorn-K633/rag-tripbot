@@ -131,37 +131,20 @@ function CoverCarousel({ images, alt }: { images: string[]; alt: string }) {
   )
 }
 
-function DeckCard({
+/** The boarding-pass card face — shared by the mobile deck (DeckCard) and the
+ *  desktop row (TripCard) so the design exists in exactly one place. Expects a
+ *  flex-col parent with the DECK_CARD_H height (the barcode pins via mt-auto). */
+function CardFace({
   tpl,
-  pos,
-  tilt,
-  isExiting,
-  locked,
   saved,
   isPending,
-  reduced,
-  onOpen,
   onHeart,
-  onNext,
-  onPrev,
 }: {
   tpl: PlanTemplate
-  pos: number
-  tilt: number
-  isExiting: boolean
-  locked: boolean
   saved: boolean
   isPending: boolean
-  reduced: boolean
-  onOpen: (id: string) => void
   onHeart: (id: string, e: React.MouseEvent) => void
-  onNext: () => void
-  onPrev: () => void
 }) {
-  const x = useMotionValue(0)
-  const dragged = useRef(false)
-  const isFront = pos === 0
-  const pose = STACK[Math.min(Math.max(pos, 0), STACK.length - 1)]
   // Gallery when authored, else the primary cover alone (resolveCoverImage turns
   // a null into the deterministic per-trip fallback, as before).
   const covers = tpl.coverImages?.length ? tpl.coverImages : [tpl.coverImage]
@@ -170,57 +153,8 @@ function DeckCard({
   const rec = tpl.availability?.recommended ?? []
   const avail = tpl.availability?.available ?? []
 
-  // Whenever the card settles back into the stack (notably right after its exit
-  // animation, once the order has rotated), snap x home instantly — mirrors the
-  // gsap.set() reset in the original. The back cards are near-invisible, so the
-  // jump isn't perceptible.
-  useEffect(() => {
-    if (!isExiting) x.set(0)
-  }, [isExiting, pos, x])
-
   return (
-    <motion.div
-      drag={isFront && !isExiting && !locked && !reduced ? 'x' : false}
-      dragElastic={0.7}
-      dragMomentum={false}
-      style={{ x, height: DECK_CARD_H, zIndex: 40 - pos * 10, boxShadow: pose.shadow }}
-      animate={{
-        y: pose.y,
-        opacity: isExiting ? 0 : pose.opacity,
-        scale: isExiting ? 0.85 : pose.scale,
-        rotate: isExiting ? -10 : tilt,
-      }}
-      transition={
-        reduced
-          ? { duration: 0 }
-          : {
-              duration: isExiting ? EXIT_MS / 1000 : 0.5,
-              ease: isExiting ? EASE_IN : isFront ? EASE_BACK_OUT : EASE_IN_OUT,
-            }
-      }
-      onPointerDown={() => {
-        dragged.current = false
-      }}
-      onDragStart={() => {
-        dragged.current = true
-      }}
-      onDragEnd={(_, info) => {
-        if (info.offset.x < -SWIPE) {
-          animate(x, EXIT_X, { duration: EXIT_MS / 1000, ease: EASE_IN })
-          onNext()
-        } else {
-          // Right fling advances backwards; either way this card returns home.
-          animate(x, 0, { duration: 0.3, ease: EASE_OUT })
-          if (info.offset.x > SWIPE) onPrev()
-        }
-      }}
-      onClick={() => {
-        if (!dragged.current) onOpen(tpl.id)
-      }}
-      className={`absolute left-0 top-0 flex w-full flex-col overflow-hidden rounded-[20px] bg-briefing-cream ${
-        isFront && !isExiting ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'
-      }`}
-    >
+    <>
       {/* Day count + save */}
       <div className="flex items-center justify-between px-5 pt-4">
         <span className="font-headline text-[13px] font-medium tracking-[0.06em] text-zen-black">
@@ -302,6 +236,119 @@ function DeckCard({
           <span key={bi} style={{ flex: b.flex }} className={b.on ? 'bg-zen-black' : 'bg-transparent'} />
         ))}
       </div>
+    </>
+  )
+}
+
+/** Static desktop card — the same face with a hover lift instead of the deck. */
+export function TripCard({
+  tpl,
+  saved,
+  isPending,
+  onOpen,
+  onHeart,
+}: {
+  tpl: PlanTemplate
+  saved: boolean
+  isPending: boolean
+  onOpen: (id: string) => void
+  onHeart: (id: string, e: React.MouseEvent) => void
+}) {
+  return (
+    <div
+      onClick={() => onOpen(tpl.id)}
+      style={{ width: DECK_CARD_W, height: DECK_CARD_H }}
+      className="flex cursor-pointer flex-col overflow-hidden rounded-[20px] bg-briefing-cream shadow-[0_20px_60px_rgba(0,0,0,0.35)] transition-[transform,box-shadow] duration-300 hover:-translate-y-2 hover:shadow-[0_28px_70px_rgba(0,0,0,0.45)]"
+    >
+      <CardFace tpl={tpl} saved={saved} isPending={isPending} onHeart={onHeart} />
+    </div>
+  )
+}
+
+function DeckCard({
+  tpl,
+  pos,
+  tilt,
+  isExiting,
+  locked,
+  saved,
+  isPending,
+  reduced,
+  onOpen,
+  onHeart,
+  onNext,
+  onPrev,
+}: {
+  tpl: PlanTemplate
+  pos: number
+  tilt: number
+  isExiting: boolean
+  locked: boolean
+  saved: boolean
+  isPending: boolean
+  reduced: boolean
+  onOpen: (id: string) => void
+  onHeart: (id: string, e: React.MouseEvent) => void
+  onNext: () => void
+  onPrev: () => void
+}) {
+  const x = useMotionValue(0)
+  const dragged = useRef(false)
+  const isFront = pos === 0
+  const pose = STACK[Math.min(Math.max(pos, 0), STACK.length - 1)]
+
+  // Whenever the card settles back into the stack (notably right after its exit
+  // animation, once the order has rotated), snap x home instantly — mirrors the
+  // gsap.set() reset in the original. The back cards are near-invisible, so the
+  // jump isn't perceptible.
+  useEffect(() => {
+    if (!isExiting) x.set(0)
+  }, [isExiting, pos, x])
+
+  return (
+    <motion.div
+      drag={isFront && !isExiting && !locked && !reduced ? 'x' : false}
+      dragElastic={0.7}
+      dragMomentum={false}
+      style={{ x, height: DECK_CARD_H, zIndex: 40 - pos * 10, boxShadow: pose.shadow }}
+      animate={{
+        y: pose.y,
+        opacity: isExiting ? 0 : pose.opacity,
+        scale: isExiting ? 0.85 : pose.scale,
+        rotate: isExiting ? -10 : tilt,
+      }}
+      transition={
+        reduced
+          ? { duration: 0 }
+          : {
+              duration: isExiting ? EXIT_MS / 1000 : 0.5,
+              ease: isExiting ? EASE_IN : isFront ? EASE_BACK_OUT : EASE_IN_OUT,
+            }
+      }
+      onPointerDown={() => {
+        dragged.current = false
+      }}
+      onDragStart={() => {
+        dragged.current = true
+      }}
+      onDragEnd={(_, info) => {
+        if (info.offset.x < -SWIPE) {
+          animate(x, EXIT_X, { duration: EXIT_MS / 1000, ease: EASE_IN })
+          onNext()
+        } else {
+          // Right fling advances backwards; either way this card returns home.
+          animate(x, 0, { duration: 0.3, ease: EASE_OUT })
+          if (info.offset.x > SWIPE) onPrev()
+        }
+      }}
+      onClick={() => {
+        if (!dragged.current) onOpen(tpl.id)
+      }}
+      className={`absolute left-0 top-0 flex w-full flex-col overflow-hidden rounded-[20px] bg-briefing-cream ${
+        isFront && !isExiting ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'
+      }`}
+    >
+      <CardFace tpl={tpl} saved={saved} isPending={isPending} onHeart={onHeart} />
     </motion.div>
   )
 }

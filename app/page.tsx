@@ -7,8 +7,8 @@ import { Compass, ArrowRight } from 'lucide-react'
 import { motion, useScroll, useTransform, useMotionTemplate, useReducedMotion, type MotionValue } from 'motion/react'
 import { IMG } from '@/lib/images'
 import { smoothScrollTo } from '@/lib/smooth-scroll'
-import PlanCard, { type PlanTemplate } from '@/app/components/PlanCard'
-import TripDeck, { DECK_CARD_W, DECK_CARD_H } from '@/app/components/TripDeck'
+import { type PlanTemplate } from '@/app/components/PlanCard'
+import TripDeck, { TripCard, DECK_CARD_W, DECK_CARD_H } from '@/app/components/TripDeck'
 import PlanPreviewModal from '@/app/components/PlanPreviewModal'
 import { useSavedTemplates } from '@/app/hooks/useSavedTemplates'
 
@@ -59,7 +59,9 @@ export default function Home() {
   const heroRef = useRef<HTMLElement>(null)
   const reduced = useReducedMotion() ?? false
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
-  const btnOpacity = useTransform(scrollYProgress, [0, 0.2, 0.45], reduced ? [1, 1, 1] : [1, 1, 0])
+  // Fade starts at the FIRST pixel of scroll (no 0.2 hold) — held opacity while
+  // y/scale already move reads as "slides away without fading".
+  const btnOpacity = useTransform(scrollYProgress, [0, 0.2], reduced ? [1, 1] : [1, 0])
   const btnY = useTransform(scrollYProgress, [0, 0.2, 0.45], reduced ? ['0%', '0%', '0%'] : ['0%', '-40%', '-120%'])
   const btnScale = useTransform(scrollYProgress, [0, 0.2, 0.45], reduced ? [1, 1, 1] : [1, 0.92, 0.75])
 
@@ -144,39 +146,51 @@ export default function Home() {
                 hover ends, it drops back on, and it shakes in a feedback loop. */}
             <motion.div
               style={{ opacity: btnOpacity, y: btnY, scale: btnScale }}
-              className="group pointer-events-auto will-change-transform"
+              // No static will-change: it pins a raster layer and blurs the text
+              // (same bug as the TripDeck cards) — motion adds it while animating.
+              className="group pointer-events-auto relative"
             >
+              {/* Ocean halo — blooms behind the glass on hover (Kimi's stage glow). */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -inset-24 opacity-0 transition-opacity duration-[450ms] ease-out group-hover:opacity-100"
+                style={{ background: 'radial-gradient(closest-side, rgba(91,136,178,0.28), transparent 72%)' }}
+              />
+              {/* MILK glass capsule — the full glass-card recipe: white/40 fill,
+                  50px blur (desktop), the big white inner glow (30px/15px; the
+                  recipe's alpha 1.5 clamps to 1), 1px insets + edge rims. Light
+                  surface → dark graphite text (cream text was unreadable on the
+                  clear-glass variant; the milk is the readability fix). Hover
+                  brightens the fill to CLOUD (briefing-cream) with the Ocean
+                  glows + halo behind.
+                  MOBILE: no backdrop-blur — iOS renders the blur in tiles, and
+                  the scroll-driven y/scale/opacity on the wrapper resamples a
+                  moving backdrop every frame, so tile seams show as lines across
+                  the button. The white/40 fill + glow carry the milk without it. */}
               <button
                 onClick={scrollToPathways}
-                style={{
-                  // Glass rim: a flat border reads as a translucent rectangle. Real
-                  // glass catches light unevenly around its edge, so the border is a
-                  // gradient — bright at the top-left and bottom-right, dim between.
-                  // Needs a transparent border + two backgrounds clipped differently.
-                  border: '1.5px solid transparent',
-                  background:
-                    'linear-gradient(180deg, rgba(255,255,255,0.13), rgba(255,255,255,0.05)) padding-box, ' +
-                    'linear-gradient(150deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.22) 38%, rgba(255,255,255,0.1) 56%, rgba(255,255,255,0.75) 100%) border-box',
-                }}
-                // Hover = the slamm-ai hero-link recipe (quick 3px rise + brighten,
-                // 220ms), re-skinned to glass: their orange border/tint becomes a
-                // brighter white rim. backdrop-blur-md, not -xl: blur cost scales
-                // with radius, and this repaints on every hero scroll frame.
-                className="pointer-events-auto relative z-20 inline-flex items-center justify-center rounded-full backdrop-blur-md text-white font-headline font-bold uppercase tracking-[0.18em] text-[clamp(15px,1.15vw,19px)] px-[clamp(40px,4vw,90px)] py-[clamp(16px,1.8vh,22px)] shadow-[0_8px_32px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.35)] transition-[transform,box-shadow] duration-[220ms] group-hover:-translate-y-[3px] group-hover:shadow-[0_16px_40px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.5)] cursor-pointer"
+                className="pointer-events-auto relative z-20 inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-full border border-white/30 bg-white/40 px-[clamp(17px,2vw,36px)] py-[clamp(10px,1.4vh,17px)] font-headline text-[clamp(17px,1.5vw,26px)] font-semibold tracking-[-0.01em] text-graphite md:backdrop-blur-[50px] shadow-[0_8px_32px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.5),inset_0_-1px_0_rgba(255,255,255,0.1),inset_0_0_30px_15px_rgba(255,255,255,1)] transition-[transform,box-shadow,background-color] duration-[350ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] group-hover:-translate-y-[2px] group-hover:bg-briefing-cream/80 group-hover:shadow-[0_8px_32px_rgba(91,136,178,0.22),0_24px_60px_rgba(91,136,178,0.28),inset_0_1px_0_rgba(255,255,255,0.5),inset_0_-1px_0_rgba(255,255,255,0.1),inset_0_0_30px_15px_rgba(255,255,255,1)] active:translate-y-0 active:scale-[0.985]"
               >
-                {/* Hover brighten: gradients can't transition (they snap), so a
-                    brighter copy of the fill+rim crossfades in via opacity. */}
+                {/* Light-catch rims: 1px top + left edge highlights. */}
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute inset-0 rounded-full opacity-0 transition-opacity duration-[220ms] group-hover:opacity-100"
-                  style={{
-                    border: '1.5px solid transparent',
-                    background:
-                      'linear-gradient(180deg, rgba(255,255,255,0.2), rgba(255,255,255,0.09)) padding-box, ' +
-                      'linear-gradient(150deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.45) 38%, rgba(255,255,255,0.3) 56%, rgba(255,255,255,0.9) 100%) border-box',
-                  }}
+                  className="pointer-events-none absolute inset-x-0 top-0 h-px"
+                  style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent)' }}
                 />
-                <span className="relative">Start Journey</span>
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute left-0 top-0 h-full w-px"
+                  style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.8), transparent, rgba(255,255,255,0.3))' }}
+                />
+                {/* Hinomaru badge — flat inline SVG (white disc + red sun). The
+                    red is flag content, not a UI accent — same carve-out from
+                    the no-red rule as the trip-card heart. Em-sized to track
+                    the text. */}
+                <svg viewBox="0 0 512 512" className="mr-3 h-[1.35em] w-[1.35em] shrink-0" aria-hidden>
+                  <circle cx="256" cy="256" r="256" className="fill-briefing-cream" />
+                  <circle cx="256" cy="256" r="96" className="fill-hinomaru" />
+                </svg>
+                Explore!
               </button>
             </motion.div>
           </div>
@@ -289,24 +303,27 @@ export default function Home() {
               )}
             </div>
 
-            {/* Desktop — the existing card row */}
+            {/* Desktop — same boarding-pass card as the mobile deck (shared
+                CardFace), laid out as a static row with a hover lift. */}
             <div className="hidden md:flex flex-wrap justify-center gap-6 md:gap-8">
               {tripsLoading
                 ? Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="w-full sm:w-[340px] h-[460px] rounded-xl bg-white/5 border border-white/10 animate-pulse" />
+                    <div
+                      key={i}
+                      style={{ width: DECK_CARD_W, height: DECK_CARD_H }}
+                      className="animate-pulse rounded-[20px] border border-white/10 bg-white/5"
+                    />
                   ))
                 : featured.length > 0
                   ? featured.map((tpl) => (
-                      <div key={tpl.id} className="w-full sm:w-[340px]">
-                        <PlanCard
-                          tpl={tpl}
-                          variant="light"
-                          isSaved={savedIds.has(tpl.id)}
-                          isPending={pending.has(tpl.id)}
-                          onOpen={() => setSelectedId(tpl.id)}
-                          onHeart={(e) => toggleHeart(tpl.id, e)}
-                        />
-                      </div>
+                      <TripCard
+                        key={tpl.id}
+                        tpl={tpl}
+                        saved={savedIds.has(tpl.id)}
+                        isPending={pending.has(tpl.id)}
+                        onOpen={(id) => setSelectedId(id)}
+                        onHeart={(id, e) => toggleHeart(id, e)}
+                      />
                     ))
                   : (
                     <p className="w-full text-center text-briefing-cream/50 font-sans">No featured trips yet.</p>

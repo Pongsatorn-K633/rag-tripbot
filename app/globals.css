@@ -11,6 +11,8 @@
   --color-briefing-cream: #F7F9FC;  /* Cloud — light background + text-on-dark */
   --color-basel-brick: #5B88B2;     /* Ocean — the single accent (buttons/links/hover/active) */
   --color-noir: #000000;            /* Noir — true black, for deep contrast moments */
+  --color-graphite: #334155;        /* Graphite — cool dark grey (Midnight's hue, desaturated); text on light glass/milk surfaces */
+  --color-hinomaru: #D80027;        /* Hinomaru — Japan-flag red. CONTENT color only (flag badge), never a UI accent — the no-red rule stands */
 }
 
 @layer base {

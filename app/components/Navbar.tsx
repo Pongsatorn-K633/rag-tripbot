@@ -228,7 +228,7 @@ export default function Navbar() {
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.15, ease: 'easeOut' }}
                 style={{ originX: 1, originY: 0.5 }}
-                className={`flex items-center gap-2 rounded-full px-2.5 py-1.5 transition-colors duration-300 ${
+                className={`flex items-center gap-2 rounded-2xl px-2.5 py-1.5 transition-colors duration-300 ${
                   isHome && isScrolled ? 'bg-briefing-cream shadow-md' : ''
                 }`}
               >
@@ -247,16 +247,17 @@ export default function Navbar() {
       {/* THE single hamburger/X button — one persistent element, never unmounts,
           so the icon morph is continuous in both directions. Sits on the panel
           tab's exact geometry (top-[23px] right-[30px], aligned to the pill's
-          icon slot earlier); when the menu opens, its own background fades to
-          cream and it BECOMES the tab of the connected panel below. */}
+          icon slot earlier). It draws ONLY the icon — no background. The tab's
+          cream lives INSIDE the panel wrapper so every cream surface fades in
+          ONE opacity group; painting cream here too put the tab on a separate
+          fade clock, and mid-fade the composite decomposed into visible pieces. */}
       <button
         onClick={() => setMobileOpen((o) => !o)}
         aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
         aria-expanded={mobileOpen}
-        style={{ transitionDuration: `${BURGER_MS}ms` }}
-        className={`md:hidden pointer-events-auto absolute top-[23px] right-[30px] z-[60] flex h-12 w-12 items-center justify-center rounded-t-2xl transition-colors ${
+        className={`md:hidden pointer-events-auto absolute top-[23px] right-[30px] z-[60] flex h-12 w-12 items-center justify-center transition-colors ${
           mobileOpen
-            ? 'bg-briefing-cream text-zen-black'
+            ? 'text-zen-black'
             : isHome && !isScrolled
               ? 'text-white/80 hover:text-basel-brick'
               : 'text-zen-black/70 hover:text-basel-brick'
@@ -283,10 +284,13 @@ export default function Navbar() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
           >
-            {/* Tab SLOT — the visible cream tab is the persistent morph button
-                floating above (z-[60]); this spacer just pushes the card down to
-                meet its bottom edge. -mb-px keeps the 1px seam overlap. */}
-            <span className="-mb-px block h-12 w-12" aria-hidden />
+            {/* Tab surface — the cream is HERE, inside the fading wrapper (the
+                morph button above draws only the icon). CSS opacity flattens a
+                group's children before fading, so keeping ALL the cream in this
+                one wrapper means mid-fade shows the complete silhouette at
+                uniform alpha — no seams, no separate pieces, nothing showing
+                through the tab. -mb-px keeps the 1px seam overlap with the card. */}
+            <span className="-mb-px block h-12 w-12 rounded-t-2xl bg-briefing-cream" aria-hidden />
 
             {/* Inverted-radius corner joining the tab's left side to the card top.
                 Always visible — the card's min start height (below) guarantees it
