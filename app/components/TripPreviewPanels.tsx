@@ -87,7 +87,18 @@ export function OverviewPanel({ itinerary, tripDays }: { itinerary: AnyItinerary
           .filter(Boolean),
       ).size
     : new Set(days.map((d) => d.location).filter(Boolean)).size
-  const highlights = v3?.highlights ?? []
+  // Day-by-day highlights, DERIVED (no schema change): each day's Must-priority
+  // attractions, falling back to Recommends, then the first attraction. Admins
+  // already steer this via the existing priority dropdown. Max 2 per day.
+  const dayHighlights = v3
+    ? v3.days.map((d) => {
+        const acts = (d.activities ?? []).filter((a) => a.slot?.startsWith('Activity'))
+        const must = acts.filter((a) => a.priority === 'Must')
+        const rec = acts.filter((a) => a.priority === 'Recommend')
+        const picks = (must.length ? must : rec.length ? rec : acts).slice(0, 2)
+        return { day: d.day, names: picks.map((a) => a.name?.th || a.name?.en || '').filter(Boolean) }
+      })
+    : days.map((d) => ({ day: d.day, names: d.activities.slice(0, 1).map((a) => a.name) }))
   // Tagline (short cover hook) under the heading; the FULL description stays
   // in the Traveler note card — the schema separates the two on purpose.
   const tagline = v3?.overview.cover_tagline
@@ -116,18 +127,18 @@ export function OverviewPanel({ itinerary, tripDays }: { itinerary: AnyItinerary
         </div>
       </section>
 
-      {/* Highlights card (V3 only — older itineraries have none) */}
-      {highlights.length > 0 && (
+      {/* Highlights card — day by day (derived from activity priorities) */}
+      {dayHighlights.length > 0 && (
         <section className="rounded-3xl border border-zen-black/10 bg-white p-5 shadow-sm">
           <h3 className="flex items-center gap-2 text-base font-extrabold tracking-tight text-noir">
             <Landmark className="size-4 text-basel-brick" />
             Highlights
           </h3>
           <ul className="mt-3 space-y-2.5">
-            {highlights.map((h, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-sm text-graphite">
-                <span className="mt-1.5 size-2 shrink-0 rounded-full bg-basel-brick" aria-hidden />
-                {h.name}
+            {dayHighlights.map((h) => (
+              <li key={h.day} className="flex items-start gap-3 text-sm">
+                <span className="w-12 shrink-0 pt-px font-bold text-basel-brick">Day {h.day}</span>
+                <span className="min-w-0 leading-snug text-graphite">{h.names.join(' · ') || '—'}</span>
               </li>
             ))}
           </ul>
