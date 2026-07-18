@@ -11,6 +11,7 @@ import { type PlanTemplate } from '@/app/components/PlanCard'
 import TripDeck, { TripCard, DECK_CARD_W, DECK_CARD_H } from '@/app/components/TripDeck'
 import PlanPreviewModal from '@/app/components/PlanPreviewModal'
 import { useSavedTemplates } from '@/app/hooks/useSavedTemplates'
+import JapanIcon from '@/app/components/JapanIcon'
 
 // ── JAPAN scroll-dissolve ────────────────────────────────────────────────────
 // Each letter scatters horizontally, rotates, drifts up, blurs and fades as you
@@ -182,14 +183,9 @@ export default function Home() {
                   className="pointer-events-none absolute left-0 top-0 h-full w-px"
                   style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.8), transparent, rgba(255,255,255,0.3))' }}
                 />
-                {/* Hinomaru badge — flat inline SVG (white disc + red sun). The
-                    red is flag content, not a UI accent — same carve-out from
-                    the no-red rule as the trip-card heart. Em-sized to track
-                    the text. */}
-                <svg viewBox="0 0 512 512" className="mr-3 h-[1.35em] w-[1.35em] shrink-0" aria-hidden>
-                  <circle cx="256" cy="256" r="256" className="fill-briefing-cream" />
-                  <circle cx="256" cy="256" r="96" className="fill-hinomaru" />
-                </svg>
+                {/* Japan map silhouette — shared JapanIcon (also the preview's
+                    Prefectures stat tile); fill-current tracks the text color. */}
+                <JapanIcon className="mr-3 h-[1.35em] w-[1.35em] shrink-0" />
                 Explore!
               </button>
             </motion.div>

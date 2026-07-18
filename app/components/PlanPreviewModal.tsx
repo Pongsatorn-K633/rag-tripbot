@@ -5,10 +5,13 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'motion/react'
 import { useSession, signIn } from 'next-auth/react'
 import { DayPicker, type DateRange } from 'react-day-picker'
-import { ArrowLeft, CalendarDays, CalendarCheck, AlertTriangle, Plane } from 'lucide-react'
+import useEmblaCarousel from 'embla-carousel-react'
+import { ArrowLeft, CalendarDays, CalendarCheck, AlertTriangle, Plane, ChevronLeft, Share2, Check, Copy, ArrowRight } from 'lucide-react'
 import 'react-day-picker/style.css'
-import ItineraryCard from '@/app/components/ItineraryCard'
+import Image from 'next/image'
+import { OverviewPanel, ItineraryPanel, DayChips, type DaySel } from '@/app/components/TripPreviewPanels'
 import type { PlanTemplate } from '@/app/components/PlanCard'
+import { resolveHeroCoverImage } from '@/lib/cover-image'
 import type { TripFlight } from '@/lib/itinerary-types'
 import { extendItineraryWithFreeDays } from '@/lib/trips/extend'
 import { AIRPORTS, getRenderDays, arrivalTooLate, departureTooTight, departureIsAfter, lastActivityEndTime } from '@/lib/trips/itinerary-model'
@@ -68,6 +71,21 @@ export default function PlanPreviewModal({
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [range, setRange] = useState<DateRange | undefined>()
   const [flight, setFlight] = useState<TripFlight>({})
+  // Fullscreen preview chrome: Overview | Itinerary tab + share-code copy tick.
+  const [tab, setTab] = useState<'overview' | 'itinerary'>('overview')
+  const [selDay, setSelDay] = useState<DaySel>('all')
+  const [copied, setCopied] = useState(false)
+  // Hero cover carousel (embla) — swipe through Template.coverImages.
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true })
+  const [coverIdx, setCoverIdx] = useState(0)
+  useEffect(() => {
+    if (!emblaApi) return
+    const onSelect = () => setCoverIdx(emblaApi.selectedScrollSnap())
+    emblaApi.on('select', onSelect)
+    return () => {
+      emblaApi.off('select', onSelect)
+    }
+  }, [emblaApi])
 
   const today = useMemo(() => {
     const d = new Date()
@@ -96,6 +114,12 @@ export default function PlanPreviewModal({
     if (!template) return
     setSaveState('idle')
     setFlight({})
+    setTab('overview')
+    setSelDay('all')
+    setCopied(false)
+    // (the embla carousel itself remounts with the modal tree, so it always
+    // reopens on slide 0 — only our dot index needs resetting)
+    setCoverIdx(0)
     const days = template.totalDays ?? template.itinerary?.days?.length ?? 1
     if (defaultStartDate) {
       const start = new Date(defaultStartDate)
@@ -179,88 +203,240 @@ export default function PlanPreviewModal({
     onClose()
   }
 
+  function handleShare() {
+    if (!template?.shareCode) return
+    navigator.clipboard
+      ?.writeText(template.shareCode)
+      .then(() => {
+        setCopied(true)
+        window.setTimeout(() => setCopied(false), 2000)
+      })
+      .catch(() => {})
+  }
+
   return (
     <AnimatePresence>
       {template && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-4 sm:py-10 px-2 sm:px-4"
-          style={{ backgroundColor: 'rgba(35,26,14,0.75)' }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget && saveState !== 'saving') handleClose()
-          }}
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 24 }}
+          transition={{ duration: 0.25, ease: 'easeOut' }}
+          // z-[70]: must cover the fixed navbar (z-50) AND the mobile morph
+          // button (z-[60]) — a fullscreen takeover, not a dialog.
+          className="fixed inset-0 z-[70] overflow-y-auto overscroll-contain bg-briefing-cream"
         >
-          <motion.div
-            initial={{ y: 40, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 40, opacity: 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="w-full max-w-lg bg-briefing-cream border border-zen-black/10 shadow-2xl overflow-hidden rounded-xl"
-          >
-            {/* Top-bar close (same as the My Trip view) */}
-            {saveState !== 'saving' && (
-              <div className="px-4 sm:px-6 pt-3 flex items-center justify-end">
-                <button onClick={handleClose} className="text-zen-black/40 hover:text-zen-black text-2xl leading-none transition-colors" aria-label="ปิด">&times;</button>
+          {/* ── Hero header — cover photo, back/share chips, period + title ──
+              STATIC frame, not full-bleed: a centered column (same max-w-2xl as
+              the content) at 4:3. The image keeps the card's 4:5 framing and
+              the frame crops the BOTTOM (object-top) — the full-bleed version
+              had to zoom the cover to fill wide desktops, which pixelated it. */}
+          <div className="relative mx-auto aspect-square w-full max-w-2xl overflow-hidden sm:rounded-b-3xl">
+            {/* Swipeable cover gallery (Template.coverImages, max 5).
+                unoptimized: Cloudinary already crops/sizes/encodes (w_1600,
+                f_auto, q_auto) — the Next optimizer's second re-encode was
+                half the pixelation. */}
+            <div className="absolute inset-0 overflow-hidden" ref={emblaRef}>
+              <div className="flex h-full">
+                {(template.coverImages?.length ? template.coverImages : [template.coverImage]).map((c, i) => (
+                  <div key={i} className="relative h-full flex-[0_0_100%]">
+                    <Image
+                      src={resolveHeroCoverImage(c, template.id)}
+                      alt={`${template.title} ${i + 1}`}
+                      fill
+                      priority={i === 0}
+                      unoptimized
+                      className="object-cover object-center"
+                      sizes="(max-width: 672px) 100vw, 672px"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Legibility gradient: a light Midnight cap up top (keeps the dots
+                and chips readable on bright skies) and a CLOUD fade at the
+                bottom — the photo dissolves into the page background and the
+                dark title sits on the light scrim. pointer-events-none so
+                swipes fall through to the carousel underneath. */}
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background:
+                  // Solid Cloud from 96%, NOT 100%: at exactly 100% the final
+                  // rendered row is a hair short of opaque, and the photo tints
+                  // it — a 1px line across the page right behind the tab pill.
+                  'linear-gradient(180deg, rgba(18,44,79,0.35) 0%, rgba(18,44,79,0) 30%, rgba(247,249,252,0) 55%, rgba(247,249,252,0.9) 85%, #F7F9FC 96%)',
+              }}
+            />
+
+            {/* Cover dots + current photo's place (no per-image place data in
+                the admin schema yet — XX until that exists) */}
+            {(template.coverImages?.length ?? 0) > 1 && (
+              <div className="pointer-events-none absolute left-1/2 top-5 z-10 flex -translate-x-1/2 items-center gap-1.5">
+                {template.coverImages!.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`rounded-full transition-all duration-200 ${
+                      i === coverIdx ? 'h-2 w-2 bg-briefing-cream' : 'h-1.5 w-1.5 bg-briefing-cream/50'
+                    }`}
+                  />
+                ))}
               </div>
             )}
-            <div className="px-4 sm:px-6 py-5">
-              {saveState === 'done' ? (
-                <div className="text-center py-8 space-y-4">
-                  <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
-                    <span className="text-green-600 text-2xl">✓</span>
-                  </div>
-                  <h3 className="font-headline font-black text-xl text-zen-black">คัดลอกเรียบร้อย!</h3>
-                  <p className="text-sm text-zen-black/60">
-                    เพิ่มทริปของคุณในหน้า My Trip แล้ว — แก้ไขได้อิสระ และรับรหัส LINE ได้ที่นั่นเลย
-                  </p>
-                  <div className="flex gap-3 pt-2">
-                    <Link
-                      href="/my-trip"
-                      className="flex-1 py-3 rounded-lg bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all text-center"
-                    >
-                      Go to My Trip
-                    </Link>
-                    <button
-                      onClick={handleClose}
-                      className="flex-1 py-3 rounded-lg border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-briefing-cream transition-all"
-                    >
-                      เลือกแพลนอื่น
-                    </button>
-                  </div>
-                </div>
-              ) : saveState === 'dates' || saveState === 'saving' ? (
-                <DateStep
-                  tripDays={tripDays}
-                  tripLength={tripLength}
-                  freeDays={freeDays}
-                  range={range}
-                  complete={complete}
-                  tooShort={tooShort}
-                  valid={valid}
-                  today={today}
-                  onChange={setRange}
-                  flight={flight}
-                  onFlightChange={setFlight}
-                  airports={template.itinerary?.airports?.length ? template.itinerary.airports : Object.keys(AIRPORTS)}
-                  dayOneFirstTime={dayOneFirstTime}
-                  lastDayLastTime={lastDayLastTime}
-                  onBack={() => setSaveState('idle')}
-                  onConfirm={handleConfirm}
-                  saving={saveState === 'saving'}
-                />
-              ) : (
-                <ItineraryCard
-                  itinerary={template.itinerary}
-                  onConfirm={viewOnly ? undefined : handleStartDuplication}
-                  viewOnly={viewOnly}
-                  coverImage={template.coverImage}
-                  coverImages={template.coverImages ?? undefined}
-                />
+
+            {/* Top controls: back (closes; steps back from the date step) + share */}
+            <div className="absolute inset-x-4 top-4 flex items-center justify-between sm:inset-x-6">
+              <button
+                onClick={() => (saveState === 'dates' ? setSaveState('idle') : handleClose())}
+                disabled={saveState === 'saving'}
+                aria-label="กลับ"
+                className="grid h-10 w-10 place-items-center rounded-full bg-zen-black/45 text-briefing-cream backdrop-blur-sm transition-colors hover:bg-zen-black/70 disabled:opacity-50"
+              >
+                <ChevronLeft size={22} strokeWidth={2.5} />
+              </button>
+              {template.shareCode && (
+                <button
+                  onClick={handleShare}
+                  aria-label="คัดลอกรหัสทริป"
+                  className="grid h-10 w-10 place-items-center rounded-full bg-zen-black/45 text-briefing-cream backdrop-blur-sm transition-colors hover:bg-zen-black/70"
+                >
+                  {copied ? <Check size={18} strokeWidth={2.5} /> : <Share2 size={18} strokeWidth={2.5} />}
+                </button>
               )}
             </div>
-          </motion.div>
+
+            {/* Period chip + title — bottom-left, clear of the tab-card overlap.
+                pointer-events-none: overlay text must not block cover swipes. */}
+            <div className="pointer-events-none absolute inset-x-4 bottom-12 sm:inset-x-0 sm:mx-auto sm:max-w-2xl sm:px-4">
+              {/* Current cover photo's PLACE — no per-image place data in the
+                  admin schema yet, so XX. Keyed to coverIdx once that exists.
+                  (Days moved out — the Trip summary below already shows it.) */}
+              <span className="inline-block rounded-full bg-zen-black/70 px-3 py-1.5 font-headline text-[11px] font-bold tracking-wide text-briefing-cream backdrop-blur-sm">
+                XX
+              </span>
+              <h1 className="mt-2 font-headline text-3xl font-extrabold leading-tight tracking-tight text-zen-black sm:text-4xl">
+                {template.title}
+              </h1>
+            </div>
+          </div>
+
+          {saveState === 'idle' ? (
+            <>
+              {/* Tab block — floats across the hero/content seam (Kimi TripTabs):
+                  segmented capsule + the day chips when Itinerary is active */}
+              <div className="relative z-10 -mt-7 px-4 font-detail">
+                {/* Seam cover — the hero's compositing-layer edge (overflow-hidden
+                    + radius) antialiases as a faint 1px line at fractional DPI
+                    zoom, even though both sides are the same cream. This flat
+                    strip paints straight over the boundary; the hero's bottom
+                    is already solid Cloud there, so it changes nothing else. */}
+                <span aria-hidden className="absolute inset-x-0 top-5 h-4 bg-briefing-cream" />
+                {/* relative: positioned so it stacks ABOVE the seam strip — an
+                    absolute sibling otherwise paints over static content. */}
+                <div className="relative mx-auto max-w-2xl">
+                  <div className="grid grid-cols-2 rounded-full border border-zen-black/10 bg-white p-1 shadow-lg shadow-zen-black/15">
+                    {(['overview', 'itinerary'] as const).map((key) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setTab(key)}
+                        className={`relative rounded-full py-2 text-sm font-semibold capitalize transition-colors ${
+                          tab === key ? 'text-white' : 'text-graphite hover:text-zen-black'
+                        }`}
+                      >
+                        {/* The Ocean highlight is ONE shared element (layoutId)
+                            that glides between the two tabs on swap. */}
+                        {tab === key && (
+                          <motion.span
+                            layoutId="preview-tab-pill"
+                            className="absolute inset-0 rounded-full bg-basel-brick shadow-md shadow-basel-brick/30"
+                            transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                            aria-hidden
+                          />
+                        )}
+                        <span className="relative">{key}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {tab === 'itinerary' && <DayChips count={tripDays} sel={selDay} onSel={setSelDay} />}
+                </div>
+              </div>
+
+              {/* Tab content — Kimi-style summary/highlights + day timelines */}
+              <div className={`mx-auto max-w-2xl px-4 pt-6 ${viewOnly ? 'pb-16' : 'pb-32'}`}>
+                {tab === 'overview' ? (
+                  <OverviewPanel itinerary={template.itinerary} tripDays={tripDays} />
+                ) : (
+                  <ItineraryPanel itinerary={template.itinerary} sel={selDay} />
+                )}
+              </div>
+
+              {/* Sticky bottom CTA — entry to the duplicate flow */}
+              {!viewOnly && (
+                <div className="fixed inset-x-0 bottom-0 z-10 border-t border-zen-black/10 bg-briefing-cream/90 p-4 backdrop-blur">
+                  <button
+                    onClick={handleStartDuplication}
+                    className="group mx-auto flex w-full max-w-2xl items-center justify-center gap-2.5 rounded-lg bg-basel-brick py-4 font-headline text-xs font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-zen-black"
+                  >
+                    <Copy size={15} strokeWidth={2.5} />
+                    Duplicate or Edit
+                    <ArrowRight size={15} strokeWidth={2.5} className="transition-transform group-hover:translate-x-1" />
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            /* Date / saving / done steps — centered card on the cream takeover */
+            <div className="mx-auto max-w-lg px-4 py-8">
+              <div className="rounded-2xl bg-white p-5 shadow-lg sm:p-6">
+                {saveState === 'done' ? (
+                  <div className="text-center py-8 space-y-4">
+                    <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
+                      <span className="text-green-600 text-2xl">✓</span>
+                    </div>
+                    <h3 className="font-headline font-black text-xl text-zen-black">คัดลอกเรียบร้อย!</h3>
+                    <p className="text-sm text-zen-black/60">
+                      เพิ่มทริปของคุณในหน้า My Trip แล้ว — แก้ไขได้อิสระ และรับรหัส LINE ได้ที่นั่นเลย
+                    </p>
+                    <div className="flex gap-3 pt-2">
+                      <Link
+                        href="/my-trip"
+                        className="flex-1 py-3 rounded-lg bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all text-center"
+                      >
+                        Go to My Trip
+                      </Link>
+                      <button
+                        onClick={handleClose}
+                        className="flex-1 py-3 rounded-lg border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-briefing-cream transition-all"
+                      >
+                        เลือกแพลนอื่น
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <DateStep
+                    tripDays={tripDays}
+                    tripLength={tripLength}
+                    freeDays={freeDays}
+                    range={range}
+                    complete={complete}
+                    tooShort={tooShort}
+                    valid={valid}
+                    today={today}
+                    onChange={setRange}
+                    flight={flight}
+                    onFlightChange={setFlight}
+                    airports={template.itinerary?.airports?.length ? template.itinerary.airports : Object.keys(AIRPORTS)}
+                    dayOneFirstTime={dayOneFirstTime}
+                    lastDayLastTime={lastDayLastTime}
+                    onBack={() => setSaveState('idle')}
+                    onConfirm={handleConfirm}
+                    saving={saveState === 'saving'}
+                  />
+                )}
+              </div>
+            </div>
+          )}
         </motion.div>
       )}
     </AnimatePresence>

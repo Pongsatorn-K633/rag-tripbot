@@ -78,6 +78,54 @@ export function resolveCoverImage(
   return stored
 }
 
+/**
+ * Hero-sized cover for FULL-BLEED headers (the fullscreen trip preview).
+ *
+ * The default resolver delivers the 4:5 CARD crop — in a wide hero band that
+ * portrait gets upscaled until its width fills the viewport and only a slice
+ * shows, which reads as pixelation. This variant instead asks Cloudinary for:
+ *   - raw uploads → a native WIDE smart crop (c_fill,g_auto,ar_2:1) at w_1600
+ *   - admin-cropped / pre-transformed URLs → keep their framing, then chain
+ *     w_1600,c_limit (downscale only — c_limit never invents pixels) + f/q_auto
+ *
+ * Render the result with next/image `unoptimized`: Cloudinary already resized
+ * and encoded it, and a second lossy re-encode by the Next optimizer is where
+ * the mushy compression artifacts come from.
+ */
+export function resolveHeroCoverImage(
+  stored: string | null | undefined,
+  fallbackSeed: string
+): string {
+  // Resolve keys/fallbacks to a URL WITHOUT the 4:5 card transform.
+  let url: string
+  if (!stored) {
+    let hash = 0
+    for (let i = 0; i < fallbackSeed.length; i++) {
+      hash = (hash * 31 + fallbackSeed.charCodeAt(i)) | 0
+    }
+    url = IMG[TEMPLATE_COVER_KEYS[Math.abs(hash) % TEMPLATE_COVER_KEYS.length]]
+  } else if (stored in IMG) {
+    url = IMG[stored as keyof typeof IMG]
+  } else {
+    url = stored
+  }
+  if (!isCloudinaryUrl(url)) return url
+
+  const [prefix, rest] = url.split(CLOUDINARY_UPLOAD)
+  const segs = rest.split('/')
+  if (!isCloudinaryTransformSegment(segs[0] ?? '')) {
+    // Same 4:5 framing as the cards (one photo identity everywhere) — the hero
+    // FRAME crops it to square, centered (object-center trims top+bottom
+    // equally), no zooming.
+    return `${prefix}${CLOUDINARY_UPLOAD}c_fill,g_auto,ar_4:5,w_1600,f_auto,q_auto/${rest}`
+  }
+  // Existing transform chain — append the hero scale/encode step before the
+  // version segment (crop coordinates must keep applying to the original).
+  const vIdx = segs.findIndex((s) => /^v\d+$/.test(s))
+  segs.splice(vIdx >= 0 ? vIdx : segs.length - 1, 0, 'w_1600,c_limit,f_auto,q_auto')
+  return `${prefix}${CLOUDINARY_UPLOAD}${segs.join('/')}`
+}
+
 // ── Cloudinary crop helpers (non-destructive, transform-based) ───────────────
 
 const CLOUDINARY_UPLOAD = '/image/upload/'

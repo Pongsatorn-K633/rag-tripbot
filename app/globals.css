@@ -1,9 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", "Noto Sans Thai", ui-sans-serif, system-ui, sans-serif;
   --font-headline: "Manrope", "Noto Sans Thai", sans-serif;
+  /* Detail UI (trip preview panels — stats, timelines, meta text). Jakarta has
+     no Thai glyphs, so Noto Sans Thai MUST stay in the chain for Thai content. */
+  --font-detail: "Plus Jakarta Sans", "Noto Sans Thai", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 
   /* Dopamichi palette — clean 3-color cool scheme. Token names are kept as
      semantic slots so every bg-/text- class adopts the palette app-wide. */

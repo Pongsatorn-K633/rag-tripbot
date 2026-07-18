@@ -59,6 +59,7 @@ export default function ItineraryView({
   onClose,
   onMakeDayFree,
   makeDayFreeLabel,
+  sections = 'all',
 }: {
   itinerary: AnyItinerary
   variant?: Variant
@@ -71,6 +72,9 @@ export default function ItineraryView({
   onMakeDayFree?: () => void
   /** Case-specific label for that action (shift vs replace). */
   makeDayFreeLabel?: string
+  /** Which chunk to render — 'overview' (description/highlights/guides) or
+   *  'days' (the day cards) for the fullscreen preview's tabs; 'all' = both. */
+  sections?: 'all' | 'overview' | 'days'
 }) {
   const t = VIEW[variant]
   // Multiple days can be open at once; toggling one never collapses the others.
@@ -135,34 +139,38 @@ export default function ItineraryView({
         </div>
       )}
 
-      {description && (
+      {sections !== 'days' && description && (
         <p className={`text-sm leading-relaxed mb-6 whitespace-pre-line ${t.textMuted}`}>{description}</p>
       )}
 
-      {highlights.length > 0 && <HighlightsStrip highlights={highlights} t={t} />}
+      {sections !== 'days' && highlights.length > 0 && <HighlightsStrip highlights={highlights} t={t} />}
 
-      {showJourneyHeader && (
-        <div className="mb-6">
-          <h2 className={`font-headline text-2xl font-extrabold ${t.text}`}>The Journey</h2>
-        </div>
+      {sections !== 'overview' && (
+        <>
+          {showJourneyHeader && (
+            <div className="mb-6">
+              <h2 className={`font-headline text-2xl font-extrabold ${t.text}`}>The Journey</h2>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {days.map((day) => (
+              <DayCard
+                key={day.day}
+                day={day}
+                isOpen={openDays.has(day.day)}
+                onToggle={() => toggleDay(day.day)}
+                t={t}
+                variant={variant}
+                onMakeDayFree={onMakeDayFree}
+                makeDayFreeLabel={makeDayFreeLabel}
+              />
+            ))}
+          </div>
+        </>
       )}
 
-      <div className="space-y-4">
-        {days.map((day) => (
-          <DayCard
-            key={day.day}
-            day={day}
-            isOpen={openDays.has(day.day)}
-            onToggle={() => toggleDay(day.day)}
-            t={t}
-            variant={variant}
-            onMakeDayFree={onMakeDayFree}
-            makeDayFreeLabel={makeDayFreeLabel}
-          />
-        ))}
-      </div>
-
-      {guides.length > 0 && <GuidesAccordion guides={guides} t={t} variant={variant} />}
+      {sections !== 'days' && guides.length > 0 && <GuidesAccordion guides={guides} t={t} variant={variant} />}
     </div>
   )
 }
