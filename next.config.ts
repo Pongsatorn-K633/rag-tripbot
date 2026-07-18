@@ -2,6 +2,11 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   images: {
+    // Custom loader (lib/image-loader.ts): Cloudinary does the responsive
+    // resizing itself — ZERO Vercel Image Optimization transformations (the
+    // Hobby 5K/month quota was exhausted double-optimizing Cloudinary files).
+    loader: 'custom',
+    loaderFile: './lib/image-loader.ts',
     remotePatterns: [
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
       { protocol: 'https', hostname: 'res.cloudinary.com' },

@@ -409,9 +409,11 @@ export default function PlanPreviewModal({
                 <div className="fixed inset-x-0 bottom-0 z-10 border-t border-zen-black/10 bg-briefing-cream/90 p-4 backdrop-blur">
                   <button
                     onClick={handleStartDuplication}
-                    className="mx-auto flex w-full max-w-2xl items-center justify-center gap-2.5 rounded-full bg-basel-brick py-4 font-headline text-xs font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-zen-black"
+                    // Styled like the active Overview tab pill (font-detail,
+                    // semibold, Ocean glow) so the CTA speaks the same language.
+                    className="mx-auto flex w-full max-w-2xl items-center justify-center gap-2 rounded-full bg-basel-brick py-3.5 font-detail text-sm font-semibold text-white shadow-md shadow-basel-brick/30 transition-all hover:bg-zen-black"
                   >
-                    <Copy size={15} strokeWidth={2.5} />
+                    <Copy size={15} strokeWidth={2.25} />
                     Duplicate and Edit
                   </button>
                 </div>
