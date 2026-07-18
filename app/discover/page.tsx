@@ -59,7 +59,15 @@ export default function DiscoverPage() {
         const res = await fetch('/api/templates')
         if (!res.ok) throw new Error('Failed to load templates')
         const data = await res.json()
-        setTemplates(data.templates ?? [])
+        const list: PlanTemplate[] = data.templates ?? []
+        setTemplates(list)
+        // Shared link (?trip=TKY-001): open that trip's preview on arrival.
+        // Read via window (not useSearchParams — that needs a Suspense boundary).
+        const code = new URLSearchParams(window.location.search).get('trip')
+        if (code) {
+          const hit = list.find((t) => t.shareCode?.toLowerCase() === code.toLowerCase())
+          if (hit) setSelectedId(hit.id)
+        }
       } catch (err) {
         console.error(err)
       } finally {

@@ -21,6 +21,8 @@ Column A here holds row labels: Primary, Details, Highlight Place 1–8, Referen
 | F | Levels | (highlight level) |
 | G | Area code | overview.area_code |
 | H | Cover Images | overview.cover_images |
+| — | Cover Places (JSON-only) | overview.cover_places — place name per cover, same order as cover_images (hero chip in the preview) |
+| — | Popular period (JSON-only) | recommended_period[].popular — `true` shows a "Popular" badge on that window in the preview |
 | I | Available Airports | overview.available_airports (JSON) |
 | J | Car Rental | overview.car_rental (JSON) |
 | K | Arrival to First Act (hrs) | overview.arrival_to_first_act_hrs |
@@ -81,6 +83,11 @@ Use this when authoring a plan from a request (e.g. *"create me a Tokyo 1-day to
 **B — Name (EN)** (`day.name.en`) — Short, catchy English theme/title for the whole day (e.g. *"Japan, I'm coming"*). First row of the day only.
 
 **C — Name (TH)** (`day.name.th`) — Thai version of the day title. First row of the day only.
+
+> **`day.highlight` (JSON-only, optional)** — `{ en, th }` one-liner shown in the trip preview's
+> **Day Highlights** card (e.g. *"เดินเล่น Ikebukuro, ชมแสงสี Shinjuku"*). Not an Excel column.
+> When absent, the preview derives the line from the day's Must/Recommend activities instead —
+> so author it only when the derived line isn't good enough.
 
 **D — Location** (`location`) — Area of this activity as `"City, District"` (e.g. *"Tokyo, Ikebukuro"*). Drives geo grouping; keep consistent within a day's region.
 

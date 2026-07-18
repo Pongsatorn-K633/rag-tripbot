@@ -4,23 +4,25 @@
   "overview": {
     "title": "Tokyo - Nagano",
     "cover_tagline": "ตะลุยแสงสีโตเกียว พร้อมขับรถเที่ยวขุนเขาเจแปนแอลป์",
-    "description": "เปิดทริปด้วยการเข้า Tokyo ปักหลักย่าน Ikebukuro สะดวกขึ้นรถไฟสาย Yamanote นั่งวนลูปตะลุยช้อป กิน ดื่ม ชมแสงสีเสียงได้ทั่วเมือง! พ่วงเดย์ทริปสุดชิลที่คามาคุระ ก่อนเปลี่ยนโหมดเช่ารถขับตะลุยขุนเขา สูดอากาศบริสุทธิ์ที่มัตสึโมโตะ ทาเตยามะ ฮะคุบะ และคามิโคจิ",
+    "description": "เปิดทริปด้วยการสัมผัส Tokyo 1 คืน 🗼\nก่อนมุ่งหน้าขับรถตะลุยขุนเขาที่ Nagano 4 วันเต็ม (Kamikochi, Tateyama, Hakuba, Togakushi) 🚗🏔️\nแล้วกลับมาจัดเต็มเที่ยว ช้อป กิน ดื่มที่ Tokyo อีก 3 วัน 🍣🍻🛍️",
     "available_period": {
       "primary": "17 April - 15 Nov",
-      "details": "Recheck the website for change\nhttps://www.kamikochi.org/ \nhttps://www.alpen-route.com/en/"
+      "details": "ข้อมูลปี 2026 ตรวจสอบวันเวลาในเว็บไซต์สถานที่เที่ยว\nhttps://www.kamikochi.org/\nhttps://www.alpen-route.com/en/"
     },
     "recommended_period": [
       {
         "primary": "1 Oct – 15 Nov",
-        "details": "Tateyama ใบไม้เปลี่ยนสีสวยงามไล่จากยอดเขา Murodo (พีคปลาย ก.ย. - กลาง ต.ค.) ลงมาด้านล่างเขื่อน \nส่วน Kamikochi (พีคกลาง ต.ค. - ต้น พ.ย.) ได้ภาพยอดเขาโรยหิมะตัดใบไม้สี ยิ่งปลายเดือนใบไม้ยิ่งส้ม\nใน Tokyo อากาศเย็นสบาย ท้องฟ้าโปร่งใส"
+        "details": "Tateyama: ใบไม้เปลี่ยนสีไล่ระดับจากยอดเขา Murodo ลงมาสู่ด้านล่างเขื่อน\nKamikochi: ยอดเขาโรยหิมะตัดกับใบไม้เปลี่ยนสี (ปลายเดือนยิ่งส้ม)\nHakuba: นั่งกระเช้าชมวิวใบไม้เปลี่ยนสีแบบสามชั้น (หิมะ-ใบไม้แดง-ป่าเขียว)\nTogakushi: เดินชมใบไม้แดงตามแนวต้นสนยักษ์ และชิมโซบะฤดูกาลใหม่\nTokyo: อากาศเย็นสบาย ท้องฟ้าโปร่งใส",
+        "popular": true
       },
       {
         "primary": "1 May – 20 June",
-        "details": "สัมผัสกำแพงหิมะสูงที่ Tateyama พร้อม\nชมวิวป่าสีเขียวตัดยอดเขาหิมะที่ Kamikochi และ Hakuba\nเดินชิลใต้ทิวต้นสนที่ Togakushi\nแวะชมดอกไฮเดรนเยียบานที่ Kamakura\nและชมแสงสีเสียงเที่ยว Tokyo ในบรรยากาศสบายๆ ก่อนเข้าฤดูฝน"
+        "details": "Tateyama: เดินชมกำแพงหิมะสูง 10–20 เมตร (ไฮไลต์สำคัญ)\nKamikochi: ยอดเขาหิมะปกคลุม ตัดกับป่าผลัดใบสีเขียว\nHakuba: ธรรมชาติเริ่มผลิใบเขียวขจี เหมาะกับปั่นจักรยานและเดินเทรลเบาๆ\nTogakushi: อากาศเย็นสบาย บรรยากาศสงบ ชมใบไม้ผลิอ่อนสีเขียวสด\nTokyo: อากาศยังเย็นสบาย ก่อนเข้าช่วงหน้าฝน",
+        "popular": true
       },
       {
         "primary": "15 July – 31 Aug",
-        "details": "เดินเขาฤดูร้อน\nTateyama ⭐ + Kamikochi ⭐ เดินเทรล + ดอกไม้อัลไพน์ อากาศบนเขาเย็นสบาย · Tokyo ร้อนชื้นจัด เหมาะอยู่ในร่ม/ห้าง/พิพิธภัณฑ์ มากกว่าเดินเที่ยวกลางแจ้ง"
+        "details": "Tateyama: อากาศเย็นสบายหนีร้อน เดินเทรคกิ้งชมทุ่งดอกไม้ป่า\nKamikochi: อากาศเย็นสบายหนีร้อน ป่าเขียวชุ่มฉ่ำ แม่น้ำสีฟ้าใส สวยงาม\nHakuba: เน้นกิจกรรมกลางแจ้งและแคมป์ปิ้ง ดอกไม้อัลไพน์บานเต็มที่\nTogakushi: อากาศเย็นสบายหนีร้อน เหมาะเดินเล่นและทานโซบะเย็น\nTokyo: อากาศร้อนแห้ง เหมาะเที่ยวในร่มมากกว่ากลางแจ้ง"
       }
     ],
     "area_code": "(fill in app)",
@@ -64,7 +66,13 @@
     "remark_en": "Prices for transport, food, accommodation, and activities are calculated for our exact trip dates (Oct 16–24, 2026).",
     "remark_th": "ค่าเดินทาง ของกิน ที่พัก และกิจกรรมต่างๆ คำนวณจากช่วงที่เดินทางจริง (16-24 ต.ค. 2026)",
     "queue_guide_en": "🟢 Low (Walk-in Friendly): Minimal to no wait expected. You can usually walk right in and be seated.\n\n🟡 Mid (Moderate Queue): Lines form during peak dining hours. Expect a standard 15–60 minute wait on average. Planning your arrival ahead of time is recommended.\n\n🔴 High (Heavy Crowds): Popular hotspot with significant wait times, often exceeding 1–2 hours. Preparing for a long queue and allocating substantial extra time is highly necessary.",
-    "queue_guide_th": "🟢 Low (เข้าใช้บริการได้สะดวก): คิวสั้นมากหรือไม่มีคิวเลย สามารถเดินเข้าร้านและรับบริการได้ทันที\n\n🟡 Mid (คิวปานกลาง): มักมีคิวในช่วงเวลาอาหาร แนะนำให้เผื่อเวลาสำหรับรอคิวประมาณ 15–60 นาทีโดยเฉลี่ย\n\n🔴 High (คิวหนาแน่นมาก): ร้านยอดฮิตที่มีคิวยาวเป็นพิเศษ อาจต้องรอคิวนานกว่า 1–2 ชั่วโมงขึ้นไป จำเป็นต้องเผื่อเวลาไว้ค่อนข้างมาก"
+    "queue_guide_th": "🟢 Low (เข้าใช้บริการได้สะดวก): คิวสั้นมากหรือไม่มีคิวเลย สามารถเดินเข้าร้านและรับบริการได้ทันที\n\n🟡 Mid (คิวปานกลาง): มักมีคิวในช่วงเวลาอาหาร แนะนำให้เผื่อเวลาสำหรับรอคิวประมาณ 15–60 นาทีโดยเฉลี่ย\n\n🔴 High (คิวหนาแน่นมาก): ร้านยอดฮิตที่มีคิวยาวเป็นพิเศษ อาจต้องรอคิวนานกว่า 1–2 ชั่วโมงขึ้นไป จำเป็นต้องเผื่อเวลาไว้ค่อนข้างมาก",
+    "cover_places": [
+      "Tokyo Tower, Minato",
+      "Shibuya Crossing, Shibuya",
+      "Tateyama Kurobe Alpine Route, Tateyama / Omachi",
+      "Kamikochi, Matsumoto"
+    ]
   },
   "highlights": [
     {
@@ -787,7 +795,11 @@
             "website": null
           }
         }
-      ]
+      ],
+      "highlight": {
+        "en": "",
+        "th": "เดินเล่น Ikebukuro, ชมแสงสี Shinjuku"
+      }
     },
     {
       "day": 2,
@@ -1316,7 +1328,11 @@
             "website": null
           }
         }
-      ]
+      ],
+      "highlight": {
+        "en": "",
+        "th": "มุ่งหน้าสู่เมือง Matsumoto"
+      }
     },
     {
       "day": 3,
@@ -2005,7 +2021,11 @@
             "website": null
           }
         }
-      ]
+      ],
+      "highlight": {
+        "en": "",
+        "th": "เดินอุทยาน Kamikochi, แวะคาเฟ่ริมทะเลสาบ และจบที่ Oide Park, Hakuba"
+      }
     },
     {
       "day": 4,
@@ -2454,7 +2474,11 @@
             "website": null
           }
         }
-      ]
+      ],
+      "highlight": {
+        "en": "",
+        "th": "ขึ้นเขาเจแปนแอลป์! Tateyama Kurobe Alpine Route"
+      }
     },
     {
       "day": 5,
@@ -3023,7 +3047,11 @@
             "website": null
           }
         }
-      ]
+      ],
+      "highlight": {
+        "en": "",
+        "th": "Hakuba Iwatake และศาลเจ้าในป่าสน Togakushi"
+      }
     },
     {
       "day": 6,

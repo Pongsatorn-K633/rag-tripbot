@@ -60,7 +60,7 @@ function period(v: unknown): PlanPeriod | undefined {
   if (v && typeof v === 'object') {
     const o = v as Record<string, unknown>
     const primary = cleanStr(o.primary), details = cleanStr(o.details)
-    return primary || details ? { primary, details } : undefined
+    return primary || details ? { primary, details, ...(o.popular === true ? { popular: true } : {}) } : undefined
   }
   return undefined
 }
@@ -150,10 +150,12 @@ function normalizeDay(d: unknown, idx: number): DayV3 {
   const acts = Array.isArray(o.activities)
     ? o.activities.map(normalizeActivity).filter((a): a is ActivityV3 => !!a)
     : []
+  const highlight = bilingual(o.highlight)
   return {
     day: typeof o.day === 'number' ? o.day : idx + 1,
     name: bilingual(o.name) ?? { en: '', th: '' },
     activities: acts,
+    ...(highlight ? { highlight } : {}),
   }
 }
 
@@ -176,6 +178,7 @@ export function importPlanJson(raw: unknown): ItineraryV3 {
     recommended_period: periods(ov.recommended_period),
     area_code: cleanStr(ov.area_code),
     cover_images: coverImages(ov.cover_images),
+    cover_places: coverImages(ov.cover_places),
     available_airports: { major_hubs: hubs },
     car_rental: carRental(ov.car_rental),
     arrival_to_first_act_hrs: num(ov.arrival_to_first_act_hrs),

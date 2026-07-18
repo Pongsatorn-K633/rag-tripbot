@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { useSession, signIn } from 'next-auth/react'
 import { DayPicker, type DateRange } from 'react-day-picker'
 import useEmblaCarousel from 'embla-carousel-react'
-import { ArrowLeft, CalendarDays, CalendarCheck, AlertTriangle, Plane, ChevronLeft, Share2, Check, Copy, ArrowRight } from 'lucide-react'
+import { ArrowLeft, CalendarDays, CalendarCheck, AlertTriangle, Plane, ChevronLeft, Share2, Check, Copy } from 'lucide-react'
 import 'react-day-picker/style.css'
 import Image from 'next/image'
 import { OverviewPanel, ItineraryPanel, DayChips, type DaySel } from '@/app/components/TripPreviewPanels'
@@ -14,7 +14,7 @@ import type { PlanTemplate } from '@/app/components/PlanCard'
 import { resolveHeroCoverImage } from '@/lib/cover-image'
 import type { TripFlight } from '@/lib/itinerary-types'
 import { extendItineraryWithFreeDays } from '@/lib/trips/extend'
-import { AIRPORTS, getRenderDays, arrivalTooLate, departureTooTight, departureIsAfter, lastActivityEndTime } from '@/lib/trips/itinerary-model'
+import { AIRPORTS, getRenderDays, isV3, arrivalTooLate, departureTooTight, departureIsAfter, lastActivityEndTime } from '@/lib/trips/itinerary-model'
 
 /** Whole-hour options (24h, no AM/PM): 00:00 … 23:00. */
 const HOURS = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, '0')}:00`)
@@ -94,6 +94,9 @@ export default function PlanPreviewModal({
   }, [])
 
   const tripDays = template?.totalDays ?? template?.itinerary?.days?.length ?? 1
+  // Per-cover place names (overview.cover_places, same order as the gallery).
+  const coverPlaces =
+    template && isV3(template.itinerary) ? (template.itinerary.overview.cover_places ?? []) : []
 
   // The plan's Day-1 first scheduled time — to warn if the flight lands after it.
   const dayOneFirstTime = useMemo(
@@ -205,8 +208,10 @@ export default function PlanPreviewModal({
 
   function handleShare() {
     if (!template?.shareCode) return
+    // Shareable LINK to this trip — /discover opens the preview from ?trip=.
+    const url = `${window.location.origin}/discover?trip=${template.shareCode}`
     navigator.clipboard
-      ?.writeText(template.shareCode)
+      ?.writeText(url)
       .then(() => {
         setCopied(true)
         window.setTimeout(() => setCopied(false), 2000)
@@ -224,10 +229,6 @@ export default function PlanPreviewModal({
           transition={{ duration: 0.25, ease: 'easeOut' }}
           // z-[70]: must cover the fixed navbar (z-50) AND the mobile morph
           // button (z-[60]) — a fullscreen takeover, not a dialog.
-          // layoutScroll: the tab pill is a layoutId shared element inside this
-          // scroller — without it, a scroll jump during a tab swap (short panel
-          // clamps scrollTop) reads as position delta and the pill flies.
-          layoutScroll
           className="fixed inset-0 z-[70] overflow-y-auto overscroll-contain bg-briefing-cream"
         >
           {/* ── Hero header — cover photo, back/share chips, period + title ──
@@ -299,24 +300,39 @@ export default function PlanPreviewModal({
                 <ChevronLeft size={22} strokeWidth={2.5} />
               </button>
               {template.shareCode && (
-                <button
-                  onClick={handleShare}
-                  aria-label="คัดลอกรหัสทริป"
-                  className="grid h-10 w-10 place-items-center rounded-full bg-zen-black/45 text-briefing-cream backdrop-blur-sm transition-colors hover:bg-zen-black/70"
-                >
-                  {copied ? <Check size={18} strokeWidth={2.5} /> : <Share2 size={18} strokeWidth={2.5} />}
-                </button>
+                <span className="relative">
+                  {/* Copied indicator — slides in beside the button */}
+                  <AnimatePresence>
+                    {copied && (
+                      <motion.span
+                        initial={{ opacity: 0, x: 8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 8 }}
+                        transition={{ duration: 0.18, ease: 'easeOut' }}
+                        className="absolute right-12 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-zen-black/70 px-3 py-1.5 font-headline text-[11px] font-bold text-briefing-cream backdrop-blur-sm"
+                      >
+                        คัดลอกลิงก์แล้ว
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                  <button
+                    onClick={handleShare}
+                    aria-label="คัดลอกลิงก์ทริป"
+                    className="grid h-10 w-10 place-items-center rounded-full bg-zen-black/45 text-briefing-cream backdrop-blur-sm transition-colors hover:bg-zen-black/70"
+                  >
+                    {copied ? <Check size={18} strokeWidth={2.5} /> : <Share2 size={18} strokeWidth={2.5} />}
+                  </button>
+                </span>
               )}
             </div>
 
             {/* Period chip + title — bottom-left, clear of the tab-card overlap.
                 pointer-events-none: overlay text must not block cover swipes. */}
             <div className="pointer-events-none absolute inset-x-4 bottom-12 sm:inset-x-0 sm:mx-auto sm:max-w-2xl sm:px-4">
-              {/* Current cover photo's PLACE — no per-image place data in the
-                  admin schema yet, so XX. Keyed to coverIdx once that exists.
-                  (Days moved out — the Trip summary below already shows it.) */}
+              {/* Current cover photo's PLACE — overview.cover_places keyed to
+                  the swipe index; XX for covers without an authored place. */}
               <span className="inline-block rounded-full bg-zen-black/70 px-3 py-1.5 font-headline text-[11px] font-bold tracking-wide text-briefing-cream backdrop-blur-sm">
-                XX
+                {coverPlaces[coverIdx] || 'XX'}
               </span>
               <h1 className="mt-2 font-headline text-3xl font-extrabold leading-tight tracking-tight text-zen-black sm:text-4xl">
                 {template.title}
@@ -338,14 +354,20 @@ export default function PlanPreviewModal({
                 {/* relative: positioned so it stacks ABOVE the seam strip — an
                     absolute sibling otherwise paints over static content. */}
                 <div className="relative mx-auto max-w-2xl">
-                  {/* layoutRoot: the sliding pill measures RELATIVE TO THIS
-                      CAPSULE, not the document — a scroll clamp during the tab
-                      swap (short panel, deep scroll) otherwise reads as a huge
-                      position delta and the pill flies across the screen. */}
-                  <motion.div
-                    layoutRoot
-                    className="grid grid-cols-2 rounded-full border border-zen-black/10 bg-white p-1 shadow-lg shadow-zen-black/15"
-                  >
+                  <div className="relative grid grid-cols-2 rounded-full border border-zen-black/10 bg-white p-1 shadow-lg shadow-zen-black/15">
+                    {/* Sliding Ocean highlight — ONE persistent element moved by
+                        pure TRANSFORM (x 0%↔100%), never layoutId: measured
+                        layout animation mis-fires when the tab swap clamps the
+                        scroll in the same commit (deep-scroll day-tap), sending
+                        the pill across the screen. A transform between two
+                        fixed slots cannot be affected by scroll or content. */}
+                    <motion.span
+                      aria-hidden
+                      initial={false}
+                      animate={{ x: tab === 'itinerary' ? '100%' : '0%' }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                      className="absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-basel-brick shadow-md shadow-basel-brick/30"
+                    />
                     {(['overview', 'itinerary'] as const).map((key) => (
                       <button
                         key={key}
@@ -355,20 +377,10 @@ export default function PlanPreviewModal({
                           tab === key ? 'text-white' : 'text-graphite hover:text-zen-black'
                         }`}
                       >
-                        {/* The Ocean highlight is ONE shared element (layoutId)
-                            that glides between the two tabs on swap. */}
-                        {tab === key && (
-                          <motion.span
-                            layoutId="preview-tab-pill"
-                            className="absolute inset-0 rounded-full bg-basel-brick shadow-md shadow-basel-brick/30"
-                            transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                            aria-hidden
-                          />
-                        )}
-                        <span className="relative">{key}</span>
+                        {key}
                       </button>
                     ))}
-                  </motion.div>
+                  </div>
                   {tab === 'itinerary' && <DayChips count={tripDays} sel={selDay} onSel={setSelDay} />}
                 </div>
               </div>
@@ -397,11 +409,10 @@ export default function PlanPreviewModal({
                 <div className="fixed inset-x-0 bottom-0 z-10 border-t border-zen-black/10 bg-briefing-cream/90 p-4 backdrop-blur">
                   <button
                     onClick={handleStartDuplication}
-                    className="group mx-auto flex w-full max-w-2xl items-center justify-center gap-2.5 rounded-lg bg-basel-brick py-4 font-headline text-xs font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-zen-black"
+                    className="mx-auto flex w-full max-w-2xl items-center justify-center gap-2.5 rounded-full bg-basel-brick py-4 font-headline text-xs font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-zen-black"
                   >
                     <Copy size={15} strokeWidth={2.5} />
-                    Duplicate or Edit
-                    <ArrowRight size={15} strokeWidth={2.5} className="transition-transform group-hover:translate-x-1" />
+                    Duplicate and Edit
                   </button>
                 </div>
               )}

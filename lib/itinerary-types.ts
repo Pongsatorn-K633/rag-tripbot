@@ -305,9 +305,14 @@ export interface DayV3 {
   day: number
   name: Bilingual
   activities: ActivityV3[]
+  /** Optional authored one-liner for the preview's Day Highlights card.
+   *  When absent, the card derives the line from Must/Recommend activities. */
+  highlight?: Bilingual
 }
 
-export interface PlanPeriod { primary?: string; details?: string }
+/** `popular` — authored editorial flag: shown as a "Popular" badge on the
+ *  preview's recommended-period rows. */
+export interface PlanPeriod { primary?: string; details?: string; popular?: boolean }
 export interface PlanAirport { name: string; code: string }
 export interface PlanCarRental {
   primary?: string // "Y" | "N"
@@ -324,6 +329,9 @@ export interface PlanOverview {
   recommended_period?: PlanPeriod[] // one or more "best time to go" windows
   area_code?: string
   cover_images?: string[]
+  /** Place name per cover image (same order/index as cover_images) — shown as
+   *  the hero chip while swiping the preview's cover gallery. */
+  cover_places?: string[]
   available_airports?: { major_hubs?: PlanAirport[] }
   car_rental?: PlanCarRental
   arrival_to_first_act_hrs?: number
