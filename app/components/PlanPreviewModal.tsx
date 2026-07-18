@@ -224,6 +224,10 @@ export default function PlanPreviewModal({
           transition={{ duration: 0.25, ease: 'easeOut' }}
           // z-[70]: must cover the fixed navbar (z-50) AND the mobile morph
           // button (z-[60]) — a fullscreen takeover, not a dialog.
+          // layoutScroll: the tab pill is a layoutId shared element inside this
+          // scroller — without it, a scroll jump during a tab swap (short panel
+          // clamps scrollTop) reads as position delta and the pill flies.
+          layoutScroll
           className="fixed inset-0 z-[70] overflow-y-auto overscroll-contain bg-briefing-cream"
         >
           {/* ── Hero header — cover photo, back/share chips, period + title ──
@@ -334,7 +338,14 @@ export default function PlanPreviewModal({
                 {/* relative: positioned so it stacks ABOVE the seam strip — an
                     absolute sibling otherwise paints over static content. */}
                 <div className="relative mx-auto max-w-2xl">
-                  <div className="grid grid-cols-2 rounded-full border border-zen-black/10 bg-white p-1 shadow-lg shadow-zen-black/15">
+                  {/* layoutRoot: the sliding pill measures RELATIVE TO THIS
+                      CAPSULE, not the document — a scroll clamp during the tab
+                      swap (short panel, deep scroll) otherwise reads as a huge
+                      position delta and the pill flies across the screen. */}
+                  <motion.div
+                    layoutRoot
+                    className="grid grid-cols-2 rounded-full border border-zen-black/10 bg-white p-1 shadow-lg shadow-zen-black/15"
+                  >
                     {(['overview', 'itinerary'] as const).map((key) => (
                       <button
                         key={key}
@@ -357,7 +368,7 @@ export default function PlanPreviewModal({
                         <span className="relative">{key}</span>
                       </button>
                     ))}
-                  </div>
+                  </motion.div>
                   {tab === 'itinerary' && <DayChips count={tripDays} sel={selDay} onSel={setSelDay} />}
                 </div>
               </div>
@@ -365,7 +376,17 @@ export default function PlanPreviewModal({
               {/* Tab content — Kimi-style summary/highlights + day timelines */}
               <div className={`mx-auto max-w-2xl px-4 pt-6 ${viewOnly ? 'pb-16' : 'pb-32'}`}>
                 {tab === 'overview' ? (
-                  <OverviewPanel itinerary={template.itinerary} tripDays={tripDays} />
+                  <OverviewPanel
+                    itinerary={template.itinerary}
+                    tripDays={tripDays}
+                    // Tap a highlight row → that day, in the Itinerary tab.
+                    // (No scroll reset — layoutScroll on the shell keeps the
+                    // pill's slide correct regardless of scroll position.)
+                    onDayTap={(day) => {
+                      setSelDay(day)
+                      setTab('itinerary')
+                    }}
+                  />
                 ) : (
                   <ItineraryPanel itinerary={template.itinerary} sel={selDay} />
                 )}

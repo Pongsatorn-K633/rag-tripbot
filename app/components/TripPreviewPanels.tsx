@@ -1,9 +1,9 @@
 'use client'
 
-import { CalendarDays, MapPin, Pencil, Sparkles, Plus, Landmark } from 'lucide-react'
+import { CalendarDays, MapPin, Pencil, Sparkles, Plus, ChevronRight } from 'lucide-react'
 import JapanIcon from '@/app/components/JapanIcon'
 import type { AnyItinerary, Choice } from '@/lib/itinerary-types'
-import { getRenderDays, isV3 } from '@/lib/trips/itinerary-model'
+import { getRenderDays, isV3, CATEGORY_EMOJI } from '@/lib/trips/itinerary-model'
 
 /**
  * Trip-preview tab panels (fullscreen PlanPreviewModal) — ported from the Kimi
@@ -65,7 +65,16 @@ export function DayChips({ count, sel, onSel }: { count: number; sel: DaySel; on
 
 // ── Overview tab — Trip summary + Highlights + Traveler note ────────────────
 
-export function OverviewPanel({ itinerary, tripDays }: { itinerary: AnyItinerary; tripDays: number }) {
+export function OverviewPanel({
+  itinerary,
+  tripDays,
+  onDayTap,
+}: {
+  itinerary: AnyItinerary
+  tripDays: number
+  /** Tap a highlight row → open that day in the Itinerary tab. */
+  onDayTap?: (day: number) => void
+}) {
   const days = getRenderDays(itinerary)
   const v3 = isV3(itinerary) ? itinerary : null
   // Attractions = REAL activities only ("Activity N" slots). Counting every
@@ -96,9 +105,13 @@ export function OverviewPanel({ itinerary, tripDays }: { itinerary: AnyItinerary
         const must = acts.filter((a) => a.priority === 'Must')
         const rec = acts.filter((a) => a.priority === 'Recommend')
         const picks = (must.length ? must : rec.length ? rec : acts).slice(0, 2)
-        return { day: d.day, names: picks.map((a) => a.name?.th || a.name?.en || '').filter(Boolean) }
+        return {
+          day: d.day,
+          names: picks.map((a) => a.name?.th || a.name?.en || '').filter(Boolean),
+          emoji: (picks[0]?.category && CATEGORY_EMOJI[picks[0].category]) || null,
+        }
       })
-    : days.map((d) => ({ day: d.day, names: d.activities.slice(0, 1).map((a) => a.name) }))
+    : days.map((d) => ({ day: d.day, names: d.activities.slice(0, 1).map((a) => a.name), emoji: null }))
   // Tagline (short cover hook) under the heading; the FULL description stays
   // in the Traveler note card — the schema separates the two on purpose.
   const tagline = v3?.overview.cover_tagline
@@ -130,15 +143,26 @@ export function OverviewPanel({ itinerary, tripDays }: { itinerary: AnyItinerary
       {/* Highlights card — day by day (derived from activity priorities) */}
       {dayHighlights.length > 0 && (
         <section className="rounded-3xl border border-zen-black/10 bg-white p-5 shadow-sm">
-          <h3 className="flex items-center gap-2 text-base font-extrabold tracking-tight text-noir">
-            <Landmark className="size-4 text-basel-brick" />
-            Highlights
-          </h3>
-          <ul className="mt-3 space-y-2.5">
+          <h3 className="text-lg font-extrabold tracking-tight text-noir">Day Highlights</h3>
+          {/* Cream ticket rows — Ocean day badge + category emoji + names.
+              Tappable: jumps to that day in the Itinerary tab. */}
+          <ul className="mt-3 space-y-2">
             {dayHighlights.map((h) => (
-              <li key={h.day} className="flex items-start gap-3 text-sm">
-                <span className="w-12 shrink-0 pt-px font-bold text-basel-brick">Day {h.day}</span>
-                <span className="min-w-0 leading-snug text-graphite">{h.names.join(' · ') || '—'}</span>
+              <li key={h.day}>
+                <button
+                  type="button"
+                  onClick={() => onDayTap?.(h.day)}
+                  className="flex w-full items-center gap-3 rounded-2xl bg-briefing-cream px-3 py-2.5 text-left transition-colors hover:bg-basel-brick/10"
+                >
+                  <span className="grid size-6 shrink-0 place-items-center rounded-full bg-basel-brick text-xs font-bold text-white">
+                    {h.day}
+                  </span>
+                  <span className="min-w-0 flex-1 text-sm font-medium leading-snug text-zen-black">
+                    {h.emoji && <span className="mr-1.5">{h.emoji}</span>}
+                    {h.names.join(' · ') || '—'}
+                  </span>
+                  <ChevronRight className="size-4 shrink-0 text-graphite/40" aria-hidden />
+                </button>
               </li>
             ))}
           </ul>
@@ -148,7 +172,7 @@ export function OverviewPanel({ itinerary, tripDays }: { itinerary: AnyItinerary
       {/* Traveler note — Midnight card (text-on-dark = briefing-cream, our
           convention; Kimi's build used text-white). XX when the plan has none. */}
       <section className="rounded-3xl bg-zen-black p-5 shadow-lg shadow-zen-black/25">
-        <p className="text-sm font-semibold text-briefing-cream/90">Traveler note</p>
+        <p className="text-lg font-extrabold tracking-tight text-briefing-cream/90">Traveler note</p>
         <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-briefing-cream/70">
           {note?.trim() || 'XX'}
         </p>

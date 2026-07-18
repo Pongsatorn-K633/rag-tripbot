@@ -180,7 +180,8 @@ function slotLabel(slot: string): string {
 }
 
 // V3 category tag → emoji (the tags an admin picks in the editor dropdown).
-const CATEGORY_EMOJI: Record<string, string> = {
+// Exported: the preview's Highlights rows reuse it for per-day flavor.
+export const CATEGORY_EMOJI: Record<string, string> = {
   food: '🍴', cafe: '☕', shopping: '🛍️', nature: '🌿', temple: '⛩️',
   landmark: '🗼', experience: '🎟️', nightlife: '🌃', transport: '🚆', stay: '🏨',
 }
