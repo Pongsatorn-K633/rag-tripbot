@@ -331,7 +331,7 @@ export default function PlanPreviewModal({
             <div className="pointer-events-none absolute inset-x-4 bottom-12 sm:inset-x-0 sm:mx-auto sm:max-w-2xl sm:px-4">
               {/* Current cover photo's PLACE — overview.cover_places keyed to
                   the swipe index; XX for covers without an authored place. */}
-              <span className="inline-block rounded-full bg-zen-black/70 px-3 py-1.5 font-headline text-[11px] font-bold tracking-wide text-briefing-cream backdrop-blur-sm">
+              <span className="inline-block rounded-full bg-zen-black/55 px-3 py-1.5 font-headline text-[11px] font-bold tracking-wide text-briefing-cream backdrop-blur-sm">
                 {coverPlaces[coverIdx] || 'XX'}
               </span>
               <h1 className="mt-2 font-headline text-3xl font-extrabold leading-tight tracking-tight text-zen-black sm:text-4xl">
@@ -366,7 +366,7 @@ export default function PlanPreviewModal({
                       initial={false}
                       animate={{ x: tab === 'itinerary' ? '100%' : '0%' }}
                       transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                      className="absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-basel-brick shadow-md shadow-basel-brick/30"
+                      className="absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-zen-black shadow-md shadow-zen-black/25"
                     />
                     {(['overview', 'itinerary'] as const).map((key) => (
                       <button
@@ -411,7 +411,7 @@ export default function PlanPreviewModal({
                     onClick={handleStartDuplication}
                     // Styled like the active Overview tab pill (font-detail,
                     // semibold, Ocean glow) so the CTA speaks the same language.
-                    className="mx-auto flex w-full max-w-2xl items-center justify-center gap-2 rounded-full bg-basel-brick py-3.5 font-detail text-sm font-semibold text-white shadow-md shadow-basel-brick/30 transition-all hover:bg-zen-black"
+                    className="mx-auto flex w-full max-w-2xl items-center justify-center gap-2 rounded-full bg-zen-black py-3.5 font-detail text-sm font-semibold text-white shadow-md shadow-zen-black/25 transition-all hover:bg-basel-brick"
                   >
                     <Copy size={15} strokeWidth={2.25} />
                     Duplicate and Edit

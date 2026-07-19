@@ -83,6 +83,15 @@ function barcodeBars(seed: string) {
  */
 function CoverCarousel({ images, alt }: { images: string[]; alt: string }) {
   const [idx, setIdx] = useState(0)
+  const reduced = useReducedMotion() ?? false
+  // Auto-advance every 4s. `idx` in the deps restarts the timer after ANY
+  // change — so a manual arrow tap resets the clock instead of an auto-swipe
+  // landing right on top of it. Off under prefers-reduced-motion.
+  useEffect(() => {
+    if (images.length < 2 || reduced) return
+    const id = window.setInterval(() => setIdx((i) => (i + 1) % images.length), 4000)
+    return () => window.clearInterval(id)
+  }, [images.length, idx, reduced])
   const arrow =
     'absolute top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-briefing-cream/50 text-zen-black shadow-md transition-colors hover:bg-briefing-cream'
 
@@ -274,6 +283,7 @@ function DeckCard({
   saved,
   isPending,
   reduced,
+  canSwipe,
   onOpen,
   onHeart,
   onNext,
@@ -287,6 +297,8 @@ function DeckCard({
   saved: boolean
   isPending: boolean
   reduced: boolean
+  /** false when the deck has a single card — nowhere to swipe to. */
+  canSwipe: boolean
   onOpen: (id: string) => void
   onHeart: (id: string, e: React.MouseEvent) => void
   onNext: () => void
@@ -295,6 +307,8 @@ function DeckCard({
   const x = useMotionValue(0)
   const dragged = useRef(false)
   const isFront = pos === 0
+  // A single-card deck has nowhere to swipe TO — disable drag entirely
+  // (next()/prev() already no-op, but the card shouldn't even wiggle).
   const pose = STACK[Math.min(Math.max(pos, 0), STACK.length - 1)]
 
   // Whenever the card settles back into the stack (notably right after its exit
@@ -307,7 +321,7 @@ function DeckCard({
 
   return (
     <motion.div
-      drag={isFront && !isExiting && !locked && !reduced ? 'x' : false}
+      drag={isFront && canSwipe && !isExiting && !locked && !reduced ? 'x' : false}
       dragElastic={0.7}
       dragMomentum={false}
       style={{ x, height: DECK_CARD_H, zIndex: 40 - pos * 10, boxShadow: pose.shadow }}
@@ -422,6 +436,7 @@ export default function TripDeck({
               saved={savedIds.has(tpl.id)}
               isPending={pending.has(tpl.id)}
               reduced={reduced}
+              canSwipe={templates.length > 1}
               onOpen={onOpen}
               onHeart={onHeart}
               onNext={next}

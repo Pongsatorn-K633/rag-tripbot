@@ -350,7 +350,7 @@ export function OverviewPanel({
   const frontContent = (
     <>
       <div className="flex items-start justify-between gap-3">
-        <h2 className="text-lg font-extrabold tracking-tight text-noir">Trip summary</h2>
+        <h2 className="text-lg font-extrabold tracking-tight text-zen-black">Trip summary</h2>
         <FlipHint dark={false} />
       </div>
       {tagline?.trim() && <p className="mt-0.5 text-sm font-medium text-graphite/70">{tagline}</p>}
@@ -425,7 +425,7 @@ export function OverviewPanel({
       {/* Highlights card — day by day (derived from activity priorities) */}
       {dayHighlights.length > 0 && (
         <section className="rounded-3xl border border-zen-black/10 bg-white p-5 shadow-sm">
-          <h3 className="text-lg font-extrabold tracking-tight text-noir">Day Highlights</h3>
+          <h3 className="text-lg font-extrabold tracking-tight text-zen-black">Day Highlights</h3>
           {/* Cream ticket rows — Ocean day badge + category emoji + names.
               Tappable: jumps to that day in the Itinerary tab. */}
           <ul className="mt-3 space-y-2">
@@ -436,7 +436,7 @@ export function OverviewPanel({
                   onClick={() => onDayTap?.(h.day)}
                   className="flex w-full items-center gap-3 rounded-2xl bg-briefing-cream px-3 py-2.5 text-left transition-colors hover:bg-basel-brick/10"
                 >
-                  <span className="grid size-6 shrink-0 place-items-center rounded-full bg-basel-brick text-xs font-bold text-white">
+                  <span className="grid size-6 shrink-0 place-items-center rounded-full bg-zen-black text-xs font-bold text-white">
                     {h.day}
                   </span>
                   <span className="min-w-0 flex-1 text-sm font-medium leading-snug text-zen-black">
@@ -455,7 +455,7 @@ export function OverviewPanel({
           in the panel's card language: cream sub-blocks inside a white card. */}
       {(recPeriods.length > 0 || availPeriod) && (
         <section className="rounded-3xl border border-zen-black/10 bg-white p-5 shadow-sm">
-          <h3 className="text-lg font-extrabold tracking-tight text-noir">Travel Periods</h3>
+          <h3 className="text-lg font-extrabold tracking-tight text-zen-black">Travel Periods</h3>
           <div className="mt-3 space-y-3">
             {recPeriods.length > 0 && (
               <div>
@@ -600,7 +600,7 @@ function TimelineItem({ row, isLast }: { row: Row; isLast: boolean }) {
         <div className={`pl-3 ${isLast ? 'pb-1' : 'pb-5'}`}>
           {/* Same size + color as activity titles — weight alone (regular vs
               bold) tells transport apart from destinations. */}
-          <p className="leading-snug text-noir">{row.name}</p>
+          <p className="leading-snug text-zen-black">{row.name}</p>
           {row.duration && <p className="mt-0.5 text-xs text-graphite/60">{row.duration}</p>}
         </div>
       </li>
@@ -617,7 +617,7 @@ function TimelineItem({ row, isLast }: { row: Row; isLast: boolean }) {
           <span className="relative z-10 mt-1.5 size-3 shrink-0 rounded-full bg-basel-brick ring-4 ring-basel-brick/20" aria-hidden />,
         )}
         <div className={`min-w-0 pl-3 ${isLast ? 'pb-1' : 'pb-6'}`}>
-          <p className="font-semibold leading-snug text-noir">{row.choice.label}</p>
+          <p className="font-semibold leading-snug text-zen-black">{row.choice.label}</p>
           {/* Slot-level duration (from the picked option) — cards stay lighter */}
           {row.duration && <p className="mt-0.5 text-xs text-graphite/60">{row.duration}</p>}
           <ChoiceOptions options={row.choice.options} />
@@ -637,7 +637,7 @@ function TimelineItem({ row, isLast }: { row: Row; isLast: boolean }) {
       {/* Content */}
       <div className={`flex items-start justify-between gap-3 pl-3 ${isLast ? 'pb-1' : 'pb-6'}`}>
         <div className="min-w-0">
-          <p className="font-semibold leading-snug text-noir">{row.name}</p>
+          <p className="font-semibold leading-snug text-zen-black">{row.name}</p>
           <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
             <p className="text-xs text-graphite/70">{row.duration || 'XX h'}</p>
             <LinkChips mapUrl={row.mapUrl} walkingUrl={row.walkingUrl} />
@@ -670,11 +670,11 @@ export function ItineraryPanel({ itinerary, sel }: { itinerary: AnyItinerary; se
         const isOpen = sel !== 'all' || openDays.has(day.day)
         const header = (
           <>
-            <span className="grid size-7 shrink-0 place-items-center rounded-full bg-basel-brick text-xs font-bold text-white">
+            <span className="grid size-7 shrink-0 place-items-center rounded-full bg-zen-black text-xs font-bold text-white">
               {day.day}
             </span>
             <div className="min-w-0 flex-1">
-              <h2 className="text-base font-extrabold tracking-tight text-noir">Day {day.day}</h2>
+              <h2 className="text-base font-extrabold tracking-tight text-zen-black">Day {day.day}</h2>
               {/* The day's authored NAME (V3 day.name) — the reason to open it */}
               {day.location && <p className="truncate text-sm text-graphite/70">{day.location}</p>}
             </div>

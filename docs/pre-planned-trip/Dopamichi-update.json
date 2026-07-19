@@ -26,7 +26,12 @@
       }
     ],
     "area_code": "(fill in app)",
-    "cover_images": "(fill in app)",
+    "cover_images": [
+      "https://res.cloudinary.com/dubett62q/image/upload/v1780336095/uldonoc9pkiy5ejiqvgz.jpg",
+      "https://res.cloudinary.com/dubett62q/image/upload/v1775942067/nsplsh_36554c7933707875784c38_mv2_d_4997_3084_s_4_2_lj2aty.jpg",
+      "https://res.cloudinary.com/dubett62q/image/upload/v1780337578/whuva0ea8amc1er9ijcp.jpg",
+      "https://res.cloudinary.com/dubett62q/image/upload/v1780333539/lu6xxzzrgffgjqkkhigd.jpg"
+    ],
     "available_airports": {
       "major_hubs": [
         {
