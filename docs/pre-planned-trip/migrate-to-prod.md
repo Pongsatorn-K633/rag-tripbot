@@ -59,13 +59,13 @@ one copy and forgetting the others.
 
 **The rules:**
 
-1. **The JSON is canonical.** Any content edit made in a dashboard (dev OR prod)
-   must be back-ported to the JSON — otherwise the next import silently reverts
-   it. Easiest back-port: Dashboard → **⬇ JSON** → save over `Dopamichi-update.json`.
-2. **Pick ONE dashboard to edit in** (prefer dev), then flow changes outward:
-   *edit dev → export/patch JSON → commit → import to prod.* Editing prod
-   directly creates a third divergent copy (this happened; reconciling it took a
-   full three-way diff).
+1. **The DEV DB is canonical; the JSON is its snapshot.** The `/ship` skill
+   automates the flow: `scripts/export-dopamichi.ts` snapshots dev → JSON,
+   then commit/push, then (JSON changed ⇒) prod import. Author in the dev
+   dashboard freely — /ship carries it everywhere.
+2. **Never edit the prod dashboard directly.** A prod-only edit is invisible to
+   the dev snapshot and the next import reverts it (this happened; reconciling
+   took a three-way diff). If it happens anyway, pull the edit dev-ward first.
 3. **The import DELETE-and-RECREATES the template** and cascades any Trips linked
    to it (user duplicates, the share-code bridge). Fine pre-launch; after launch
    this needs rethinking before any prod re-import.

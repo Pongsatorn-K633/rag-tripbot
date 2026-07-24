@@ -8,6 +8,24 @@ description: Commit + push, then sync trip data to the prod DB when the authorin
 Follow these steps IN ORDER. The goal: after /ship finishes, GitHub, Vercel,
 the dev DB, and the prod DB all agree. Full background: `docs/pre-planned-trip/migrate-to-prod.md`.
 
+**Direction of truth: the DEV DB is canonical** (that's where authoring happens
+— dashboard edits, scripts). The JSON is its snapshot; prod is downstream.
+
+## 0. Snapshot dev → JSON
+
+1. FIRST check for uncommitted hand-edits: `git status --short docs/pre-planned-trip/`.
+   If the JSON already has uncommitted changes, STOP and ask the user which wins
+   — a snapshot would silently overwrite direct file edits.
+2. Export the dev DB into the authoring JSON:
+
+```bash
+npx tsx scripts/export-dopamichi.ts
+```
+
+3. `git diff --stat` the JSON. No diff → dev and JSON already agreed. A diff →
+   that's the content this ship will carry to prod; skim it for surprises
+   (fields the user didn't knowingly change).
+
 ## 1. Commit + push
 
 1. `git status` — review what's changing. Never commit `scripts/` one-off leftovers.
@@ -57,10 +75,10 @@ side per run: plain = dev, `USE_PROD_DB=1` = prod, `DUMP_TO=<path>` picks the
 output file). Normalization noise (key order, `null` vs `{en:null,th:null}`)
 is harmless; only content differences matter.
 
-## Remember the direction of truth
+## Edge cases
 
-JSON is canonical. If the user edited a **dashboard** (dev or prod) instead of
-the JSON, the JSON must be updated FIRST (Dashboard → ⬇ JSON → save over
-`Dopamichi-update.json`, or targeted patch) — otherwise this import will
-silently revert their dashboard edits. When in doubt, run the dump-diff before
-importing.
+- **Prod-dashboard edits**: step 0 snapshots DEV — an edit made only on the
+  prod dashboard is NOT captured and the import will revert it. If the user
+  mentions editing on prod, first pull that content dev-ward (dump-diff, then
+  apply to dev) before shipping.
+- The Kyoto demo trip (v2, no sourceFile) is outside this flow entirely.
