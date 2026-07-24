@@ -545,12 +545,19 @@ export default function Home() {
                           value={dest ?? ''}
                           options={[
                             { value: '', label: 'ทั้งหมด · All' },
-                            ...TOP_PREFECTURES.map((p) => ({
-                              value: p,
-                              label: p,
-                              disabled: !availableDest.has(p),
-                              sub: availableDest.has(p) ? undefined : 'เร็วๆ นี้ · Coming soon',
-                            })),
+                            // Live prefectures first, then coming-soon — each
+                            // group alphabetical.
+                            ...[...TOP_PREFECTURES]
+                              .sort(
+                                (a, b) =>
+                                  Number(!availableDest.has(a)) - Number(!availableDest.has(b)) || a.localeCompare(b),
+                              )
+                              .map((p) => ({
+                                value: p,
+                                label: p,
+                                disabled: !availableDest.has(p),
+                                sub: availableDest.has(p) ? undefined : 'เร็วๆ นี้ · Coming soon',
+                              })),
                           ]}
                           onPick={(v) => {
                             setDest(v || null)

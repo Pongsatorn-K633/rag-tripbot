@@ -50,3 +50,36 @@ Open `dopamichi.com/pre-planned` (or Admin → Dashboard if you imported as a dr
   that one command, so no cleanup is needed.
 - The `dev` branch is a copy-on-write clone of prod, so both already have the system user +
   categories the import needs.
+
+## Keeping JSON ↔ dev ↔ prod in sync (rules learned the hard way, 2026-07)
+
+There are THREE copies of a trip's content: the **JSON file** (authoring source),
+the **dev DB**, and the **prod DB**. Every drift incident so far came from editing
+one copy and forgetting the others.
+
+**The rules:**
+
+1. **The JSON is canonical.** Any content edit made in a dashboard (dev OR prod)
+   must be back-ported to the JSON — otherwise the next import silently reverts
+   it. Easiest back-port: Dashboard → **⬇ JSON** → save over `Dopamichi-update.json`.
+2. **Pick ONE dashboard to edit in** (prefer dev), then flow changes outward:
+   *edit dev → export/patch JSON → commit → import to prod.* Editing prod
+   directly creates a third divergent copy (this happened; reconciling it took a
+   full three-way diff).
+3. **The import DELETE-and-RECREATES the template** and cascades any Trips linked
+   to it (user duplicates, the share-code bridge). Fine pre-launch; after launch
+   this needs rethinking before any prod re-import.
+4. **In-app-authored fields ride on preservation, not the JSON** — the single
+   `coverImage` always carries over from the prior row; the `cover_images`
+   gallery comes from the JSON *when present*, else carries over. Never leave
+   placeholder strings like `"(fill in app)"` in the JSON: one import shipped
+   that to prod and wiped the gallery (fixed by storing the real URLs in the
+   JSON, which is now the norm).
+5. **Data errors in the JSON propagate everywhere** — the KIX/Narita airport
+   contradiction (Day 1 says "ถึง Narita", airports said KIX) originated in the
+   authored JSON and spread to both DBs via import. When editing the JSON,
+   sanity-check fields that don't visibly render (airports feed the duplicate
+   flow's flight picker, not the preview header).
+6. **Verify sync after any incident:** dump both DBs and diff (any session can
+   script this in a minute). Normalization noise (key order, `null` vs
+   `{en:null,th:null}`) is harmless — only content differences matter.

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 import useEmblaCarousel from 'embla-carousel-react'
 import { CalendarDays, CalendarCheck, MapPin, ChevronRight, RefreshCw, Footprints } from 'lucide-react'
 import { safeHref } from '@/lib/url'
@@ -336,9 +336,21 @@ export function OverviewPanel({
   // (same disease as the old will-change blur). At rest the card is a plain flat
   // element — pixel-sharp by construction.
   const [flipping, setFlipping] = useState(false)
+  // One-time flip TEASE on first view: the card tilts a few degrees and springs
+  // back — motion demonstrates "this rotates" better than any icon can.
+  const [teasing, setTeasing] = useState(false)
+  const teased = useRef(false)
+  const reducedMotion = useReducedMotion() ?? false
+  useEffect(() => {
+    if (teased.current || reducedMotion) return
+    teased.current = true
+    const id = window.setTimeout(() => setTeasing(true), 900)
+    return () => window.clearTimeout(id)
+  }, [reducedMotion])
 
   function toggleFlip() {
     if (flipping) return
+    setTeasing(false)
     setFlipping(true)
     setFlipped((f) => !f)
   }
@@ -351,7 +363,7 @@ export function OverviewPanel({
     <>
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-lg font-extrabold tracking-tight text-zen-black">Trip summary</h2>
-        <FlipHint dark={false} />
+        <FlipHint label="Review" dark={false} />
       </div>
       {tagline?.trim() && <p className="mt-0.5 text-sm font-medium text-graphite/70">{tagline}</p>}
       <div className="mt-4 grid grid-cols-3 gap-3">
@@ -369,7 +381,7 @@ export function OverviewPanel({
     <>
       <div className="flex items-start justify-between gap-3">
         <p className="text-lg font-extrabold tracking-tight text-briefing-cream/90">Admin Review</p>
-        <FlipHint dark />
+        <FlipHint label="Summary" dark />
       </div>
       {/* Near-full opacity: this is the pitch, not fine print — and opacity
           dims color EMOJI along with the text, which reads as washed out. */}
@@ -397,13 +409,25 @@ export function OverviewPanel({
         }}
         className="cursor-pointer select-none"
       >
-        {flipping ? (
+        {flipping || teasing ? (
           <div style={{ perspective: 1200 }}>
             <motion.div
-              initial={{ rotateY: flipped ? 0 : 180 }}
-              animate={{ rotateY: flipped ? 180 : 0 }}
-              transition={{ duration: 0.55, ease: [0.45, 0, 0.55, 1] }}
-              onAnimationComplete={() => setFlipping(false)}
+              initial={{ rotateY: flipped ? (flipping ? 0 : 180) : flipping ? 180 : 0 }}
+              animate={
+                teasing && !flipping
+                  ? // Tease: tilt a few degrees and spring back
+                    { rotateY: flipped ? [180, 168, 180] : [0, -12, 0] }
+                  : { rotateY: flipped ? 180 : 0 }
+              }
+              transition={
+                teasing && !flipping
+                  ? { duration: 0.9, ease: 'easeInOut' }
+                  : { duration: 0.55, ease: [0.45, 0, 0.55, 1] }
+              }
+              onAnimationComplete={() => {
+                setFlipping(false)
+                setTeasing(false)
+              }}
               style={{ transformStyle: 'preserve-3d' }}
               className="grid"
             >
@@ -516,16 +540,18 @@ function NoteLines({ text }: { text: string }) {
   )
 }
 
-/** Flip affordance — icon-only corner chip (↻): "this card flips". */
-function FlipHint({ dark }: { dark: boolean }) {
+/** Flip affordance — labeled corner chip ("↻ Review"): icon-only proved too
+ *  subtle; words name the interaction AND what's on the back. */
+function FlipHint({ label, dark }: { label: string; dark: boolean }) {
   return (
     <span
       aria-hidden
-      className={`grid size-6 shrink-0 place-items-center rounded-full ${
+      className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
         dark ? 'bg-white/10 text-briefing-cream/70' : 'bg-briefing-cream text-graphite/70'
       }`}
     >
       <RefreshCw className="size-3" strokeWidth={2.25} />
+      {label}
     </span>
   )
 }
