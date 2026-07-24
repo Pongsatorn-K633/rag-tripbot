@@ -83,15 +83,6 @@ function barcodeBars(seed: string) {
  */
 function CoverCarousel({ images, alt }: { images: string[]; alt: string }) {
   const [idx, setIdx] = useState(0)
-  const reduced = useReducedMotion() ?? false
-  // Auto-advance every 4s. `idx` in the deps restarts the timer after ANY
-  // change — so a manual arrow tap resets the clock instead of an auto-swipe
-  // landing right on top of it. Off under prefers-reduced-motion.
-  useEffect(() => {
-    if (images.length < 2 || reduced) return
-    const id = window.setInterval(() => setIdx((i) => (i + 1) % images.length), 4000)
-    return () => window.clearInterval(id)
-  }, [images.length, idx, reduced])
   const arrow =
     'absolute top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-briefing-cream/50 text-zen-black shadow-md transition-colors hover:bg-briefing-cream'
 
