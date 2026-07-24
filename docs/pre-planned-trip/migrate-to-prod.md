@@ -13,7 +13,7 @@ copying DB rows/IDs across branches.
 ### 1. (Only if you edited in the *editor*) export the current JSON
 If you changed the trip in the admin **editor** (not just the JSON file), export the live
 state first: **Admin → Dashboard → Pre-planned → ⬇ JSON** on the card, and save it over
-`docs/pre-planned-trip/Dopamichi-update.json` (or anywhere).
+`data/snapshots/tokyo-nagano.json` (or anywhere).
 If the JSON file is already current, skip this.
 
 ### 2. Deploy the V3 code to production
@@ -25,18 +25,20 @@ Runs locally but connects to the **prod** Neon DB via `.env`. Syntax depends on 
 
 **Git Bash:**
 ```bash
-USE_PROD_DB=1 npx tsx scripts/import-dopamichi.ts docs/pre-planned-trip/Dopamichi-update.json --publish
+USE_PROD_DB=1 npx tsx scripts/import-dopamichi.ts data/snapshots/tokyo-nagano.json --publish
 ```
 
 **PowerShell:**
 ```powershell
-$env:USE_PROD_DB="1"; npx tsx scripts/import-dopamichi.ts docs/pre-planned-trip/Dopamichi-update.json --publish; $env:USE_PROD_DB=$null
+$env:USE_PROD_DB="1"; npx tsx scripts/import-dopamichi.ts data/snapshots/tokyo-nagano.json --publish; $env:USE_PROD_DB=$null
 ```
 
 - `USE_PROD_DB=1` → loads `.env` (prod) and unlocks the safety guard; prints `⚠️ TARGETING PRODUCTION DB`.
 - `--publish` → goes live on `/pre-planned`. **Omit `--publish`** to import as a **draft**
   first (review in admin, then publish from the dashboard).
-- The JSON path arg is optional — it defaults to `docs/pre-planned-trip/Dopamichi-update.json`.
+- The JSON path arg is optional — it defaults to `data/snapshots/tokyo-nagano.json`
+  (the machine-managed snapshot — never hand-edit that file; put hand-edited/transformer
+  JSON anywhere else and pass its path).
 - Idempotent by `sourceFile`: re-running **updates** the trip instead of duplicating it.
 
 ### 4. Verify
@@ -59,16 +61,24 @@ one copy and forgetting the others.
 
 **The rules:**
 
-1. **The DEV DB is canonical; the JSON is its snapshot.** The `/ship` skill
-   automates the flow: `scripts/export-dopamichi.ts` snapshots dev → JSON,
-   then commit/push, then (JSON changed ⇒) prod import. Author in the dev
-   dashboard freely — /ship carries it everywhere.
-2. **Never edit the prod dashboard directly.** A prod-only edit is invisible to
-   the dev snapshot and the next import reverts it (this happened; reconciling
-   took a three-way diff). If it happens anyway, pull the edit dev-ward first.
-3. **The import DELETE-and-RECREATES the template** and cascades any Trips linked
-   to it (user duplicates, the share-code bridge). Fine pre-launch; after launch
-   this needs rethinking before any prod re-import.
+1. **The PROD DB is canonical; the JSON is its snapshot; dev follows.**
+   *(Flipped from dev-canonical on 2026-07-24 — authoring moved to the live
+   prod dashboard.)* The `/ship` skill automates the flow:
+   `USE_PROD_DB=1 scripts/export-dopamichi.ts` snapshots prod → JSON, then
+   commit/push, then (JSON changed ⇒) dev import. Author on the prod
+   dashboard freely — /ship carries it into git + dev.
+2. **Never author on the DEV dashboard.** A dev-only edit is invisible to the
+   prod snapshot and the next dev import reverts it. Dev is for testing code
+   against a copy of real content, not for authoring. If it happens anyway,
+   export dev, diff against the prod snapshot, and reconcile before shipping.
+   The one sanctioned dev-ward-first path is **hand-edited/transformer JSON**,
+   which imports to prod deliberately (see the /ship edge cases).
+3. **The import UPDATES the template in place** (matched by `sourceFile`) — user
+   duplicates + their edits survive, the shareCode is kept, and the LINE bridge
+   Trip is content-synced via `syncBridgeTrip()`. (Before 2026-07 it
+   delete-recreated and cascaded linked Trips; that was fixed so re-imports are
+   safe after launch.) A user's duplicated Trip keeps its own itinerary copy and
+   does NOT receive the update — by design.
 4. **In-app-authored fields ride on preservation, not the JSON** — the single
    `coverImage` always carries over from the prior row; the `cover_images`
    gallery comes from the JSON *when present*, else carries over. Never leave

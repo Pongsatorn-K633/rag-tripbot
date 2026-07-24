@@ -60,9 +60,15 @@ Three versions coexist; the renderer normalizes them:
 ## 4. Dev / prod workflow (CRITICAL)
 - `.env` → **production** Neon (`ep-twilight-hall`). `.env.local` (gitignored) → isolated **`dev`** Neon branch
   (`ep-spring-sunset`) — created off prod. `npm run dev` + the scripts read `.env.local` first via `scripts/load-env.ts`.
-- **Authoring loop:** Dashboard **⬇ JSON** (export) or **Blank JSON** → hand-edit → re-import → refresh.
+- **The snapshot `data/snapshots/tokyo-nagano.json` is MACHINE-MANAGED** — written only by
+  `export-dopamichi.ts`, read only by `import-dopamichi.ts`. Never hand-edit it (AI included);
+  hand-authored/transformer JSON lives elsewhere and is passed to the import by path.
+- **Authoring loop (PROD-canonical since 2026-07-24):** author on the **prod** admin dashboard →
+  `/ship` snapshots prod → JSON (`USE_PROD_DB=1 npx tsx scripts/export-dopamichi.ts`), commits,
+  and re-imports the JSON into `dev` so it follows. Imports are **update-in-place** (matched by
+  `sourceFile`) — linked Trips, user edits, and the share code survive; the LINE bridge re-syncs.
   - Dev import: `npx tsx scripts/import-dopamichi.ts [file.json] --publish` (hits `dev`, guarded against prod).
-  - Prod import: `USE_PROD_DB=1 npx tsx scripts/import-dopamichi.ts [file.json] --publish` (see **[migrate-to-prod.md](pre-planned-trip/migrate-to-prod.md)**).
+  - Prod import (only for hand-edited/transformer JSON): `USE_PROD_DB=1 npx tsx scripts/import-dopamichi.ts [file.json] --publish` (see **[migrate-to-prod.md](pre-planned-trip/migrate-to-prod.md)**).
 - **Deploy order:** push V3 **code** to Vercel FIRST, *then* import V3 data to prod — else old prod code crashes on a V3 row.
   V3 code is backward-compatible (v1/v2 still render), so deploying is safe; prod has no V3 data until you import.
 - **Windows note:** `npm run build` may hit EPERM on `prisma generate` if the dev server holds the query-engine DLL.
