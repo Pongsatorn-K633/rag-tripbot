@@ -13,7 +13,10 @@ export interface PlanTemplate {
   id: string
   title: string
   description: string | null
-  itinerary: Itinerary
+  /** Absent in the list payload (GET /api/templates omits it for size) —
+   *  PlanPreviewModal lazy-fetches it from GET /api/templates/[id] on open.
+   *  Present when the caller already has it (e.g. the admin dashboard). */
+  itinerary?: Itinerary
   coverImage: string | null
   coverImages?: string[] | null
   totalDays: number

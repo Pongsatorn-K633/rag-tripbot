@@ -93,7 +93,8 @@ Three versions coexist; the renderer normalizes them:
 **Recommended next:**
 - **Phase 6 — Testing/QA:** no automated suite yet (only `tsc`/lint/build + manual). Biggest stability gap. Add Vitest (lib/) + Playwright (auth, trips, LINE webhook) + CI; then create a Test/QA agent.
 - **Phase 7 C/D — LIFF duplicate/edit:** LINE identity (`User.lineUserId`, `@line/liff`), `/liff/edit`, "my LINE trips", rate-limit duplicate. Spec: `docs/duplicate-edit-feature.md`.
-**Smaller:** per-activity **user notes** in `ItineraryEditorV3` (deferred) · `area_code` edit in the V3 builder · **chat re-enable** (`/chat → /maintenance` redirect still on).
+**Smaller:** per-activity **user notes** in `ItineraryEditorV3` (deferred) · `area_code` edit in the V3 builder · **chat re-enable** (`/chat → /maintenance` redirect still on) ·
+**ISR-proper homepage** (deferred 2026-07-25, do only if the gallery skeleton flash still bothers after the payload-slim + route-cache ship): split `app/page.tsx` into a small **server** `page.tsx` (Prisma query directly, `export const revalidate = 300`) + `HomeClient.tsx` taking `templates` as props — cards arrive in the HTML, no client fetch/skeleton. Same treatment for `/discover`; NOT `/saved` (per-user). Keep the `/api/templates*` routes — the preview modal's lazy itinerary fetch + LIFF still use them.
 **Deferred design docs:** `docs/phase2-v3-builder-plan.md` (full V3 builder plan + decisions), `docs/single-source-of-truth-plan.md` (vocab consolidation).
 
 ## 8. Security review (new V3 surfaces) — done at handoff

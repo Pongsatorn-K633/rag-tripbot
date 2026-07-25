@@ -418,7 +418,7 @@ export default function Home() {
               {/* Search — filter button INSIDE the field (far right); the chips
                   live in the collapsible panel below. Quick first cut; precise
                   dates live on /discover. */}
-              <div className="relative mt-5 max-w-md">
+              <div className="relative mt-5 max-w-md md:mx-auto">
                 <div className="relative">
                   {/* z-10: the input's backdrop-blur creates a stacking context
                       that otherwise paints OVER this earlier-DOM icon. */}

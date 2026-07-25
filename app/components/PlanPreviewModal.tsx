@@ -11,6 +11,7 @@ import 'react-day-picker/style.css'
 import Image from 'next/image'
 import { OverviewPanel, ItineraryPanel, DayChips, type DaySel } from '@/app/components/TripPreviewPanels'
 import type { PlanTemplate } from '@/app/components/PlanCard'
+import type { Itinerary } from '@/app/components/TemplateCard'
 import { resolveHeroCoverImage } from '@/lib/cover-image'
 import type { TripFlight } from '@/lib/itinerary-types'
 import { extendItineraryWithFreeDays } from '@/lib/trips/extend'
@@ -93,22 +94,39 @@ export default function PlanPreviewModal({
     return d
   }, [])
 
-  const tripDays = template?.totalDays ?? template?.itinerary?.days?.length ?? 1
+  // The list payload (GET /api/templates) omits the itinerary for size — fetch
+  // it on demand the first time a template is opened, keyed by id so reopening
+  // is instant. Callers that already pass a full template (admin) skip this.
+  const [loadedItins, setLoadedItins] = useState<Record<string, Itinerary>>({})
+  const itinerary = template ? (template.itinerary ?? loadedItins[template.id]) : undefined
+  useEffect(() => {
+    if (!template || template.itinerary || loadedItins[template.id]) return
+    let active = true
+    fetch(`/api/templates/${template.id}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((d) => {
+        if (active && d.template?.itinerary)
+          setLoadedItins((m) => ({ ...m, [template.id]: d.template.itinerary }))
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [template, loadedItins])
+
+  const tripDays = template?.totalDays ?? itinerary?.days?.length ?? 1
   // Per-cover place names (overview.cover_places, same order as the gallery).
-  const coverPlaces =
-    template && isV3(template.itinerary) ? (template.itinerary.overview.cover_places ?? []) : []
+  const coverPlaces = isV3(itinerary) ? (itinerary.overview.cover_places ?? []) : []
 
   // The plan's Day-1 first scheduled time — to warn if the flight lands after it.
   const dayOneFirstTime = useMemo(
-    () => (template?.itinerary ? getRenderDays(template.itinerary)[0]?.activities.find((a) => a.time)?.time : undefined),
-    [template],
+    () => (itinerary ? getRenderDays(itinerary)[0]?.activities.find((a) => a.time)?.time : undefined),
+    [itinerary],
   )
   // The last day's last activity END time — to warn if departure is too tight.
   const lastDayLastTime = useMemo(() => {
-    if (!template?.itinerary) return undefined
-    const days = getRenderDays(template.itinerary)
+    if (!itinerary) return undefined
+    const days = getRenderDays(itinerary)
     return lastActivityEndTime(days[days.length - 1]?.activities ?? [])
-  }, [template])
+  }, [itinerary])
 
   // Reset + pre-fill whenever a different template is opened. Seed the range from
   // the page's filter window (start → end), padding the end to at least the plan
@@ -123,7 +141,9 @@ export default function PlanPreviewModal({
     // (the embla carousel itself remounts with the modal tree, so it always
     // reopens on slide 0 — only our dot index needs resetting)
     setCoverIdx(0)
-    const days = template.totalDays ?? template.itinerary?.days?.length ?? 1
+    // totalDays is non-null in the DB; the itinerary may not be fetched yet, so
+    // don't reach into it here (it'd also drag it into this reset effect's deps).
+    const days = template.totalDays ?? 1
     if (defaultStartDate) {
       const start = new Date(defaultStartDate)
       const win = defaultEndDate ? dayCount(start, new Date(defaultEndDate)) : days
@@ -153,13 +173,15 @@ export default function PlanPreviewModal({
     setSaveState('dates')
   }
 
-  // Step 2 → save: requires a valid range (start + end, ≥ plan length).
+  // Step 2 → save: requires a valid range (start + end, ≥ plan length) AND the
+  // lazily-fetched itinerary (arrives well before a human can pick dates; the
+  // guard covers a failed fetch, where saving a trip without content is worse).
   async function handleConfirm() {
-    if (!template || !from || !valid) return
+    if (!template || !from || !valid || !itinerary) return
     setSaveState('saving')
     // Pad the plan with free days when the chosen window is longer than the plan.
     const itineraryToSave =
-      freeDays > 0 ? extendItineraryWithFreeDays(template.itinerary, tripLength) : template.itinerary
+      freeDays > 0 ? extendItineraryWithFreeDays(itinerary, tripLength) : itinerary
     // Attach the traveler's flights (arrival → Day 1, departure → last day).
     const hasFlight = !!(flight.arrival?.airport || flight.arrival?.time || flight.departure?.airport || flight.departure?.time)
     const itineraryFinal = hasFlight ? { ...itineraryToSave, flight } : itineraryToSave
@@ -184,7 +206,7 @@ export default function PlanPreviewModal({
       // Prefix from the template's PROVINCE (e.g. HOK from HOK-001), not the first
       // city (Sapporo→SAP), so the personal code matches the plan's province.
       try {
-        const prefix = template.shareCode?.split('-')[0] || template.itinerary?.days?.[0]?.location || 'JPN'
+        const prefix = template.shareCode?.split('-')[0] || itinerary?.days?.[0]?.location || 'JPN'
         await fetch('/api/activate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -385,11 +407,19 @@ export default function PlanPreviewModal({
                 </div>
               </div>
 
-              {/* Tab content — Kimi-style summary/highlights + day timelines */}
+              {/* Tab content — Kimi-style summary/highlights + day timelines.
+                  The itinerary arrives from the lazy fetch (usually <1s); a
+                  pulse placeholder holds the space until it does. */}
               <div className={`mx-auto max-w-2xl px-4 pt-6 ${viewOnly ? 'pb-16' : 'pb-32'}`}>
-                {tab === 'overview' ? (
+                {!itinerary ? (
+                  <div className="space-y-3 py-4" aria-busy>
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="h-20 animate-pulse rounded-2xl bg-zen-black/5" />
+                    ))}
+                  </div>
+                ) : tab === 'overview' ? (
                   <OverviewPanel
-                    itinerary={template.itinerary}
+                    itinerary={itinerary}
                     tripDays={tripDays}
                     // Tap a highlight row → that day, in the Itinerary tab.
                     // (No scroll reset — layoutScroll on the shell keeps the
@@ -400,7 +430,7 @@ export default function PlanPreviewModal({
                     }}
                   />
                 ) : (
-                  <ItineraryPanel itinerary={template.itinerary} sel={selDay} />
+                  <ItineraryPanel itinerary={itinerary} sel={selDay} />
                 )}
               </div>
 
@@ -460,7 +490,7 @@ export default function PlanPreviewModal({
                     onChange={setRange}
                     flight={flight}
                     onFlightChange={setFlight}
-                    airports={template.itinerary?.airports?.length ? template.itinerary.airports : Object.keys(AIRPORTS)}
+                    airports={itinerary?.airports?.length ? itinerary.airports : Object.keys(AIRPORTS)}
                     dayOneFirstTime={dayOneFirstTime}
                     lastDayLastTime={lastDayLastTime}
                     onBack={() => setSaveState('idle')}
