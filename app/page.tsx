@@ -1,16 +1,11 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
-import Link from 'next/link'
+import { useRef } from 'react'
 import Image from 'next/image'
-import { Compass, ArrowRight, Search, SlidersHorizontal, X, ChevronDown, Check } from 'lucide-react'
-import { motion, AnimatePresence, useScroll, useTransform, useMotionTemplate, useReducedMotion, type MotionValue } from 'motion/react'
+import { motion, useScroll, useTransform, useMotionTemplate, useReducedMotion, type MotionValue } from 'motion/react'
 import { IMG } from '@/lib/images'
 import { smoothScrollTo } from '@/lib/smooth-scroll'
-import { type PlanTemplate } from '@/app/components/PlanCard'
-import TripDeck, { TripCard, DECK_CARD_W, DECK_CARD_H } from '@/app/components/TripDeck'
-import PlanPreviewModal from '@/app/components/PlanPreviewModal'
-import { useSavedTemplates } from '@/app/hooks/useSavedTemplates'
+import TripSearchSection from '@/app/components/TripSearchSection'
 import JapanIcon from '@/app/components/JapanIcon'
 
 // ── JAPAN scroll-dissolve ────────────────────────────────────────────────────
@@ -49,113 +44,6 @@ function HeroLetter({
 // the landing lower into the section; 0 puts the section's top at the viewport top.
 const PATHWAYS_OFFSET = 30
 
-// ── Featured Trips search + filters ─────────────────────────────────────────
-// Season chips (not a month-range picker): one tap, matches the season-emoji
-// vocabulary, and precise date filtering already lives on /discover.
-const SEASONS = [
-  { key: 'Winter', emoji: '❄️', months: 'Dec – Feb' },
-  { key: 'Spring', emoji: '🌸', months: 'Mar – May' },
-  { key: 'Summer', emoji: '☀️', months: 'Jun – Aug' },
-  { key: 'Autumn', emoji: '🍁', months: 'Sep – Nov' },
-] as const
-// Top tourist prefectures (Thai-market recognition order). Edit freely — chips
-// self-prune to prefectures that actually have published trips.
-const TOP_PREFECTURES = ['Tokyo', 'Osaka', 'Kyoto', 'Hokkaido', 'Fukuoka', 'Okinawa', 'Nagano', 'Nara', 'Yamanashi', 'Gifu']
-const SEASON_OF_MONTH = ['Winter', 'Winter', 'Spring', 'Spring', 'Spring', 'Summer', 'Summer', 'Summer', 'Autumn', 'Autumn', 'Autumn', 'Winter']
-
-/** Custom dropdown for the filter modal (Cloud theme). Options can carry a
- *  `sub` line — e.g. season months — so labels never truncate.
- *  (Native <select> was tried: the OS-drawn open list can't be styled.) */
-function FilterSelect({
-  label,
-  display,
-  open,
-  onToggle,
-  options,
-  value,
-  onPick,
-}: {
-  label: string
-  display: string
-  open: boolean
-  onToggle: () => void
-  options: { value: string; label: string; sub?: string; disabled?: boolean }[]
-  value: string
-  onPick: (v: string) => void
-}) {
-  return (
-    <div>
-      <p className="text-[11px] font-bold uppercase tracking-wider text-graphite/70">{label}</p>
-      <div className="relative mt-2">
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={open}
-          className="flex w-full items-center justify-between gap-2 rounded-full border border-zen-black/15 bg-white px-4 py-2.5 text-sm font-semibold text-zen-black transition-colors hover:border-basel-brick/50"
-        >
-          <span className="truncate">{display}</span>
-          <ChevronDown
-            className={`size-4 shrink-0 text-graphite/60 transition-transform ${open ? 'rotate-180' : ''}`}
-            aria-hidden
-          />
-        </button>
-        {open && (
-          <div className="absolute left-0 right-0 top-full z-20 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-zen-black/10 bg-white shadow-xl shadow-black/15">
-            {options.map((o) => {
-              const active = o.value === value
-              return (
-                <button
-                  key={o.value}
-                  type="button"
-                  disabled={o.disabled}
-                  onClick={() => onPick(o.value)}
-                  className={`flex w-full items-center justify-between gap-2 px-4 py-2 text-left transition-colors ${
-                    o.disabled ? 'cursor-not-allowed' : active ? 'bg-basel-brick/10' : 'hover:bg-zen-black/5'
-                  }`}
-                >
-                  <span className="min-w-0">
-                    <span
-                      className={`block truncate text-sm ${
-                        o.disabled
-                          ? 'font-medium text-graphite/35'
-                          : active
-                            ? 'font-bold text-zen-black'
-                            : 'font-medium text-graphite'
-                      }`}
-                    >
-                      {o.label}
-                    </span>
-                    {o.sub && (
-                      <span className={`block text-[11px] ${o.disabled ? 'text-graphite/35' : 'text-graphite/60'}`}>
-                        {o.sub}
-                      </span>
-                    )}
-                  </span>
-                  {active && <Check className="size-4 shrink-0 text-basel-brick" strokeWidth={2.5} aria-hidden />}
-                </button>
-              )
-            })}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-/** Seasons a trip spans — from its recommended windows' endpoint months
- *  (Template.season is a single value; multi-window trips span several). */
-function templateSeasons(t: PlanTemplate): Set<string> {
-  const s = new Set<string>()
-  for (const r of t.availability?.recommended ?? []) {
-    for (const end of [r.from, r.to]) {
-      const m = parseInt(String(end ?? '').slice(0, 2), 10)
-      if (m >= 1 && m <= 12) s.add(SEASON_OF_MONTH[m - 1])
-    }
-  }
-  if (!s.size && t.season) s.add(t.season)
-  return s
-}
-
 export default function Home() {
   const scrollToPathways = (e?: { preventDefault: () => void }) => {
     e?.preventDefault()
@@ -173,66 +61,8 @@ export default function Home() {
   const btnY = useTransform(scrollYProgress, [0, 0.2, 0.45], reduced ? ['0%', '0%', '0%'] : ['0%', '-40%', '-120%'])
   const btnScale = useTransform(scrollYProgress, [0, 0.2, 0.45], reduced ? [1, 1, 1] : [1, 0.92, 0.75])
 
-  // Featured trips (second viewport) — newest published templates, opened via the
-  // same PlanPreviewModal as /discover.
-  const [templates, setTemplates] = useState<PlanTemplate[]>([])
-  const [tripsLoading, setTripsLoading] = useState(true)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const selectedTemplate = selectedId ? templates.find((t) => t.id === selectedId) ?? null : null
-  const featured = [...templates].slice(-3).reverse() // newest 3 (API is createdAt asc)
-  const { savedIds, pending, toggleHeart } = useSavedTemplates('/')
-
-  // Search + filters (Destination / Season). No filter → the newest 3.
-  const [query, setQuery] = useState('')
-  const [dest, setDest] = useState<string | null>(null)
-  const [season, setSeason] = useState<string | null>(null)
-  const [filterOpen, setFilterOpen] = useState(false)
-  // Which custom dropdown is open inside the filter modal (only one at a time).
-  const [ddOpen, setDdOpen] = useState<'season' | 'dest' | null>(null)
-  const activeFilterCount = (dest ? 1 : 0) + (season ? 1 : 0)
-
-  // Auto-collapse the filter modal if the page scrolls far from the search bar
-  // (the scrim doesn't lock background scroll — desktop wheel keeps working).
-  useEffect(() => {
-    if (!filterOpen) return
-    const startY = window.scrollY
-    const onScroll = () => {
-      if (Math.abs(window.scrollY - startY) > 250) setFilterOpen(false)
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [filterOpen])
-  // Destinations: ALL top tourist prefectures are listed; ones without a
-  // published trip are disabled + "Coming soon" (markets the roadmap without
-  // letting anyone filter into an empty result).
-  const availableDest = new Set(
-    TOP_PREFECTURES.filter((p) => templates.some((t) => t.title.toLowerCase().includes(p.toLowerCase()))),
-  )
-  const q = query.trim().toLowerCase()
-  const filtering = !!(q || dest || season)
-  const shown = filtering
-    ? [...templates]
-        .reverse() // newest first
-        .filter((t) => {
-          if (q && !`${t.title} ${t.description ?? ''}`.toLowerCase().includes(q)) return false
-          if (dest && !t.title.toLowerCase().includes(dest.toLowerCase())) return false
-          if (season && !templateSeasons(t).has(season)) return false
-          return true
-        })
-    : featured
-
-  useEffect(() => {
-    let active = true
-    fetch('/api/templates')
-      .then((r) => (r.ok ? r.json() : { templates: [] }))
-      .then((d) => { if (active) setTemplates(d.templates ?? []) })
-      .catch(() => {})
-      .finally(() => { if (active) setTripsLoading(false) })
-    return () => { active = false }
-  }, [])
-
   return (
-    <main className="bg-zen-black">
+    <main className="bg-graphite">
       {/* Full-bleed photo hero */}
       <section ref={heroRef} className="relative w-full h-screen min-h-[660px] overflow-hidden bg-zen-black">
         <Image
@@ -400,253 +230,16 @@ export default function Home() {
           className="px-8 py-12 md:py-24 scroll-mt-24 min-h-screen flex flex-col justify-start md:justify-center text-briefing-cream"
         >
           <div className="max-w-[1536px] mx-auto w-full">
-            <div className="mb-10">
-              <div className="md:flex md:items-center md:justify-between md:gap-4">
-                <div>
-                  <h2 className="font-headline font-bold text-3xl md:text-5xl tracking-tight">Featured Trips</h2>
-                  <p className="mt-1.5 text-briefing-cream/70 font-sans">Ready-to-go Japan itineraries.</p>
-                </div>
-                {/* Desktop: View all centered vertically against the title + subtitle block */}
-                <Link
-                  href="/discover"
-                  className="group shrink-0 hidden md:flex items-center gap-2 font-headline font-bold uppercase tracking-widest text-sm text-briefing-cream/80 hover:text-basel-brick transition-colors"
-                >
-                  View all
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </div>
-              {/* Search — filter button INSIDE the field (far right); the chips
-                  live in the collapsible panel below. Quick first cut; precise
-                  dates live on /discover. */}
-              <div className="relative mt-5 max-w-md md:mx-auto">
-                <div className="relative">
-                  {/* z-10: the input's backdrop-blur creates a stacking context
-                      that otherwise paints OVER this earlier-DOM icon. */}
-                  <Search className="pointer-events-none absolute left-4 top-1/2 z-10 size-4 -translate-y-1/2 text-briefing-cream/40" aria-hidden />
-                  <input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="ค้นหาทริป · Find a trip…"
-                    className="w-full rounded-full border border-white/15 bg-white/10 py-2.5 pl-11 pr-12 text-sm text-briefing-cream outline-none backdrop-blur-sm transition-colors placeholder:text-briefing-cream/40 focus:border-basel-brick/60"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFilterOpen((o) => !o)
-                      setDdOpen(null)
-                    }}
-                    aria-expanded={filterOpen}
-                    aria-label="ตัวกรอง · Filters"
-                    className={`absolute right-1.5 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-full transition-colors ${
-                      filterOpen ? 'bg-briefing-cream text-zen-black' : 'text-briefing-cream/60 hover:bg-white/10 hover:text-briefing-cream'
-                    }`}
-                  >
-                    <SlidersHorizontal className="size-4" strokeWidth={2.25} />
-                    {activeFilterCount > 0 && (
-                      <span className="absolute -right-0.5 -top-0.5 grid size-4 place-items-center rounded-full bg-basel-brick text-[9px] font-bold text-white">
-                        {activeFilterCount}
-                      </span>
-                    )}
-                  </button>
-                </div>
-
-                {/* Active-filter bubbles — each removable with its own × */}
-                {activeFilterCount > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {season && (
-                      <button
-                        type="button"
-                        onClick={() => setSeason(null)}
-                        className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-briefing-cream backdrop-blur-sm transition-colors hover:border-basel-brick/50"
-                      >
-                        {SEASONS.find((s) => s.key === season)?.emoji} {season}
-                        <X className="size-3 text-briefing-cream/60" strokeWidth={2.5} aria-hidden />
-                      </button>
-                    )}
-                    {dest && (
-                      <button
-                        type="button"
-                        onClick={() => setDest(null)}
-                        className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-briefing-cream backdrop-blur-sm transition-colors hover:border-basel-brick/50"
-                      >
-                        {dest}
-                        <X className="size-3 text-briefing-cream/60" strokeWidth={2.5} aria-hidden />
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Filter MODAL — overlays the whole page (the deck cards carry
-                  their own z-indexes, so any in-page popover loses the paint
-                  war). × or backdrop tap closes. */}
-              <AnimatePresence>
-                {filterOpen && (
-                  <motion.div
-                    key="filter-modal"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.18, ease: 'easeOut' }}
-                    style={{ backgroundColor: 'rgba(10,27,51,0.6)' }}
-                    className="fixed inset-0 z-[80] flex items-center justify-center px-4"
-                    onClick={(e) => {
-                      if (e.target === e.currentTarget) setFilterOpen(false)
-                    }}
-                  >
-                    <motion.div
-                      initial={{ opacity: 0, y: 12, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 12, scale: 0.97 }}
-                      transition={{ duration: 0.2, ease: 'easeOut' }}
-                      // Cloud card — solid briefing-cream (glass went muddy over
-                      // the dark scrim; a filter panel wants clarity, and this
-                      // matches the app's modal language).
-                      className="relative w-full max-w-sm rounded-3xl bg-briefing-cream p-5 font-detail shadow-2xl shadow-black/30"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <h3 className="text-lg font-extrabold tracking-tight text-zen-black">What&apos;s your choice?</h3>
-                        <button
-                          type="button"
-                          onClick={() => setFilterOpen(false)}
-                          className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold text-basel-brick transition-colors hover:bg-basel-brick/10"
-                        >
-                          Done
-                        </button>
-                      </div>
-
-                      {/* Season LEFT · Destination RIGHT */}
-                      <div className="mt-4 grid grid-cols-2 gap-3">
-                        <FilterSelect
-                          label="Season · ฤดู"
-                          display={
-                            season
-                              ? `${SEASONS.find((s) => s.key === season)?.emoji ?? ''} ${season}`
-                              : 'ทั้งหมด · All'
-                          }
-                          open={ddOpen === 'season'}
-                          onToggle={() => setDdOpen(ddOpen === 'season' ? null : 'season')}
-                          value={season ?? ''}
-                          options={[
-                            { value: '', label: 'ทั้งหมด · All' },
-                            // Months on their OWN small line — labels never truncate
-                            ...SEASONS.map((s) => ({ value: s.key, label: `${s.emoji} ${s.key}`, sub: s.months })),
-                          ]}
-                          onPick={(v) => {
-                            setSeason(v || null)
-                            setDdOpen(null)
-                          }}
-                        />
-                        <FilterSelect
-                          label="Destination · จังหวัด"
-                          display={dest ?? 'ทั้งหมด · All'}
-                          open={ddOpen === 'dest'}
-                          onToggle={() => setDdOpen(ddOpen === 'dest' ? null : 'dest')}
-                          value={dest ?? ''}
-                          options={[
-                            { value: '', label: 'ทั้งหมด · All' },
-                            // Live prefectures first, then coming-soon — each
-                            // group alphabetical.
-                            ...[...TOP_PREFECTURES]
-                              .sort(
-                                (a, b) =>
-                                  Number(!availableDest.has(a)) - Number(!availableDest.has(b)) || a.localeCompare(b),
-                              )
-                              .map((p) => ({
-                                value: p,
-                                label: p,
-                                disabled: !availableDest.has(p),
-                                sub: availableDest.has(p) ? undefined : 'เร็วๆ นี้ · Coming soon',
-                              })),
-                          ]}
-                          onPick={(v) => {
-                            setDest(v || null)
-                            setDdOpen(null)
-                          }}
-                        />
-                      </div>
-
-                      {activeFilterCount > 0 && (
-                        <div className="mt-4 flex justify-end">
-                          {/* mr-3 = Done's px-3 inset, so their right text edges align */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDest(null)
-                              setSeason(null)
-                            }}
-                            className="mr-3 text-xs font-semibold text-graphite/70 underline-offset-2 hover:text-basel-brick hover:underline"
-                          >
-                            Reset
-                          </button>
-                        </div>
-                      )}
-                    </motion.div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-            {/* Mobile — swipeable deck (design + motion ported from the Kimi build) */}
-            <div className="md:hidden">
-              {tripsLoading ? (
-                <div
-                  style={{ width: DECK_CARD_W, height: DECK_CARD_H }}
-                  className="mx-auto animate-pulse rounded-[20px] border border-white/10 bg-white/5"
-                />
-              ) : shown.length > 0 ? (
-                <TripDeck
-                  key={shown.map((t) => t.id).join('|')}
-                  templates={shown}
-                  savedIds={savedIds}
-                  pending={pending}
-                  onOpen={(id) => setSelectedId(id)}
-                  onHeart={(id, e) => toggleHeart(id, e)}
-                />
-              ) : (
-                <p className="text-center text-briefing-cream/50 font-sans">
-                  {filtering ? 'ไม่พบทริปที่ตรงเงื่อนไข · No matching trips' : 'No featured trips yet.'}
-                </p>
-              )}
-              {/* Mobile View all — AFTER the deck: browse cards → want more →
-                  the natural next step. (Its old spot above the deck is now
-                  the search + filter bubbles' home.) */}
-              <Link
-                href="/discover"
-                className="group mx-auto mt-6 flex w-fit items-center gap-2 font-headline font-bold uppercase tracking-widest text-xs text-briefing-cream/70 transition-colors hover:text-basel-brick"
-              >
-                View all
-                <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-              </Link>
-            </div>
-
-            {/* Desktop — same boarding-pass card as the mobile deck (shared
-                CardFace), laid out as a static row with a hover lift. */}
-            <div className="hidden md:flex flex-wrap justify-center gap-6 md:gap-8">
-              {tripsLoading
-                ? Array.from({ length: 3 }).map((_, i) => (
-                    <div
-                      key={i}
-                      style={{ width: DECK_CARD_W, height: DECK_CARD_H }}
-                      className="animate-pulse rounded-[20px] border border-white/10 bg-white/5"
-                    />
-                  ))
-                : shown.length > 0
-                  ? shown.map((tpl) => (
-                      <TripCard
-                        key={tpl.id}
-                        tpl={tpl}
-                        saved={savedIds.has(tpl.id)}
-                        isPending={pending.has(tpl.id)}
-                        onOpen={(id) => setSelectedId(id)}
-                        onHeart={(id, e) => toggleHeart(id, e)}
-                      />
-                    ))
-                  : (
-                    <p className="w-full text-center text-briefing-cream/50 font-sans">
-                      {filtering ? 'ไม่พบทริปที่ตรงเงื่อนไข · No matching trips' : 'No featured trips yet.'}
-                    </p>
-                  )}
-            </div>
+            {/* The whole search + filter + cards experience — ONE shared unit
+                with /discover (app/components/TripSearchSection.tsx): search
+                pill, filter modal, chips, TripDeck/TripCard, preview modal. */}
+            <TripSearchSection
+              title="Ready-to-go Trips"
+              subtitle="จัดทริปไว้ให้ พร้อมไปได้เลย!"
+              callbackUrl="/"
+              defaultCount={3}
+              viewAllHref="/discover"
+            />
           </div>
         </section>
 
@@ -693,21 +286,11 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="col-span-2 bg-basel-brick flex flex-col items-center justify-center text-center p-8 text-briefing-cream">
-              <Compass className="w-10 h-10 mb-2" strokeWidth={1.5} />
-              <p className="font-headline font-bold text-2xl uppercase tracking-tighter">100K+ Explorers</p>
-            </div>
           </div>
         </div>
       </section>
       </div>
 
-      {/* Preview + duplicate modal — same component /discover uses to "open" a trip. */}
-      <PlanPreviewModal
-        template={selectedTemplate}
-        callbackUrl="/"
-        onClose={() => setSelectedId(null)}
-      />
     </main>
   )
 }

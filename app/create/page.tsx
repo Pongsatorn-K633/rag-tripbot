@@ -13,33 +13,34 @@ export const metadata = {
 
 export default function CreatePage() {
   return (
-    <main className="pt-32 pb-24 px-6 max-w-7xl mx-auto">
+    // Dark page — ClientLayout paints the Graphite canvas for this route.
+    <main className="pt-32 pb-24 px-6 max-w-7xl mx-auto text-briefing-cream">
       {/* Hero */}
       <header className="mb-16">
-        <h1 className="text-4xl md:text-5xl lg:text-7xl font-headline font-extrabold tracking-tighter text-basel-brick mb-6">
+        <h1 className="text-4xl md:text-5xl lg:text-7xl font-headline font-extrabold tracking-tighter text-briefing-cream mb-6">
           Create
         </h1>
-        <p className="text-zen-black/70 text-lg max-w-2xl leading-relaxed font-sans">
+        <p className="text-briefing-cream/70 text-lg max-w-2xl leading-relaxed font-sans">
           เริ่มต้นสร้างแผนการเดินทางของคุณ — เลือกวิธีที่ใช่สำหรับคุณ
         </p>
       </header>
 
       {/* Two pathways */}
-      <div className="grid grid-cols-1 md:grid-cols-2 border border-zen-black/15">
+      <div className="grid grid-cols-1 md:grid-cols-2 border border-white/15">
         {/* AI Chat — UNDER MAINTENANCE (points at /maintenance for now) */}
         <Link
           href="/maintenance"
-          className="group relative p-12 border-b md:border-b-0 md:border-r border-zen-black/15 bg-zen-black/[0.02] hover:bg-zen-black/[0.04] transition-all duration-300 cursor-not-allowed"
+          className="group relative p-12 border-b md:border-b-0 md:border-r border-white/15 bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300 cursor-not-allowed"
         >
           <div className="absolute top-4 right-4 bg-basel-brick text-white text-[9px] font-black uppercase tracking-widest px-2 py-1">
             Maintenance
           </div>
-          <MessageSquare className="w-10 h-10 mb-8 text-zen-black opacity-40" strokeWidth={1.5} />
-          <h3 className="text-3xl font-headline font-bold mb-6 text-zen-black opacity-50">แชทวางแผนกับ AI</h3>
-          <p className="mb-10 text-lg text-zen-black/50">
+          <MessageSquare className="w-10 h-10 mb-8 text-briefing-cream opacity-40" strokeWidth={1.5} />
+          <h3 className="text-3xl font-headline font-bold mb-6 text-briefing-cream opacity-55">แชทวางแผนกับ AI</h3>
+          <p className="mb-10 text-lg text-briefing-cream/50">
             คุยกับ AI Concierge เพื่อสร้างแผนเที่ยวใหม่ตั้งแต่ต้น — ขณะนี้กำลังปรับปรุงอยู่ 🍵
           </p>
-          <div className="flex items-center font-bold uppercase tracking-widest text-sm text-zen-black/50">
+          <div className="flex items-center font-bold uppercase tracking-widest text-sm text-briefing-cream/50">
             <span>Temporarily Offline</span>
             <ArrowRight className="ml-2 w-4 h-4" />
           </div>
@@ -48,7 +49,7 @@ export default function CreatePage() {
         {/* AI Scanner — upload an existing plan */}
         <Link
           href="/ai-scanner"
-          className="group p-12 text-zen-black hover:bg-basel-brick hover:text-briefing-cream transition-all duration-300 cursor-pointer"
+          className="group p-12 text-briefing-cream hover:bg-basel-brick hover:text-briefing-cream transition-all duration-300 cursor-pointer"
         >
           <Upload className="w-10 h-10 mb-8" strokeWidth={1.5} />
           <h3 className="text-3xl font-headline font-bold mb-6">มีแผนอยู่แล้ว? สแกนเลย</h3>

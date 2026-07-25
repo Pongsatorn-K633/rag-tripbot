@@ -142,26 +142,29 @@ export default function GoPage() {
   }
 
   return (
-    <main className="pt-24 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 max-w-7xl mx-auto">
+    // Dark page — ClientLayout paints the Graphite canvas for this route. The
+    // trip cards below stay WHITE surfaces with their own dark text; only the
+    // page-level type flips to Cloud.
+    <main className="pt-24 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 max-w-7xl mx-auto text-briefing-cream">
       {/* Hero */}
       <header className="mb-20">
-        <h1 className="text-4xl md:text-5xl lg:text-7xl font-headline font-extrabold tracking-tighter text-basel-brick mb-6">
+        <h1 className="text-4xl md:text-5xl lg:text-7xl font-headline font-extrabold tracking-tighter text-briefing-cream mb-6">
           My Trip
         </h1>
-        <p className="text-zen-black/70 text-lg max-w-3xl leading-relaxed font-sans">
+        <p className="text-briefing-cream/70 text-lg max-w-3xl leading-relaxed font-sans">
           ทริปของคุณ — แก้ไขได้อิสระ และใช้ share code เพื่อ activate บน LINE แล้วออกไปเที่ยวได้เลย
         </p>
-        <p className="text-zen-black/40 text-sm mt-1 font-sans">
+        <p className="text-briefing-cream/50 text-sm mt-1 font-sans">
           Your trips — edit freely, then activate on LINE and go!
         </p>
       </header>
 
       {/* Sign-in CTA for guests */}
       {!isSignedIn && !loading && (
-        <div className="border-2 border-dashed border-zen-black/10 rounded-xl p-8 sm:p-16 text-center mb-20">
-          <Plane size={40} className="mx-auto mb-4 text-zen-black/20" />
-          <p className="text-zen-black/60 text-lg mb-2 font-sans">สมัครสมาชิกเพื่อดูแผนการเดินทางของคุณ</p>
-          <p className="text-zen-black/40 text-sm mb-6">Sign in to see your saved trips</p>
+        <div className="border-2 border-dashed border-white/20 rounded-xl p-8 sm:p-16 text-center mb-20">
+          <Plane size={40} className="mx-auto mb-4 text-briefing-cream/30" />
+          <p className="text-briefing-cream/70 text-lg mb-2 font-sans">สมัครสมาชิกเพื่อดูแผนการเดินทางของคุณ</p>
+          <p className="text-briefing-cream/50 text-sm mb-6">Sign in to see your saved trips</p>
           <button
             onClick={() => signIn(undefined, { callbackUrl: '/my-trip' })}
             className="px-8 py-4 bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all"
@@ -188,9 +191,9 @@ export default function GoPage() {
       {isSignedIn && !loading && (
         <>
           {trips.length === 0 ? (
-            <div className="border-2 border-dashed border-zen-black/10 rounded-xl p-8 sm:p-16 text-center">
-              <p className="text-zen-black/40 font-sans text-lg mb-2">ยังไม่มีแผนการเดินทาง</p>
-              <p className="text-zen-black/30 font-sans text-sm mb-6">
+            <div className="border-2 border-dashed border-white/20 rounded-xl p-8 sm:p-16 text-center">
+              <p className="text-briefing-cream/70 font-sans text-lg mb-2">ยังไม่มีแผนการเดินทาง</p>
+              <p className="text-briefing-cream/50 font-sans text-sm mb-6">
                 สร้างแผนได้จาก <Link href="/discover" className="text-basel-brick underline">แพลนพร้อมเที่ยว</Link>&nbsp;,&nbsp;&nbsp;หากมีแผนอยู่แล้วอัปโหลดที่นี่เลย <Link href="/ai-scanner" className="text-basel-brick underline">AI Scanner</Link>
               </p>
             </div>

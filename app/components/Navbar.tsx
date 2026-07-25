@@ -9,6 +9,7 @@ import { useSession, signIn, signOut } from 'next-auth/react'
 import { motion, AnimatePresence } from 'motion/react'
 import { IMG } from '@/lib/images'
 import { smoothScrollToTop } from '@/lib/smooth-scroll'
+import { isGraphiteRoute } from '@/lib/theme-routes'
 
 const TABS = [
   { id: 'home', label: 'Home', href: '/' },
@@ -58,11 +59,21 @@ function NavTabs({
 /** Brand mark (mascot + "dopamichi"). `light` = white text (over the dark hero);
  *  otherwise dark. Rendered in the fixed bar (non-home) OR the page layer (home). */
 function BrandLogo({ light, onClick }: { light: boolean; onClick?: (e: React.MouseEvent) => void }) {
+  // -ml-2: optical nudge left of the page padding — mirrored by
+  // MobilePageTitle so the mark never shifts across pages.
   return (
-    <Link href="/" className="flex items-center rounded-full h-[46px] pl-1 pr-4" onClick={onClick}>
-      <span className={`inline-flex items-center justify-center w-[34px] h-[34px] rounded-full ${light ? 'bg-briefing-cream' : ''}`}>
-        <Image src={IMG.logo} alt="dopamichi logo" width={32} height={32} className="h-6 w-6 object-contain" unoptimized />
+    <Link href="/" className="-ml-2 flex items-center rounded-full h-[46px] pl-1 pr-4" onClick={onClick}>
+      {/* No cream disc behind the mascot (removed 2026-07-25): the bare mark is
+          what inner pages show, so the disc made the logo read differently on
+          home. The hero's dark overlay carries the contrast. */}
+      <span className="inline-flex items-center justify-center w-[34px] h-[34px] rounded-full">
+        {/* 32px display from the 192px local source, optimizer ON (the old
+            `unoptimized` was for the expired Google-hosted logo URL) — Next
+            serves a DPR-matched asset, so it's sharp on retina. */}
+        <Image src={IMG.logo} alt="dopamichi logo" width={64} height={64} className="h-8 w-8 object-contain" />
       </span>
+      {/* ml-3 — must equal MobilePageTitle's divider slot (5+1+6px) so the
+          text start is identical across pages. */}
       <span className={`ml-3 text-2xl font-headline font-bold tracking-tighter ${light ? 'text-white' : 'text-zen-black'}`}>
         dopamichi
       </span>
@@ -114,10 +125,22 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
 
-  // Home page only: the bar is transparent over the dark photo hero (white
-  // logo + links), fading to a dark blurred bar once scrolled past 40px. Other
-  // pages have light backgrounds, so they keep the solid cream bar + dark text.
+  // Three bar treatments:
+  //  • home     — transparent over the photo hero (white text, Cloud oval on scroll)
+  //  • graphite — /discover, /my-trip, /create: dark bar, light text
+  //  • other    — light pages keep the solid Cloud bar + dark text
   const isHome = pathname === '/'
+  const isGraphite = isGraphiteRoute(pathname)
+  // Light TEXT/ICONS — needed on both dark treatments.
+  const lightChrome = isHome || isGraphite
+  // Inner pages shrink the bar once scrolled (94px → 66px) to give the content
+  // back some viewport. Home is exempt: its bar is transparent over the hero and
+  // the Cloud oval blooms at exactly the current geometry.
+  // NOTE: the floating burger + the mobile menu's close-tab are pinned to the
+  // bar's vertical centre — (94-48)/2 = 23px, (66-48)/2 = 9px — so all three
+  // MUST move together or the open menu shears apart.
+  const compact = !isHome && isScrolled
+  const burgerTop = compact ? 'top-[9px]' : 'top-[23px]'
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 40)
     onScroll()
@@ -154,9 +177,14 @@ export default function Navbar() {
 
   // Home is always transparent — the nav rides in a floating Cloud pill instead
   // of a solid bar (no more dark sticky bar). Other pages keep the Cloud bar.
+  // Non-home: the hairline under the bar appears only once scrolled — flat
+  // against the page top, it read as a stray line. border-b stays (transparent)
+  // in both states so toggling never shifts layout by 1px.
   const headerClass = isHome
     ? 'bg-transparent border-b border-transparent'
-    : 'bg-briefing-cream/80 backdrop-blur-md border-b border-zen-black/5'
+    : isGraphite
+      ? `bg-graphite/90 backdrop-blur-md border-b ${isScrolled ? 'border-white/10' : 'border-transparent'}`
+      : `bg-briefing-cream/80 backdrop-blur-md border-b ${isScrolled ? 'border-zen-black/5' : 'border-transparent'}`
 
   return (
     <>
@@ -176,11 +204,32 @@ export default function Navbar() {
       </div>
     )}
     <header className={`fixed top-0 w-full z-50 transition-colors duration-300 [transform:translateZ(0)] [backface-visibility:hidden] ${isHome ? 'pointer-events-none' : ''} ${headerClass}`}>
-      <nav className="relative flex justify-between items-center px-8 lg:px-12 py-6 w-full">
-        {/* Left cluster — the fixed bar's logo. Invisible on home (the page-layer
-            logo above is shown instead) but keeps the layout slot. */}
-        <div className={`relative flex items-center shrink-0 ${isHome ? 'invisible' : ''}`}>
-          <BrandLogo light={isHome} onClick={onHomeClick} />
+      {/* Mobile non-home: FIXED height matching home's bar (py-6 + 46px content
+          = 94px) — fixed, not padding-driven, because children mount/unmount
+          (the pill hides while the menu is open) and a content-driven height
+          would make the bar jump. Desktop + home keep the py-6 geometry. */}
+      <nav
+        className={`relative flex justify-between items-center px-8 lg:px-12 w-full transition-[height,padding] duration-300 ${
+          isHome
+            ? 'py-6'
+            : compact
+              ? 'h-[66px] md:h-auto md:py-2.5'
+              : 'h-[94px] md:h-auto md:py-6'
+        }`}
+      >
+        {/* Left cluster — desktop: the brand logo. Mobile non-home: the current
+            PAGE TITLE instead (the brand read as a hard sell on inner pages;
+            home's page-layer logo still carries it). Invisible on home (the
+            page-layer logo above is shown instead) but keeps the layout slot. */}
+        {/* h-[46px] on home: the brand logo used to hold this height on mobile
+            even while invisible — now it's desktop-only, so the slot must pin
+            the height itself or home's bar shrinks and the floating burger
+            (top-[23px]) drifts off the cream pill. */}
+        <div className={`relative flex items-center shrink-0 ${isHome ? 'invisible h-[46px]' : ''}`}>
+          <div className="hidden md:flex">
+            <BrandLogo light={lightChrome} onClick={onHomeClick} />
+          </div>
+          <MobilePageTitle light={lightChrome} />
         </div>
 
         {/* Centered nav — always centered in the bar. On the home hero it's white
@@ -202,7 +251,9 @@ export default function Navbar() {
               />
             )}
             <div className="relative flex items-center gap-8 px-8 font-headline tracking-tight font-bold text-lg whitespace-nowrap">
-              <NavTabs isActive={isActive} light={isHome && !isScrolled} onHomeClick={onHomeClick} />
+              {/* Home: light until the Cloud oval blooms in on scroll, then
+                  dark ON that oval. Graphite routes: always light. */}
+              <NavTabs isActive={isActive} light={isHome ? !isScrolled : isGraphite} onHomeClick={onHomeClick} />
             </div>
           </div>
         </div>
@@ -210,10 +261,13 @@ export default function Navbar() {
         {/* Right side: user menu (desktop) + hamburger (mobile) */}
         <div className="flex items-center gap-3">
           <div className={`hidden md:block ${isHome ? 'invisible' : ''}`}>
-            <NavUserMenu light={isHome} />
+            <NavUserMenu light={lightChrome} />
           </div>
-          {/* Mobile: page label + profile + hamburger. Hidden while the menu is
-              open — the connected menu below provides its own X close tab. */}
+          {/* Mobile: page label + hamburger. Hidden while the menu is open —
+              the connected menu below provides its own X close tab. (No avatar
+              here: it wasn't clickable, the account section lives inside the
+              menu, and it sat under the floating burger's tap target — the
+              cause of the icon-overlap bug on /discover.) */}
           <div className="flex md:hidden items-center pointer-events-auto">
             {/* AnimatePresence so the pill EXITS (quick shrink-fade toward the
                 corner the panel grows from) instead of vanishing on the spot —
@@ -228,12 +282,10 @@ export default function Navbar() {
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.15, ease: 'easeOut' }}
                 style={{ originX: 1, originY: 0.5 }}
-                className={`flex items-center gap-2 rounded-2xl px-2.5 py-1.5 transition-colors duration-300 ${
+                className={`flex items-center gap-3 rounded-2xl px-2.5 py-1.5 transition-colors duration-300 ${
                   isHome && isScrolled ? 'bg-briefing-cream shadow-md' : ''
                 }`}
               >
-                <MobilePageLabel />
-                <MobileAvatar />
                 {/* Spacer only — the REAL morph button floats above this slot
                     (one persistent element, see below). Keeps the pill's shape. */}
                 <span className="block h-6 w-6" aria-hidden />
@@ -246,8 +298,9 @@ export default function Navbar() {
 
       {/* THE single hamburger/X button — one persistent element, never unmounts,
           so the icon morph is continuous in both directions. Sits on the panel
-          tab's exact geometry (top-[23px] right-[30px], aligned to the pill's
-          icon slot earlier). It draws ONLY the icon — no background. The tab's
+          tab's exact geometry (top-[23px] right-[30px] — every bar variant is
+          94px tall, and this top MUST stay in lockstep with the menu panel
+          below). It draws ONLY the icon. The tab's
           cream lives INSIDE the panel wrapper so every cream surface fades in
           ONE opacity group; painting cream here too put the tab on a separate
           fade clock, and mid-fade the composite decomposed into visible pieces. */}
@@ -255,10 +308,12 @@ export default function Navbar() {
         onClick={() => setMobileOpen((o) => !o)}
         aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
         aria-expanded={mobileOpen}
-        className={`md:hidden pointer-events-auto absolute top-[23px] right-[30px] z-[60] flex h-12 w-12 items-center justify-center transition-colors ${
+        // Open → dark, it sits on the cream menu tab. Closed → light on both
+        // dark treatments (home hero / graphite bar), dark on cream bars.
+        className={`md:hidden pointer-events-auto absolute ${burgerTop} right-[30px] z-[60] flex h-12 w-12 items-center justify-center transition-[top,color] duration-300 ${
           mobileOpen
             ? 'text-zen-black'
-            : isHome && !isScrolled
+            : (isHome && !isScrolled) || isGraphite
               ? 'text-white/80 hover:text-basel-brick'
               : 'text-zen-black/70 hover:text-basel-brick'
         }`}
@@ -273,7 +328,7 @@ export default function Navbar() {
         {mobileOpen && (
           <motion.div
             key="mobile-menu"
-            className="md:hidden absolute top-[23px] right-[30px] z-50 flex flex-col items-end pointer-events-auto drop-shadow-[0_16px_24px_rgba(0,0,0,0.3)]"
+            className={`md:hidden absolute ${burgerTop} right-[30px] z-50 flex flex-col items-end pointer-events-auto drop-shadow-[0_16px_24px_rgba(0,0,0,0.3)]`}
             // Fade only — no scale, no roll. Transforms shear the tab/corner/card
             // composite apart (the tab is the persistent morph button OUTSIDE this
             // wrapper), and height rolls show the silhouette at intermediate sizes,
@@ -567,42 +622,52 @@ function MobileUserMenu({ onClose }: { onClose: () => void }) {
   )
 }
 
-// ── Mobile avatar (shown next to hamburger) ──────────────────────────────────
+// ── Mobile page title (left slot — replaces the brand on inner pages) ────────
 
-function MobileAvatar() {
-  const { data: session } = useSession()
+// Pages beyond the nav tabs still need a left-slot title on mobile.
+const EXTRA_TITLES = [
+  { href: '/saved', label: 'Saved' },
+  { href: '/settings', label: 'Settings' },
+  { href: '/admin', label: 'Admin' },
+  { href: '/onboarding', label: 'Welcome' },
+  { href: '/trips', label: 'Edit Trip' },
+]
 
-  if (!session?.user) return null
-
-  return session.user.image ? (
-    <Image
-      src={session.user.image}
-      alt={session.user.name ?? 'Profile'}
-      width={32}
-      height={32}
-      className="w-8 h-8 rounded-full object-cover border border-zen-black/10"
-      unoptimized={session.user.image.includes('res.cloudinary.com')}
-    />
-  ) : (
-    <div className="w-8 h-8 rounded-full bg-zen-black/5 flex items-center justify-center border border-zen-black/10">
-      <User size={14} className="text-zen-black/40" strokeWidth={2} />
-    </div>
-  )
-}
-
-// ── Mobile page label (shows which page the user is on) ─────────────────────
-
-function MobilePageLabel() {
+function MobilePageTitle({ light = false }: { light?: boolean }) {
   const pathname = usePathname()
-  const current = TABS.find((t) => {
+  const current = [...TABS, ...EXTRA_TITLES].find((t) => {
     if (t.href === '/') return pathname === '/'
     return pathname.startsWith(t.href)
   })
-  if (!current || current.href === '/') return null
+  // Home renders nothing (the page-layer logo owns that slot). Unknown routes
+  // fall back to the bare mascot — brand presence without the wordmark.
+  if (current?.href === '/') return null
+  if (!current) {
+    return (
+      <Link href="/" className="md:hidden -ml-2 flex h-[46px] items-center pl-1">
+        <span className="inline-flex h-[34px] w-[34px] items-center justify-center">
+          <Image src={IMG.logo} alt="dopamichi" width={64} height={64} className="h-8 w-8 object-contain" />
+        </span>
+      </Link>
+    )
+  }
 
   return (
-    <span className="text-[9px] font-black uppercase tracking-widest text-basel-brick bg-basel-brick/10 px-2 py-1 rounded">
-      {current.label}
+    // Mirrors BrandLogo's skeleton EXACTLY (-ml-2 + pl-1 + 34px box + 32px
+    // mascot + 12px to the text) so neither the mascot nor the text start
+    // shifts a pixel when navigating home ⇄ inner pages. The divider lives
+    // inside the 12px slot that ml-3 occupies on home (5px + 1px line + 6px).
+    <span className="md:hidden flex items-center">
+      <Link href="/" aria-label="Home" className="-ml-2 flex h-[46px] items-center pl-1">
+        <span className="inline-flex h-[34px] w-[34px] items-center justify-center">
+          <Image src={IMG.logo} alt="dopamichi" width={64} height={64} className="h-8 w-8 object-contain" />
+        </span>
+      </Link>
+      <span aria-hidden className={`ml-[5px] mr-[6px] h-6 w-px ${light ? 'bg-white/25' : 'bg-zen-black/15'}`} />
+      {/* Same type treatment as the "dopamichi" wordmark in BrandLogo. */}
+      <span className={`text-2xl font-headline font-bold tracking-tighter ${light ? 'text-briefing-cream' : 'text-zen-black'}`}>
+        {current.label}
+      </span>
     </span>
   )
 }

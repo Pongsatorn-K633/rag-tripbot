@@ -17,7 +17,9 @@ function fmt(d?: Date): string {
  * basel-brick / cream palette via CSS variables on the wrapper.
  */
 const TRIGGER_VARIANT = {
-  light: { btn: 'bg-briefing-cream border-zen-black/20', value: 'text-zen-black', placeholder: 'text-zen-black/40', chevron: 'text-zen-black/40' },
+  // Placeholder is full zen-black (not faded): it matches FilterSelect, whose
+  // "ทั้งหมด · All" empty state renders at full color too.
+  light: { btn: 'bg-white border-zen-black/15', value: 'text-zen-black', placeholder: 'text-zen-black', chevron: 'text-graphite/60' },
   dark: { btn: 'bg-white/5 border-white/15', value: 'text-briefing-cream', placeholder: 'text-briefing-cream/40', chevron: 'text-briefing-cream/40' },
 } as const
 
@@ -45,20 +47,26 @@ export default function DateRangePicker({
 
   return (
     <div
-      className="relative rdp-brand"
+      // font-detail: react-day-picker's day/nav <button>s inherit family, but
+      // pinning it here guarantees the calendar matches the filter UI (Plus
+      // Jakarta Sans) regardless of the surrounding context's font.
+      className="relative rdp-brand font-detail"
+      // Cool-palette calendar theme (Ocean accent + Midnight text). The old
+      // values here were warm-era reds — the one place the 2026-07 palette
+      // migration missed.
       style={
         {
-          '--rdp-accent-color': '#B43325',
-          '--rdp-accent-background-color': '#f1e2de',
-          '--rdp-today-color': '#B43325',
-          '--rdp-range_middle-color': '#231a0e',
+          '--rdp-accent-color': '#5B88B2',
+          '--rdp-accent-background-color': '#E7EEF5',
+          '--rdp-today-color': '#5B88B2',
+          '--rdp-range_middle-color': '#122C4F',
         } as React.CSSProperties
       }
     >
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`w-full flex items-center justify-between gap-3 border rounded-lg px-4 py-3 text-sm font-medium hover:border-basel-brick transition-colors ${tv.btn}`}
+        className={`w-full flex items-center justify-between gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold hover:border-basel-brick/50 transition-colors ${tv.btn}`}
       >
         <span className="flex items-center gap-2.5">
           <CalendarDays size={16} className="text-basel-brick" strokeWidth={2.5} />
@@ -74,8 +82,11 @@ export default function DateRangePicker({
         <>
           {/* Backdrop — closes on outside click without affecting layout */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
-          {/* Floating overlay — does not shift surrounding content */}
-          <div className="absolute left-0 top-full mt-2 z-50 bg-white border border-zen-black/15 rounded-xl shadow-xl p-3 w-max max-w-[calc(100vw-3rem)]">
+          {/* Floating overlay — does not shift surrounding content.
+              text-zen-black is explicit: the popover renders inside light-on-dark
+              contexts too (home's filter modal), where inherited text color made
+              the calendar invisible. */}
+          <div className="absolute left-0 top-full mt-2 z-50 bg-white text-zen-black border border-zen-black/15 rounded-xl shadow-xl p-3 w-max max-w-[calc(100vw-3rem)]">
             <DayPicker
               mode="range"
               min={1}
@@ -90,16 +101,18 @@ export default function DateRangePicker({
               <button
                 type="button"
                 onClick={() => onChange(undefined)}
-                className="text-[10px] font-black uppercase tracking-widest text-zen-black/40 hover:text-basel-brick transition-colors px-2 py-1.5"
+                className="px-2 py-1.5 text-xs font-semibold text-graphite/70 hover:text-basel-brick transition-colors"
               >
-                ล้าง · Clear
+                Reset
               </button>
+              {/* Same treatment as the filter modal's header Done (text Ocean,
+                  Ocean-tint hover) — not a filled pill. */}
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="px-4 py-1.5 rounded-lg bg-basel-brick text-white text-[10px] font-black uppercase tracking-widest hover:bg-zen-black transition-colors"
+                className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold text-basel-brick transition-colors hover:bg-basel-brick/10"
               >
-                เสร็จ · Done
+                Done
               </button>
             </div>
           </div>
