@@ -327,12 +327,19 @@ export default function TripSearchSection({
                 }}
                 aria-expanded={filterOpen}
                 aria-label="ตัวกรอง · Filters"
+                // Solid Midnight chip, not a ghost icon (60% cream read as
+                // decoration). Midnight is DARKER than the graphite canvas, so
+                // it recedes — the hairline ring gives the chip an edge, and
+                // Ocean-on-hover matches the app's other dark buttons.
                 className={`absolute right-1.5 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-full transition-colors ${
-                  filterOpen ? 'bg-briefing-cream text-zen-black' : 'text-briefing-cream/60 hover:bg-white/10 hover:text-briefing-cream'
+                  filterOpen
+                    ? 'bg-briefing-cream text-zen-black'
+                    : 'bg-zen-black text-white ring-1 ring-white/15 hover:bg-basel-brick'
                 }`}
               >
                 <SlidersHorizontal className="size-4" strokeWidth={2.25} />
                 {activeFilterCount > 0 && (
+                  // Ocean reads on both button states (Midnight and cream).
                   <span className="absolute -right-0.5 -top-0.5 grid size-4 place-items-center rounded-full bg-basel-brick text-[9px] font-bold text-white">
                     {activeFilterCount}
                   </span>
@@ -401,10 +408,14 @@ export default function TripSearchSection({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
-              // Solid-enough scrim, NO backdrop-blur: backdrop-filter on the
-              // same element as overflow-y-auto renders a faint seam line in
-              // Chrome. 0.92 Midnight hides the page content without the blur.
-              style={{ backgroundColor: 'rgba(10,27,51,0.92)' }}
+              // FULLY OPAQUE, and no backdrop-blur. Any alpha < 1 ghosts the
+              // page through: directly behind this sit the white trip cards
+              // with their black barcode strips, so even 8% transparency drew
+              // faint horizontal lines that shifted with scroll position.
+              // (backdrop-filter on the same element as overflow-y-auto also
+              // renders a seam in Chrome — hence no blur either.) A full-screen
+              // opaque takeover is the same pattern PlanPreviewModal uses.
+              style={{ backgroundColor: '#0A1B33' }}
               // items-start + top padding (not centered): the date picker opens
               // DOWNWARD from inside the card, so the card sits a bit above
               // center to leave the calendar viewport room. overflow-y-auto
@@ -415,13 +426,19 @@ export default function TripSearchSection({
               }}
             >
               <motion.div
-                initial={{ opacity: 0, y: 12, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 12, scale: 0.97 }}
+                // NO scale: a scaled layer rasterises its rounded edge on
+                // subpixels, which draws a faint hairline just outside the
+                // border-radius (it reads as a dashed underline below the
+                // card). Opacity + y give the same entrance without it.
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 12 }}
                 transition={{ duration: 0.2, ease: 'easeOut' }}
                 // Cloud card — solid briefing-cream (glass went muddy over the
-                // dark scrim; a filter panel wants clarity).
-                className="relative w-full max-w-sm rounded-3xl bg-briefing-cream p-5 font-detail shadow-2xl shadow-black/30"
+                // dark scrim; a filter panel wants clarity). No drop shadow: a
+                // wide black blur over the flat Midnight scrim is invisible but
+                // can band, and the outermost band edge reads as a line.
+                className="relative w-full max-w-sm rounded-3xl bg-briefing-cream p-5 font-detail"
               >
                 <h3 className="text-lg font-extrabold tracking-tight text-zen-black">What&apos;s your choice?</h3>
                 {/* right-8 = card p-5 (20px) + Done's px-3 text inset (12px),
@@ -528,7 +545,7 @@ export default function TripSearchSection({
                       >
                         <span aria-hidden className="mr-1.5 text-xs">{s.emoji}</span>
                         {s.key}
-                        <span className={`ml-3 translate-y-[1px] text-[10px] font-medium ${seasonPick === s.key ? 'text-white/85' : 'text-graphite/80'}`}>
+                        <span className={`ml-1.5 translate-y-[1px] text-[10px] font-medium ${seasonPick === s.key ? 'text-white/85' : 'text-graphite/80'}`}>
                           {s.months}
                         </span>
                       </button>

@@ -19,7 +19,7 @@ export default function DiscoverPage() {
       <div className="mx-auto w-full max-w-[1536px]">
         <TripSearchSection
           title="Ready-to-go Trips"
-          subtitle="กดใช้ฟิลเตอร์ หาทริปที่ใช่ได้ไวขึ้น"
+          subtitle="จัดทริปไว้ให้ พร้อมไปได้เลย!"
           callbackUrl="/discover"
           openFromQueryParam
           headingTag="h1"
