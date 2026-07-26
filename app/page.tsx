@@ -227,7 +227,11 @@ export default function Home() {
             Start Journey / Learn More still scroll here. */}
         <section
           id="pathways"
-          className="px-8 py-12 md:py-24 scroll-mt-24 min-h-screen flex flex-col justify-start md:justify-center text-briefing-cream"
+          // overflow-hidden: the coverflow breaks out to w-screen (100vw), which
+          // is wider than the content box when a vertical scrollbar is present —
+          // this absorbs that overshoot instead of letting the page scroll
+          // sideways. The filter modal is `fixed`, so it isn't clipped by this.
+          className="overflow-hidden px-8 py-12 md:py-24 scroll-mt-24 min-h-screen flex flex-col justify-start md:justify-center text-briefing-cream"
         >
           <div className="max-w-[1536px] mx-auto w-full">
             {/* The whole search + filter + cards experience — ONE shared unit

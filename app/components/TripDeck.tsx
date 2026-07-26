@@ -69,6 +69,18 @@ function Chip({ w = 34, h = 26 }: { w?: number; h?: number }) {
   )
 }
 
+/**
+ * Lean for a trip whose admin hasn't picked one — every compact card tilts, so
+ * a stack reads as scattered tickets. Derived from the trip id, NOT Math.random:
+ * a real random would re-roll on every render, so cards would jump between
+ * paints and the server and client HTML wouldn't match. Same trip, same lean.
+ */
+function defaultTilt(seed: string): 'left' | 'right' {
+  let h = 0
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0
+  return (h & 1) === 0 ? 'left' : 'right'
+}
+
 /** Deterministic decorative barcode — same trip always gets the same pattern. */
 function barcodeBars(seed: string) {
   let h = 0
@@ -450,8 +462,8 @@ function CardFace({
 // scales with the card. rotateY is signed per side so the cards face inward.
 const FLOW_POSES = [
   { x: 0, scale: 1, rotateY: 0, opacity: 1, blur: 0 },
-  { x: 0.66, scale: 0.86, rotateY: 20, opacity: 0.92, blur: 1.2 },
-  { x: 1.12, scale: 0.7, rotateY: 28, opacity: 0.34, blur: 4 },
+  { x: 1.18, scale: 0.88, rotateY: 20, opacity: 0.95, blur: 0.8 },
+  { x: 2.12, scale: 0.76, rotateY: 28, opacity: 0.55, blur: 2.5 },
 ]
 const FLOW_VISIBLE = FLOW_POSES.length - 1 // how far from centre still renders
 const FLOW_DRAG = 60 // px before a drag counts as advancing
@@ -522,7 +534,11 @@ export function TripCoverflow({
         // The extra 72px of height is room for the cards' drop shadow to fade
         // out INSIDE the box — at exactly card height, overflow-hidden sliced
         // the shadow mid-fade and left a hard-edged band under each card.
-        className="relative mx-auto w-full cursor-grab overflow-hidden active:cursor-grabbing"
+        // Full-bleed: left-1/2 + w-screen + -translate-x-1/2 breaks out of the
+        // page's 1536px wrapper. Without it the fan (~1600px) was sliced by the
+        // wrapper's edge, which read as an invisible border cutting the outer
+        // cards mid-page. Now they run off the SCREEN edge instead.
+        className="relative left-1/2 w-screen -translate-x-1/2 cursor-grab overflow-hidden active:cursor-grabbing"
         style={{ height: `calc(${DECK_CARD_H} + 72px)`, perspective: 1800 }}
       >
         {templates.map((tpl, i) => {
@@ -543,7 +559,11 @@ export function TripCoverflow({
               animate={{
                 x: dir * pose.x * CARD_MAX_W,
                 scale: pose.scale,
-                rotateY: reduced ? 0 : dir * pose.rotateY,
+                // NEGATED dir: the cards must face INWARD, toward the centre.
+                // dir * angle turned each one away from the middle (left cards
+                // looking further left, right cards further right), which read
+                // as the fan opening outwards instead of wrapping around.
+                rotateY: reduced ? 0 : -dir * pose.rotateY,
                 opacity: pose.opacity,
                 filter: reduced || !pose.blur ? 'blur(0px)' : `blur(${pose.blur}px)`,
               }}
@@ -554,7 +574,6 @@ export function TripCoverflow({
                 zIndex: 10 - dist,
                 left: '50%',
                 marginLeft: -CARD_MAX_W / 2,
-                pointerEvents: dist === FLOW_VISIBLE ? 'none' : 'auto',
               }}
               onClick={() => (isCentre ? onOpen(tpl.id) : setActive(i))}
               className={`absolute top-0 flex flex-col overflow-hidden rounded-[20px] bg-briefing-cream shadow-[0_20px_60px_rgba(0,0,0,0.35)] ${
@@ -653,6 +672,12 @@ export function TripCardCompact({
   // photo in its header row rather than overlaying the image.
   const [coverIdx, setCoverIdx] = useState(0)
   const place = tpl.coverPlaces?.[coverIdx]
+  // Admin's pick when they've made one (including an explicit 'none'); every
+  // other trip leans one way or the other rather than sitting straight.
+  const tilt =
+    tpl.cardTilt === 'none' || tpl.cardTilt === 'left' || tpl.cardTilt === 'right'
+      ? tpl.cardTilt
+      : defaultTilt(tpl.id)
 
   // formatRanges lists every window, joined with " / ". Labels carry no colour
   // of their own so they read at the same weight as their dates.
@@ -691,7 +716,12 @@ export function TripCardCompact({
       // max-w-md (448px) not 3xl (768px): at full width the row stretched, all
       // the content bunched left and the right half sat empty. Mobile is
       // unaffected — below 448px this is simply w-full.
-      className="flex w-full max-w-md cursor-pointer overflow-hidden rounded-xl bg-briefing-cream shadow-[0_10px_30px_rgba(0,0,0,0.28)] transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(0,0,0,0.38)]"
+      // The tilt is a Tailwind rotate utility so it COMPOSES with the hover
+      // translate (both write the same transform variables) — a raw
+      // `transform` in style would clobber the lift instead.
+      className={`flex w-full max-w-md cursor-pointer overflow-hidden rounded-xl bg-briefing-cream shadow-[0_10px_30px_rgba(0,0,0,0.28)] transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:rotate-0 hover:shadow-[0_16px_40px_rgba(0,0,0,0.38)] ${
+        tilt === 'left' ? '-rotate-[1.2deg]' : tilt === 'right' ? 'rotate-[1.2deg]' : ''
+      }`}
     >
       {/* Left group — a column: [cover | title block] on top, then the travel
           periods as a band spanning both. The periods get the card's full width

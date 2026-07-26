@@ -296,7 +296,9 @@ export default function TripSearchSection({
 
   return (
     <>
-      <div className="mb-16">
+      {/* Tighter above the compact list (/discover) than above home's coverflow,
+          which needs room for the fanned cards to breathe. */}
+      <div className={compactCards ? 'mb-8' : 'mb-16'}>
         <div className="md:flex md:items-center md:gap-14">
           <div className="shrink-0">
             <HeadingTag className="font-headline font-bold text-3xl md:text-5xl tracking-tight">{title}</HeadingTag>
@@ -609,8 +611,11 @@ export default function TripSearchSection({
         /* Compact horizontal cards, stacked — /discover's whole catalogue. One
            layout at every width (no deck/row split): the card is already a row,
            so it just narrows. Same `shown` list and handlers as the tall cards,
-           so the preview modal, lazy itinerary fetch and hearts work unchanged. */
-        <div className="flex flex-col items-center gap-4">
+           so the preview modal, lazy itinerary fetch and hearts work unchanged.
+           md:items-start pins the stack to the LEFT from md up, leaving the
+           right of the row free; centred on mobile, where it fills the width.
+           md:pl-16 nudges it in off the very edge. */
+        <div className="flex flex-col items-center gap-5 md:items-start md:pl-16">
           {tripsLoading ? (
             Array.from({ length: 3 }).map((_, i) => (
               <div

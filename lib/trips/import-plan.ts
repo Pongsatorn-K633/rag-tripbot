@@ -1,8 +1,9 @@
 import type {
   ItineraryV3, DayV3, ActivityV3, PlanOverview, PlanPeriod, PlanCarRental, PlanLinks,
   Bilingual, HighlightV3, PlanPriority, PlanQueueTime, PlanBookingPolicy,
-  DateRange, TripAvailability,
+  DateRange, TripAvailability, PlanCardTilt,
 } from '@/lib/itinerary-types'
+import { PLAN_CARD_TILTS } from '@/lib/itinerary-types'
 import { safeHref } from '@/lib/url'
 
 /**
@@ -47,6 +48,13 @@ function bilingual(v: unknown): Bilingual | null {
   const en = typeof o.en === 'string' ? o.en : ''
   const th = typeof o.th === 'string' ? o.th : ''
   return en || th ? { en, th } : null
+}
+
+/** Anything unrecognised (or absent) means no tilt — never throw over cosmetics. */
+function cardTilt(v: unknown): PlanCardTilt | undefined {
+  return typeof v === 'string' && (PLAN_CARD_TILTS as readonly string[]).includes(v)
+    ? (v as PlanCardTilt)
+    : undefined
 }
 
 function coverImages(v: unknown): string[] {
@@ -179,6 +187,7 @@ export function importPlanJson(raw: unknown): ItineraryV3 {
     area_code: cleanStr(ov.area_code),
     cover_images: coverImages(ov.cover_images),
     cover_places: coverImages(ov.cover_places),
+    card_tilt: cardTilt(ov.card_tilt),
     available_airports: { major_hubs: hubs },
     car_rental: carRental(ov.car_rental),
     arrival_to_first_act_hrs: num(ov.arrival_to_first_act_hrs),

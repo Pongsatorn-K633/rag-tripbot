@@ -39,11 +39,11 @@ export async function GET() {
 
   // Per-cover place captions, keyed by index to `coverImages`. V3 only; v1/v2
   // itineraries simply have none and their cards render no caption.
-  const templates = rows.map(({ itinerary, ...t }) => ({
-    ...t,
-    coverPlaces:
-      (itinerary as { overview?: { cover_places?: string[] } } | null)?.overview?.cover_places ?? [],
-  }))
+  const templates = rows.map(({ itinerary, ...t }) => {
+    const ov = (itinerary as { overview?: { cover_places?: string[]; card_tilt?: string } } | null)
+      ?.overview
+    return { ...t, coverPlaces: ov?.cover_places ?? [], cardTilt: ov?.card_tilt ?? null }
+  })
 
   return NextResponse.json({ templates })
 }

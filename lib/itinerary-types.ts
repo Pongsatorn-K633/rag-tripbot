@@ -260,6 +260,10 @@ export type PlanPriority = 'Must' | 'Recommend' | 'Normal'
 export type PlanQueueTime = 'Low' | 'Mid' | 'High' | 'Reserve'
 export type PlanBookingPolicy = 'Walk-in Only' | 'Same-Day Ticket' | 'Optional' | 'Recommended' | 'Mandatory'
 
+/** Resting tilt of a trip's compact card. */
+export const PLAN_CARD_TILTS = ['none', 'left', 'right'] as const
+export type PlanCardTilt = (typeof PLAN_CARD_TILTS)[number]
+
 /** Meal slots (food). */
 export const PLAN_MEAL_SLOTS = ['Breakfast', 'Brunch', 'Lunch', 'AfternoonMeal', 'Dinner', 'LatenightMeal'] as const
 /** Slots that render as a pick-one carousel — ONLY meals. Activity 1–8 are never
@@ -332,6 +336,11 @@ export interface PlanOverview {
   /** Place name per cover image (same order/index as cover_images) — shown as
    *  the hero chip while swiping the preview's cover gallery. */
   cover_places?: string[]
+  /** Admin-chosen resting tilt for this trip's compact card on /discover, so a
+   *  stacked list reads as scattered tickets rather than a rigid column.
+   *  Deliberately per-trip and NOT random: random would re-roll on every render
+   *  and make cards jump between paints. */
+  card_tilt?: PlanCardTilt
   available_airports?: { major_hubs?: PlanAirport[] }
   car_rental?: PlanCarRental
   arrival_to_first_act_hrs?: number

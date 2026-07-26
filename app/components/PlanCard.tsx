@@ -23,6 +23,9 @@ export interface PlanTemplate {
    *  from the V3 itinerary's `overview.cover_places` by GET /api/templates;
    *  empty for v1/v2 trips, which render no caption. */
   coverPlaces?: string[] | null
+  /** Admin-chosen resting tilt for the compact card ('none' | 'left' | 'right'),
+   *  from the V3 itinerary's `overview.card_tilt`. */
+  cardTilt?: string | null
   totalDays: number
   season: string | null
   availability: TripAvailability | null
