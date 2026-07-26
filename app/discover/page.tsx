@@ -15,7 +15,9 @@ export default function DiscoverPage() {
     // so it covers the full viewport however short the content is.
     // pt-26 (104px): the fixed navbar is 94px at rest, so this leaves a 10px
     // breath under it — any tighter and the title collides with the bar.
-    <main className="min-h-screen px-8 pb-24 pt-26 text-briefing-cream">
+    // px-4 on mobile (was px-8): the compact cards are full-width rows, so the
+    // page gutter is the only thing limiting how long they can run.
+    <main className="min-h-screen px-4 pb-24 pt-26 text-briefing-cream sm:px-8">
       <div className="mx-auto w-full max-w-[1536px]">
         <TripSearchSection
           title="Ready-to-go Trips"
@@ -23,6 +25,7 @@ export default function DiscoverPage() {
           callbackUrl="/discover"
           openFromQueryParam
           headingTag="h1"
+          compactCards
         />
       </div>
     </main>

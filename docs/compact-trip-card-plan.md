@@ -1,8 +1,15 @@
 # Compact horizontal trip card — build plan
 
-> **Status:** planned 2026-07-26, not yet implemented. Trial placement is a second
-> list **below** the existing cards on `/discover`, so the current card is untouched
-> and the two can be compared side by side before anything is replaced.
+> **Status:** BUILT 2026-07-27 (planned 2026-07-26) — `TripCardCompact` in
+> [`app/components/TripDeck.tsx`](../app/components/TripDeck.tsx), rendered as a
+> stacked list below the normal cards on `/discover` via the `compactPreview`
+> prop on `TripSearchSection`. The tall card is untouched, so the two styles can
+> be compared in place before anything is replaced.
+>
+> **Still to decide after looking at it:** whether this replaces the tall card on
+> `/discover` (drop `compactPreview`, swap the grid), and whether `/saved` and
+> `/my-trip` adopt it. Remove the "Compact style · preview" label when it stops
+> being a trial.
 
 ## Goal
 

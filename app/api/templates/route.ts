@@ -16,7 +16,7 @@ import { prisma } from '@/lib/db'
 export const revalidate = 300
 
 export async function GET() {
-  const templates = await prisma.template.findMany({
+  const rows = await prisma.template.findMany({
     where: { published: true },
     orderBy: { createdAt: 'asc' },
     select: {
@@ -30,7 +30,20 @@ export async function GET() {
       availability: true,
       shareCode: true,
       createdAt: true,
+      // Read ONLY to pull overview.cover_places out below — the jsonb is
+      // dropped before responding, so the client payload stays ~1 KB. The DB
+      // read is per revalidation (5 min), not per visitor.
+      itinerary: true,
     },
   })
+
+  // Per-cover place captions, keyed by index to `coverImages`. V3 only; v1/v2
+  // itineraries simply have none and their cards render no caption.
+  const templates = rows.map(({ itinerary, ...t }) => ({
+    ...t,
+    coverPlaces:
+      (itinerary as { overview?: { cover_places?: string[] } } | null)?.overview?.cover_places ?? [],
+  }))
+
   return NextResponse.json({ templates })
 }

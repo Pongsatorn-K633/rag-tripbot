@@ -232,12 +232,14 @@ export default function Home() {
           <div className="max-w-[1536px] mx-auto w-full">
             {/* The whole search + filter + cards experience — ONE shared unit
                 with /discover (app/components/TripSearchSection.tsx): search
-                pill, filter modal, chips, TripDeck/TripCard, preview modal. */}
+                pill, filter modal, chips, the TripDeck, preview modal. */}
             <TripSearchSection
               title="Ready-to-go Trips"
               subtitle="จัดทริปไว้ให้ พร้อมไปได้เลย!"
               callbackUrl="/"
-              defaultCount={3}
+              // 5, not 3: the desktop coverflow has five slots (centre + two
+              // each side), so fewer trips leave the fan lopsided.
+              defaultCount={5}
               viewAllHref="/discover"
             />
           </div>

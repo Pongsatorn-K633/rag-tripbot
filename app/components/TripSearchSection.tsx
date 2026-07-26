@@ -8,7 +8,7 @@ import type { DateRange } from 'react-day-picker'
 import { evaluateTrip } from '@/lib/availability'
 import DateRangePicker from '@/app/components/DateRangePicker'
 import { type PlanTemplate } from '@/app/components/PlanCard'
-import TripDeck, { TripCard, DECK_CARD_W, DECK_CARD_H } from '@/app/components/TripDeck'
+import TripDeck, { TripCardCompact, TripCoverflow, DECK_CARD_W, DECK_CARD_H } from '@/app/components/TripDeck'
 import PlanPreviewModal from '@/app/components/PlanPreviewModal'
 import { useSavedTemplates } from '@/app/hooks/useSavedTemplates'
 
@@ -16,7 +16,7 @@ import { useSavedTemplates } from '@/app/hooks/useSavedTemplates'
  * TripSearchSection — the ENTIRE "Ready-to-go Trips" experience as one shared
  * unit: title row + search pill + filter modal (destination multi-select,
  * travel dates, season quick-picks, flexibility) + removable filter chips +
- * the boarding-pass cards (TripDeck on mobile / TripCard row on desktop) +
+ * the cards (TripDeck at every width, or TripCardCompact when compactCards) +
  * the trip preview/duplicate modal.
  *
  * Used by BOTH the home page (newest 3, "View all" links) and /discover
@@ -188,6 +188,7 @@ export default function TripSearchSection({
   viewAllHref,
   openFromQueryParam = false,
   headingTag: HeadingTag = 'h2',
+  compactCards = false,
 }: {
   title: string
   subtitle: string
@@ -201,6 +202,10 @@ export default function TripSearchSection({
   openFromQueryParam?: boolean
   /** 'h1' on pages where this is the main heading (/discover). */
   headingTag?: 'h1' | 'h2'
+  /** Render the compact horizontal cards as a stacked list INSTEAD of the tall
+   *  boarding-pass cards (deck on mobile / row on desktop). /discover uses
+   *  this; home keeps the tall cards. */
+  compactCards?: boolean
 }) {
   const [templates, setTemplates] = useState<PlanTemplate[]>([])
   const [tripsLoading, setTripsLoading] = useState(true)
@@ -291,7 +296,7 @@ export default function TripSearchSection({
 
   return (
     <>
-      <div className="mb-10">
+      <div className="mb-16">
         <div className="md:flex md:items-center md:gap-14">
           <div className="shrink-0">
             <HeadingTag className="font-headline font-bold text-3xl md:text-5xl tracking-tight">{title}</HeadingTag>
@@ -600,64 +605,85 @@ export default function TripSearchSection({
         </AnimatePresence>
       </div>
 
-      {/* Mobile — swipeable deck (design + motion ported from the Kimi build) */}
-      <div className="md:hidden">
+      {compactCards ? (
+        /* Compact horizontal cards, stacked — /discover's whole catalogue. One
+           layout at every width (no deck/row split): the card is already a row,
+           so it just narrows. Same `shown` list and handlers as the tall cards,
+           so the preview modal, lazy itinerary fetch and hearts work unchanged. */
+        <div className="flex flex-col items-center gap-4">
+          {tripsLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-[150px] w-full max-w-3xl animate-pulse rounded-xl border border-white/10 bg-white/5"
+              />
+            ))
+          ) : shown.length > 0 ? (
+            shown.map((tpl) => (
+              <TripCardCompact
+                key={tpl.id}
+                tpl={tpl}
+                saved={savedIds.has(tpl.id)}
+                isPending={pending.has(tpl.id)}
+                onOpen={(id) => setSelectedId(id)}
+                onHeart={(id, e) => toggleHeart(id, e)}
+              />
+            ))
+          ) : (
+            <p className="text-center text-briefing-cream/50 font-sans">{emptyText}</p>
+          )}
+        </div>
+      ) : (
+        <>
+      {/* Two presentations of the SAME card: a vertical stack on the phone
+          (cards peeking below the front one) and a 3D coverflow on desktop,
+          which needs horizontal room a phone doesn't have. */}
+      <div>
         {tripsLoading ? (
           <div
             style={{ width: DECK_CARD_W, height: DECK_CARD_H }}
             className="mx-auto animate-pulse rounded-[20px] border border-white/10 bg-white/5"
           />
         ) : shown.length > 0 ? (
-          <TripDeck
-            key={shown.map((t) => t.id).join('|')}
-            templates={shown}
-            savedIds={savedIds}
-            pending={pending}
-            onOpen={(id) => setSelectedId(id)}
-            onHeart={(id, e) => toggleHeart(id, e)}
-          />
+          <>
+            <div className="md:hidden">
+              <TripDeck
+                key={shown.map((t) => t.id).join('|')}
+                templates={shown}
+                savedIds={savedIds}
+                pending={pending}
+                onOpen={(id) => setSelectedId(id)}
+                onHeart={(id, e) => toggleHeart(id, e)}
+              />
+            </div>
+            <div className="hidden md:block">
+              <TripCoverflow
+                key={shown.map((t) => t.id).join('|')}
+                templates={shown}
+                savedIds={savedIds}
+                pending={pending}
+                onOpen={(id) => setSelectedId(id)}
+                onHeart={(id, e) => toggleHeart(id, e)}
+              />
+            </div>
+          </>
         ) : (
           <p className="text-center text-briefing-cream/50 font-sans">{emptyText}</p>
         )}
         {viewAllHref && (
-          /* Mobile View all — AFTER the deck: browse cards → want more → the
-             natural next step. */
+          /* Mobile only — AFTER the deck: browse cards → want more → the
+             natural next step. Desktop already has one in the title row. */
           <Link
             href={viewAllHref}
-            className="group mx-auto mt-6 flex w-fit items-center gap-2 font-headline font-bold uppercase tracking-widest text-xs text-briefing-cream/70 transition-colors hover:text-basel-brick"
+            className="group mx-auto mt-6 flex w-fit items-center gap-2 font-headline font-bold uppercase tracking-widest text-xs text-briefing-cream/70 transition-colors hover:text-basel-brick md:hidden"
           >
             View all
             <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
           </Link>
         )}
       </div>
-
-      {/* Desktop — same boarding-pass card as the mobile deck (shared
-          CardFace), laid out as a wrapping row with a hover lift. */}
-      <div className="hidden md:flex flex-wrap justify-center gap-6 md:gap-8">
-        {tripsLoading
-          ? Array.from({ length: defaultCount ?? 4 }).map((_, i) => (
-              <div
-                key={i}
-                style={{ width: DECK_CARD_W, height: DECK_CARD_H }}
-                className="animate-pulse rounded-[20px] border border-white/10 bg-white/5"
-              />
-            ))
-          : shown.length > 0
-            ? shown.map((tpl) => (
-                <TripCard
-                  key={tpl.id}
-                  tpl={tpl}
-                  saved={savedIds.has(tpl.id)}
-                  isPending={pending.has(tpl.id)}
-                  onOpen={(id) => setSelectedId(id)}
-                  onHeart={(id, e) => toggleHeart(id, e)}
-                />
-              ))
-            : (
-              <p className="w-full text-center text-briefing-cream/50 font-sans">{emptyText}</p>
-            )}
-      </div>
+        </>
+      )}
 
       {/* Preview + duplicate modal — the picked travel window pre-fills its
           date step. */}

@@ -19,6 +19,10 @@ export interface PlanTemplate {
   itinerary?: Itinerary
   coverImage: string | null
   coverImages?: string[] | null
+  /** Per-cover place captions, same order/index as `coverImages`. Extracted
+   *  from the V3 itinerary's `overview.cover_places` by GET /api/templates;
+   *  empty for v1/v2 trips, which render no caption. */
+  coverPlaces?: string[] | null
   totalDays: number
   season: string | null
   availability: TripAvailability | null

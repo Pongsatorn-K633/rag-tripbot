@@ -182,7 +182,7 @@ export function formatRange(range: DateRange, lang: 'th' | 'en' = 'th'): string 
 /** Multiple ranges joined by " · ". Empty ⇒ "ตลอดทั้งปี"/"All year". */
 export function formatRanges(ranges: DateRange[], lang: 'th' | 'en' = 'th'): string {
   if (!ranges || ranges.length === 0) return lang === 'th' ? 'ตลอดทั้งปี' : 'All year'
-  return ranges.map((r) => formatRange(r, lang)).join(' · ')
+  return ranges.map((r) => formatRange(r, lang)).join(' / ')
 }
 
 // ── Season derivation ─────────────────────────────────────────────────────────
