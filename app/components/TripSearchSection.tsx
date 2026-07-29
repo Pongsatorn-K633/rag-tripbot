@@ -607,6 +607,20 @@ export default function TripSearchSection({
         </AnimatePresence>
       </div>
 
+      {/* Mobile "View all" — its OWN row directly above the cards, so it's
+          reachable without scrolling past a ~600px deck. Not in the title row:
+          the heading wraps to two lines on a phone and the link ended up
+          stranded beside it. Desktop keeps its copy at the end of the header. */}
+      {viewAllHref && (
+        <Link
+          href={viewAllHref}
+          className="group -mt-8 mb-6 ml-auto flex w-fit items-center gap-1.5 font-headline font-bold uppercase tracking-widest text-xs text-briefing-cream/70 transition-colors hover:text-basel-brick md:hidden"
+        >
+          View all
+          <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+        </Link>
+      )}
+
       {compactCards ? (
         /* Compact horizontal cards, stacked — /discover's whole catalogue. One
            layout at every width (no deck/row split): the card is already a row,
@@ -674,17 +688,6 @@ export default function TripSearchSection({
           </>
         ) : (
           <p className="text-center text-briefing-cream/50 font-sans">{emptyText}</p>
-        )}
-        {viewAllHref && (
-          /* Mobile only — AFTER the deck: browse cards → want more → the
-             natural next step. Desktop already has one in the title row. */
-          <Link
-            href={viewAllHref}
-            className="group mx-auto mt-6 flex w-fit items-center gap-2 font-headline font-bold uppercase tracking-widest text-xs text-briefing-cream/70 transition-colors hover:text-basel-brick md:hidden"
-          >
-            View all
-            <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-          </Link>
         )}
       </div>
         </>

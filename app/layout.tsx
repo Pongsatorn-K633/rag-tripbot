@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import Navbar from '@/app/components/Navbar'
 import Footer from '@/app/components/Footer'
@@ -19,6 +19,19 @@ export const metadata: Metadata = {
     ],
     apple: { url: '/apple-touch-icon.png', sizes: '180x180' },
   },
+}
+
+/**
+ * Tints the browser's own chrome (iOS status bar, Android address bar) to
+ * Midnight, so it meets the photo hero instead of the browser choosing a colour
+ * of its own — that mismatch is the seam visible at the top of the page.
+ *
+ * ONE value for the whole site: `viewport` is a Server Component export and
+ * app/page.tsx is 'use client', so it can't declare its own. Midnight is the
+ * right global pick now that home, /discover, /my-trip and /create are all dark.
+ */
+export const viewport: Viewport = {
+  themeColor: '#122C4F',
 }
 
 export default function RootLayout({

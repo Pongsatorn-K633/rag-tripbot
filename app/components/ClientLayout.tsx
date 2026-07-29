@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from 'motion/react'
 import { usePathname } from 'next/navigation'
-import { useContext, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { LayoutRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime'
 import { isGraphiteCanvas } from '@/lib/theme-routes'
 
@@ -43,6 +43,35 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const slide = pathname === '/' ? 0 : 10
   const isDark = isGraphiteCanvas(pathname)
 
+  /**
+   * Re-tint the browser's own chrome (iOS status bar / bottom toolbar) to match
+   * whichever end of the page you're looking at: Midnight over a dark page, and
+   * Cloud once the cream footer is on screen. iOS applies ONE theme-color to
+   * both bars, so a single static value can only ever match one end.
+   *
+   * IntersectionObserver, not a scroll listener: this does no work at all while
+   * scrolling — the browser calls back only when the footer crosses the
+   * viewport edge, so there's no per-frame cost and no layout reads.
+   */
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]')
+    if (!meta) return
+    const pageTint = isDark ? '#122C4F' : '#F7F9FC'
+    const footerTint = '#F7F9FC' // the footer is cream on every route
+    meta.setAttribute('content', pageTint)
+
+    // Null on /chat and /liff/*, where the Footer renders nothing.
+    const footer = document.querySelector('footer')
+    if (!footer || pageTint === footerTint) return
+
+    const io = new IntersectionObserver(
+      ([entry]) => meta.setAttribute('content', entry.isIntersecting ? footerTint : pageTint),
+      { threshold: 0 },
+    )
+    io.observe(footer)
+    return () => io.disconnect()
+  }, [isDark, pathname])
+
   return (
     <>
       {/* Page CANVAS + transition backdrop, in one fixed layer.
@@ -60,12 +89,17 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           isDark ? 'bg-graphite' : 'bg-briefing-cream'
         }`}
       />
-      <AnimatePresence mode="wait">
+      {/* NO exit animation, and no mode="wait".
+          With them, the outgoing page stayed mounted for 300ms while the router
+          had already reset the scroll to the top — so leaving a scrolled page
+          flashed ITS top (home's photo hero) before the new route appeared.
+          Mounting the new page immediately removes that window entirely; the
+          incoming fade still covers the swap, over the canvas above. */}
+      <AnimatePresence>
         <motion.div
           key={pathname}
           initial={{ opacity: 0, y: slide }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -slide }}
           transition={{ duration: 0.3 }}
           className="flex-grow"
         >

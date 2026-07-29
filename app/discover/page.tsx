@@ -17,7 +17,12 @@ export default function DiscoverPage() {
     // breath under it — any tighter and the title collides with the bar.
     // px-4 on mobile (was px-8): the compact cards are full-width rows, so the
     // page gutter is the only thing limiting how long they can run.
-    <main className="min-h-screen px-4 pb-24 pt-26 text-briefing-cream sm:px-8">
+    // NO min-h-screen: it forced main to a full viewport on top of the 94px
+    // navbar and the footer, so the page was always taller than the screen and
+    // the footer sat just past the fold even with little content. Without it
+    // the body's flex column stretches ClientLayout's flex-grow wrapper
+    // instead, which parks the footer at the true bottom.
+    <main className="px-4 pb-24 pt-26 text-briefing-cream sm:px-8">
       <div className="mx-auto w-full max-w-[1536px]">
         <TripSearchSection
           title="Ready-to-go Trips"

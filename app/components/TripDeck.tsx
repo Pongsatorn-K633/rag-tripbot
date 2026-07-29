@@ -43,7 +43,11 @@ export const DECK_CARD_W = `min(${CARD_MAX_W}px, calc(100vw - 3rem))`
 export const DECK_CARD_H = `calc(258px + (min(${CARD_MAX_W}px, 100vw - 3rem) - 40px) * 1.25)`
 
 const TILT = [-1.5, 2, -2.5, 1.8] // per-card resting rotation (deg)
-const SWIPE = 60 // fling threshold (px)
+const SWIPE = 36 // fling threshold (px) — distance alone
+// …or a quick flick: a fast, short gesture is how people actually swipe a card
+// on a phone, and judging on distance ONLY made those feel like nothing
+// happened. px/sec, from Motion's drag-end velocity.
+const SWIPE_V = 380
 const EXIT_X = -400
 const EXIT_MS = 420
 
@@ -134,16 +138,22 @@ function CoverCarousel({
   const arrow = `absolute top-1/2 -translate-y-1/2 place-items-center rounded-full bg-briefing-cream/50 text-zen-black shadow-md transition-colors hover:bg-briefing-cream ${
     compact ? 'h-5 w-5' : 'h-7 w-7'
   }`
-  // Display kept OUT of `arrow` so `hidden` and `grid` never fight over CSS
-  // order. Compact: desktop only — on a phone the 126px thumb has no room and
-  // drag + dots already cover it.
-  const arrowShow = compact ? 'hidden md:grid' : 'grid'
+  // Display kept OUT of `arrow` so it can't collide with other display classes.
+  const arrowShow = 'grid'
 
   const step = (by: 1 | -1) => setIdx((i) => (i + by + images.length) % images.length)
 
   function go(e: React.MouseEvent, by: 1 | -1) {
     e.stopPropagation() // the card's own onClick opens the trip
     step(by)
+  }
+
+  /** Tap the photo → next cover, wrapping at the end. Never opens the trip.
+   *  Not reached after a drag (onClickCapture halts that click) nor from the
+   *  arrows (they stopPropagation first), so neither double-advances. */
+  function onTapAdvance(e: React.MouseEvent) {
+    e.stopPropagation()
+    if (images.length > 1) step(1)
   }
 
   const canDrag = drag && images.length > 1
@@ -197,10 +207,13 @@ function CoverCarousel({
         onPointerUp={onPointerUp}
         onClickCapture={onClickCapture}
         // Compact: the thumb is a gallery in its own right, so a click on it
-        // must NOT fall through to the card and open the trip. Bubble phase,
-        // not capture — the arrows sit inside and need their click first (they
-        // stopPropagation themselves, so they never reach this).
-        onClick={compact ? (e) => e.stopPropagation() : undefined}
+        // must NOT fall through to the card and open the trip — and rather than
+        // being a dead zone it advances to the next cover. A tap needs no reach
+        // arc, which a swipe at the screen's left edge does: that edge is the
+        // hardest place for a right thumb to drag. Bubble phase, not capture —
+        // the arrows sit inside and need their click first (they stopPropagation
+        // themselves, so they never reach this).
+        onClick={compact ? onTapAdvance : undefined}
         // select-none: without it a mouse drag starts selecting the page
         // instead of swiping. touch-pan-y keeps vertical scrolling native while
         // the horizontal axis is ours.
@@ -214,7 +227,15 @@ function CoverCarousel({
             src={src}
             alt={`${alt} ${i + 1}`}
             fill
-            sizes={compact ? '126px' : '300px'}
+            // Compact asks for 256px to fill a 126px box — deliberate 2×
+            // headroom, NOT a mistake. At an exact 1:1 request a 1× desktop
+            // display gets one source pixel per device pixel, and the card's
+            // 1.2° tilt then resamples every one of them onto a half-pixel
+            // offset, which is what made the thumb look soft. Extra source
+            // pixels give the rotation something to average. Retina was always
+            // fine (it picks a 2× candidate itself), so this only changes
+            // desktop. The tall card already had headroom: 300px into ~260px.
+            sizes={compact ? '256px' : '300px'}
             draggable={false}
             // decoding="sync": these covers are all in the DOM at opacity 0, so
             // they're fetched up front — but the browser defers DECODING what
@@ -234,23 +255,16 @@ function CoverCarousel({
           />
         ))}
 
-        {images.length > 1 && (
+        {/* Arrows on the TALL card only. The compact thumb has tap-to-advance,
+            drag, and tappable dots — a fourth control covering 40px of a 126px
+            image earned nothing. */}
+        {images.length > 1 && !compact && (
           <>
-            <button
-              type="button"
-              onClick={(e) => go(e, -1)}
-              aria-label="Previous cover"
-              className={`${arrow} ${arrowShow} ${compact ? 'left-1' : 'left-2'}`}
-            >
-              <ChevronLeft size={compact ? 11 : 16} strokeWidth={2.5} />
+            <button type="button" onClick={(e) => go(e, -1)} aria-label="Previous cover" className={`${arrow} ${arrowShow} left-2`}>
+              <ChevronLeft size={16} strokeWidth={2.5} />
             </button>
-            <button
-              type="button"
-              onClick={(e) => go(e, 1)}
-              aria-label="Next cover"
-              className={`${arrow} ${arrowShow} ${compact ? 'right-1' : 'right-2'}`}
-            >
-              <ChevronRight size={compact ? 11 : 16} strokeWidth={2.5} />
+            <button type="button" onClick={(e) => go(e, 1)} aria-label="Next cover" className={`${arrow} ${arrowShow} right-2`}>
+              <ChevronRight size={16} strokeWidth={2.5} />
             </button>
           </>
         )}
@@ -682,18 +696,21 @@ export function TripCardCompact({
   // formatRanges lists every window, joined with " / ". Labels carry no colour
   // of their own so they read at the same weight as their dates.
   const periods = (
-    <>
-      {rec.length > 0 && (
-        <p className="text-[10px] font-bold leading-[18px] text-basel-brick">
-          <span className="mr-1 tracking-widest text-basel-brick/75">แนะนำ</span>
-          {formatRanges(rec, 'th')}
-        </p>
-      )}
-      {/* Availability + day count share this line, count flush right. A trip
-          with no window isn't season-bound at all, so it says so rather than
-          showing an empty "เปิดตามฤดูกาล". */}
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="min-w-0 text-[10px] leading-[18px] text-zen-black">
+    // Dates on the left, a right-hand column with the save button above the day
+    // count. The heart lives HERE rather than on the photo: that surface is
+    // tap-to-advance now, and a button on it would be a mis-hit zone. This spot
+    // is the card's right edge, so it's still under a right thumb.
+    <div className="flex items-end justify-between gap-1">
+      <div className="min-w-0">
+        {rec.length > 0 && (
+          <p className="text-[10px] font-bold leading-[18px] text-basel-brick">
+            <span className="mr-1 tracking-widest text-basel-brick/75">แนะนำ</span>
+            {formatRanges(rec, 'th')}
+          </p>
+        )}
+        {/* A trip with no window isn't season-bound at all, so it says so
+            rather than showing an empty "เปิดตามฤดูกาล". */}
+        <p className="text-[10px] leading-[18px] text-zen-black">
           {avail.length > 0 ? (
             <>
               <span className="mr-1 tracking-widest">เปิดตามฤดูกาล</span>
@@ -703,11 +720,27 @@ export function TripCardCompact({
             <span className="tracking-widest">เที่ยวได้ทั้งปี</span>
           )}
         </p>
-        <span className="shrink-0 font-headline text-[10px] font-medium tracking-[0.06em] text-zen-black">
+      </div>
+
+      <div className="flex shrink-0 flex-col items-end gap-1">
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onHeart(tpl.id, e)
+          }}
+          disabled={isPending}
+          aria-label={saved ? 'Unsave' : 'Save'}
+          className="text-zen-black/70 transition-colors hover:text-red-500 disabled:opacity-60"
+        >
+          {/* Saved = red, the universal favourite convention (deliberate
+              exception to the single-accent palette rule). */}
+          <Heart size={16} strokeWidth={1.5} className={saved ? 'fill-red-500 text-red-500' : ''} />
+        </button>
+        <span className="font-headline text-[10px] font-medium tracking-[0.06em] text-zen-black">
           {tpl.totalDays} DAYS
         </span>
       </div>
-    </>
+    </div>
   )
 
   return (
@@ -728,11 +761,18 @@ export function TripCardCompact({
           that way, instead of being squeezed into the narrow text column (on a
           phone that column is ~165px, which orphaned the "+N ช่วง" suffix). */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex min-w-0">
+        {/* flex-row-reverse — cover on the RIGHT, text on the left. The DOM
+            order stays cover-then-text so screen readers still announce the
+            image first. Puts the whole gallery (photo, its dots) under a right
+            thumb, and matches how article lists lead with the headline. */}
+        <div className="flex min-w-0 flex-row-reverse">
           {/* Square cover — 150px box − p-3 = a 126px square.
               pb-1: the dot row sits under the image, so the box needs almost no
               bottom padding of its own. */}
-          <div className="w-[150px] shrink-0 px-3 pb-1 pt-3">
+          {/* pr-1.5 (not px-3): the right edge faces the barcode's perforation,
+              so it needs less gap than the text side. Box width drops with it
+              (144 − 12 − 6) to keep the square at the same 126px. */}
+          <div className="w-[144px] shrink-0 pb-1 pl-3 pr-1.5 pt-3">
             {/* No `places` — the caption is NOT drawn on the photo here; the
                 header row shows it instead, driven by onIndexChange. */}
             <CoverCarousel images={images} alt={tpl.title} square compact onIndexChange={setCoverIdx} />
@@ -740,38 +780,22 @@ export function TripCardCompact({
 
           {/* min-w-0: without it this flex child refuses to shrink and the text
               below stops wrapping inside the column. */}
-          <div className="flex min-w-0 flex-1 flex-col py-3 pr-3">
-        {/* Cover caption (left) · day count + save (right). The caption lives
-            here rather than over the photo — off the image it's plain page
-            paint, so it can never be dragged into the crossfade's layer.
+          <div className="flex min-w-0 flex-1 flex-col py-3 pl-3">
+        {/* Cover caption only — the day count and save button both live in the
+            band at the card's bottom-right now. The caption sits here rather
+            than over the photo: off the image it's plain page paint, so it
+            can never be dragged into the crossfade's compositing layer.
             key={coverIdx} replays the opacity fade on each cover change. */}
-        <div className="flex items-center justify-between gap-2">
-          {place ? (
+        <div className="flex h-4 items-center">
+          {place && (
             <span
               key={coverIdx}
-              className="flex min-w-0 max-w-[85%] animate-fade-in items-center gap-1 font-headline text-[11px] font-medium tracking-[0.06em] text-graphite"
+              className="flex min-w-0 animate-fade-in items-center gap-1 font-headline text-[11px] font-medium tracking-[0.06em] text-graphite"
             >
               <ArrowRight className="size-3 shrink-0" strokeWidth={2} aria-hidden />
               <span className="truncate">{place}</span>
             </span>
-          ) : (
-            <span /> /* keeps the heart right-aligned when a trip has no places */
           )}
-          {/* The day count moved down to the availability line; this row is
-              just the cover caption and the save button now. */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onHeart(tpl.id, e)
-            }}
-            disabled={isPending}
-            aria-label={saved ? 'Unsave' : 'Save'}
-            className="shrink-0 text-zen-black/70 transition-colors hover:text-red-500 disabled:opacity-60"
-          >
-            {/* Saved = red, the universal favourite convention (deliberate
-                exception to the single-accent palette rule). */}
-            <Heart size={16} strokeWidth={1.5} className={saved ? 'fill-red-500 text-red-500' : ''} />
-          </button>
         </div>
 
         {/* Rule → title → Rule. No PREVIEW cue or chip glyph here (the tall
@@ -798,6 +822,8 @@ export function TripCardCompact({
             (cover + text), so the dates keep to one line each. Always rendered:
             a trip with no windows still says เที่ยวได้ทั้งปี and carries the day
             count. mt-auto pins it to the bottom when the cover is taller. */}
+        {/* px-2 (not px-3): a trip with three recommended windows fills this
+            line, and the 8px saved keeps it from wrapping a trailing month. */}
         <div className="mt-auto border-t border-zen-black/15 px-3 py-2">{periods}</div>
       </div>
 
@@ -886,13 +912,16 @@ function DeckCard({
         dragged.current = true
       }}
       onDragEnd={(_, info) => {
-        if (info.offset.x < -SWIPE) {
+        // Distance OR velocity — either alone is enough to count as a swipe.
+        const left = info.offset.x < -SWIPE || info.velocity.x < -SWIPE_V
+        const right = info.offset.x > SWIPE || info.velocity.x > SWIPE_V
+        if (left) {
           animate(x, EXIT_X, { duration: EXIT_MS / 1000, ease: EASE_IN })
           onNext()
         } else {
           // Right fling advances backwards; either way this card returns home.
           animate(x, 0, { duration: 0.3, ease: EASE_OUT })
-          if (info.offset.x > SWIPE) onPrev()
+          if (right) onPrev()
         }
       }}
       onClick={() => {
