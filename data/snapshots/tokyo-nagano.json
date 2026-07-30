@@ -2,6 +2,7 @@
   "source_file": "Dopamichi.xlsx",
   "overview": {
     "title": "Tokyo - Nagano",
+    "area_code": "kanto,chubu",
     "remark_en": "Prices for transport, food, accommodation, and activities are calculated for our exact trip dates (Oct 16–24, 2026).",
     "remark_th": "ค่าเดินทาง ของกิน ที่พัก และกิจกรรมต่างๆ คำนวณจากช่วงที่เดินทางจริง (16-24 ต.ค. 2026)",
     "car_rental": {

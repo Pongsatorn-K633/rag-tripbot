@@ -26,6 +26,10 @@ export interface PlanTemplate {
   /** Admin-chosen resting tilt for the compact card ('none' | 'left' | 'right'),
    *  from the V3 itinerary's `overview.card_tilt`. */
   cardTilt?: string | null
+  /** Region ids (of the 8 in lib/japan-regions.ts) parsed from the V3
+   *  itinerary's `overview.area_code` by GET /api/templates. The /discover
+   *  region-map filter matches these EXACTLY — no area_code, no match. */
+  regions?: string[]
   totalDays: number
   season: string | null
   availability: TripAvailability | null

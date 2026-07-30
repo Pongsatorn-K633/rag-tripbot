@@ -19,7 +19,7 @@ Column A here holds row labels: Primary, Details, Highlight Place 1–8, Referen
 | D | Available Period | overview.available_period |
 | E | Recommended Period(s) | overview.recommended_period (array — one or more `{primary, details}` windows) |
 | F | Levels | (highlight level) |
-| G | Area code | overview.area_code |
+| G | Area code | overview.area_code — region id(s) of the trip, comma-separated, lowercase, from the 8-region set in `lib/japan-regions.ts`: `hokkaido`, `tohoku`, `kanto`, `chubu`, `kinki`, `chugoku`, `shikoku`, `kyushu-okinawa` (e.g. `kanto,chubu`). Drives the /discover 3D-map region filter via `GET /api/templates` → `regions[]`; the match is EXACT — a trip without it matches no region filter |
 | H | Cover Images | overview.cover_images |
 | — | Cover Places (JSON-only) | overview.cover_places — place name per cover, same order as cover_images (hero chip in the preview) |
 | — | Popular period (JSON-only) | recommended_period[].popular — `true` shows a "Popular" badge on that window in the preview |

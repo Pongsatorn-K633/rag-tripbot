@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'motion/react'
-import { ArrowRight, Search, SlidersHorizontal, X, ChevronDown, Check } from 'lucide-react'
+import { ArrowRight, Search, SlidersHorizontal, X, ChevronDown, Check, Map as MapIcon } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
 import { evaluateTrip } from '@/lib/availability'
 import DateRangePicker from '@/app/components/DateRangePicker'
@@ -11,6 +11,8 @@ import { type PlanTemplate } from '@/app/components/PlanCard'
 import TripDeck, { TripCardCompact, TripCoverflow, DECK_CARD_W, DECK_CARD_H } from '@/app/components/TripDeck'
 import PlanPreviewModal from '@/app/components/PlanPreviewModal'
 import { useSavedTemplates } from '@/app/hooks/useSavedTemplates'
+import JapanMap3D from '@/app/components/JapanMap3D'
+import { JAPAN_REGIONS } from '@/lib/japan-regions'
 
 /**
  * TripSearchSection — the ENTIRE "Ready-to-go Trips" experience as one shared
@@ -36,6 +38,48 @@ const SEASONS = [
 // Top tourist prefectures (Thai-market recognition order). Edit freely — the
 // dropdown self-prunes to prefectures that actually have published trips.
 const TOP_PREFECTURES = ['Tokyo', 'Osaka', 'Kyoto', 'Hokkaido', 'Fukuoka', 'Okinawa', 'Nagano', 'Nara', 'Yamanashi', 'Gifu']
+
+/** Does this trip belong to the given region? EXACT match against the trip's
+ *  own region ids (parsed from V3 `overview.area_code` by GET /api/templates).
+ *  Deliberately strict: a trip with no area_code matches no region filter —
+ *  keyword inference was tried and false-matched across place names
+ *  ("Kamikochi" ⊃ "Kochi"). */
+function tripInRegion(t: PlanTemplate, regionId: string): boolean {
+  return (t.regions ?? []).includes(regionId)
+}
+
+/** One region legend chip (colour dot + name) — shared by the desktop map
+ *  overlay and the mobile map sheet. Toggles the region in the multi-select
+ *  filter; on pointer devices it also mirrors hover onto the map. */
+function RegionChip({
+  region,
+  active,
+  onToggle,
+  onHoverChange,
+}: {
+  region: (typeof JAPAN_REGIONS)[number]
+  active: boolean
+  onToggle: () => void
+  onHoverChange?: (id: string | null) => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      onMouseEnter={onHoverChange ? () => onHoverChange(region.id) : undefined}
+      onMouseLeave={onHoverChange ? () => onHoverChange(null) : undefined}
+      aria-pressed={active}
+      className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left font-sans text-xs transition-colors ${
+        active
+          ? 'border-briefing-cream/40 bg-briefing-cream/10 text-briefing-cream'
+          : 'border-briefing-cream/10 text-briefing-cream/60 hover:border-briefing-cream/25 hover:text-briefing-cream'
+      }`}
+    >
+      <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: region.color }} aria-hidden />
+      {region.name.replace(' Region', '')}
+    </button>
+  )
+}
 // ± flex widens the picked window by N days on EACH side, so a slightly-off
 // availability window still matches. Default ตรงเป๊ะ (0).
 const FLEX_CHIPS = [
@@ -189,6 +233,7 @@ export default function TripSearchSection({
   openFromQueryParam = false,
   headingTag: HeadingTag = 'h2',
   compactCards = false,
+  regionMap = false,
 }: {
   title: string
   subtitle: string
@@ -206,6 +251,11 @@ export default function TripSearchSection({
    *  boarding-pass cards (deck on mobile / row on desktop). /discover uses
    *  this; home keeps the tall cards. */
   compactCards?: boolean
+  /** Desktop-only sticky 3D Japan map panel to the RIGHT of the compact card
+   *  list (/discover): title + map + region legend. Regions are a multi-select
+   *  FILTER on the cards (click map or legend chips). Always visible from lg
+   *  up; hidden below lg. compactCards mode only. */
+  regionMap?: boolean
 }) {
   const [templates, setTemplates] = useState<PlanTemplate[]>([])
   const [tripsLoading, setTripsLoading] = useState(true)
@@ -217,6 +267,15 @@ export default function TripSearchSection({
   // Multi-select destinations — a trip matches if it touches ANY selected
   // prefecture (OR), so adding picks widens results instead of zeroing them.
   const [destList, setDestList] = useState<string[]>([])
+  // Multi-select REGIONS from the 3D map panel — same OR semantics.
+  const [regionList, setRegionList] = useState<string[]>([])
+  const toggleRegion = (id: string) =>
+    setRegionList((prev) => (prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id]))
+  // Legend-chip hover, mirrored onto the map (lift + accent) via the map's
+  // externalHoverRegion prop — CSS :hover can't cross from chip to SVG.
+  const [hoverRegion, setHoverRegion] = useState<string | null>(null)
+  // Mobile: the floating map button opens the region map as a bottom sheet.
+  const [mapSheetOpen, setMapSheetOpen] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
   // Destination dropdown open state (the only dropdown in the modal).
   const [ddOpen, setDdOpen] = useState<'dest' | null>(null)
@@ -253,7 +312,7 @@ export default function TripSearchSection({
     TOP_PREFECTURES.filter((p) => templates.some((t) => t.title.toLowerCase().includes(p.toLowerCase()))),
   )
   const q = query.trim().toLowerCase()
-  const filtering = !!(q || destList.length || startD)
+  const filtering = !!(q || destList.length || regionList.length || startD)
   // No filter → newest `defaultCount` (home) or the whole catalog (/discover).
   const base = defaultCount ? [...templates].slice(-defaultCount).reverse() : [...templates].reverse()
   const shown = filtering
@@ -262,6 +321,7 @@ export default function TripSearchSection({
         .filter((t) => {
           if (q && !`${t.title} ${t.description ?? ''}`.toLowerCase().includes(q)) return false
           if (destList.length && !destList.some((d) => t.title.toLowerCase().includes(d.toLowerCase()))) return false
+          if (regionList.length && !regionList.some((r) => tripInRegion(t, r))) return false
           if (effStart && effEnd && !evaluateTrip(t.availability, effStart, effEnd, t.totalDays).matches) return false
           return true
         })
@@ -353,6 +413,7 @@ export default function TripSearchSection({
                 )}
               </button>
             </div>
+
 
             {/* Active-filter bubbles — each removable ONLY via its × */}
             {activeFilterCount > 0 && (
@@ -629,27 +690,95 @@ export default function TripSearchSection({
            md:items-start pins the stack to the LEFT from md up, leaving the
            right of the row free; centred on mobile, where it fills the width.
            md:pl-16 nudges it in off the very edge. */
-        <div className="flex flex-col items-center gap-5 md:items-start md:pl-16">
-          {tripsLoading ? (
-            Array.from({ length: 3 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-[150px] w-full max-w-3xl animate-pulse rounded-xl border border-white/10 bg-white/5"
-              />
-            ))
-          ) : shown.length > 0 ? (
-            shown.map((tpl) => (
-              <TripCardCompact
-                key={tpl.id}
-                tpl={tpl}
-                saved={savedIds.has(tpl.id)}
-                isPending={pending.has(tpl.id)}
-                onOpen={(id) => setSelectedId(id)}
-                onHeart={(id, e) => toggleHeart(id, e)}
-              />
-            ))
-          ) : (
-            <p className="text-center text-briefing-cream/50 font-sans">{emptyText}</p>
+        /* lg+ with the region map: TWO EQUAL halves, each centering its
+           content, so the page reads symmetric (left gutter ≈ middle gap ≈
+           right gutter). Below lg the map is hidden entirely — the mobile
+           layout is exactly what it was. */
+        <div className={regionMap ? 'lg:grid lg:grid-cols-2 lg:items-start lg:gap-10' : undefined}>
+          <div className="flex flex-col items-center gap-5 md:items-start md:pl-16 lg:min-w-0 lg:items-center lg:pl-0">
+            {tripsLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-[150px] w-full max-w-3xl animate-pulse rounded-xl border border-white/10 bg-white/5"
+                />
+              ))
+            ) : shown.length > 0 ? (
+              shown.map((tpl, i) => (
+                /* Route-line rail (lg+): an Ocean node at each card's centre,
+                   line segments joining node to node — starts at the first
+                   card's dot, ends at the last's. Sits in the free space left
+                   of the centred cards; hidden below lg. */
+                <div key={tpl.id} className="relative w-full max-w-md">
+                  <span
+                    aria-hidden
+                    className={`absolute -left-8 hidden w-[3px] -translate-x-1/2 bg-basel-brick/30 lg:block ${
+                      i === 0 ? 'top-1/2' : '-top-2.5'
+                    } ${i === shown.length - 1 ? 'bottom-1/2' : '-bottom-2.5'}`}
+                  />
+                  <span
+                    aria-hidden
+                    className="absolute -left-8 top-1/2 hidden size-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-basel-brick/25 lg:grid"
+                  >
+                    <span className="size-3 rounded-full bg-basel-brick" />
+                  </span>
+                  <TripCardCompact
+                    tpl={tpl}
+                    saved={savedIds.has(tpl.id)}
+                    isPending={pending.has(tpl.id)}
+                    onOpen={(id) => setSelectedId(id)}
+                    onHeart={(id, e) => toggleHeart(id, e)}
+                  />
+                </div>
+              ))
+            ) : (
+              <p className="text-center text-briefing-cream/50 font-sans">{emptyText}</p>
+            )}
+          </div>
+          {regionMap && (
+            /* sticky top-24: parks just under the navbar while the card list
+               scrolls past. Centered in its half, mirroring the cards.
+               Palette: Cloud tops on the graphite canvas; Midnight extrusion
+               sides (default slate would vanish against graphite). Selected
+               regions fill with their own accent colour (mono-variant
+               highlight), matching their legend dot. */
+            <div className="hidden w-full max-w-[560px] lg:sticky lg:top-24 lg:block lg:justify-self-center lg:self-start xl:max-w-[660px]">
+              {/* Title, then the legend as a 4×2 chip row, then the map at the
+                  panel's full width. A chip is the same multi-select toggle
+                  as clicking the region on the map; selected regions fill
+                  with their accent colour, and hovering a chip mirrors the
+                  map's own hover (lift + accent). */}
+              <h3 className="mb-3 text-center font-detail text-xl font-light tracking-[0.08em] text-briefing-cream xl:text-2xl">
+                8 Regions
+              </h3>
+              <div className="grid grid-cols-4 gap-1.5">
+                {JAPAN_REGIONS.map((r) => (
+                  <RegionChip
+                    key={r.id}
+                    region={r}
+                    active={regionList.includes(r.id)}
+                    onToggle={() => toggleRegion(r.id)}
+                    onHoverChange={setHoverRegion}
+                  />
+                ))}
+              </div>
+              {/* -mt pulls the map's empty top sea band up under the chips;
+                  pointer-events-none on the svg keeps the overlapped chips
+                  clickable (regions re-enable their own events). */}
+              <div className="-mt-10">
+                <JapanMap3D
+                  interactive
+                  depth={14}
+                  topColor="#F7F9FC"
+                  sideColor="#122C4F"
+                  shadowColor="#000000"
+                  highlightedRegions={regionList}
+                  onRegionClick={toggleRegion}
+                  externalHoverRegion={hoverRegion}
+                  className="pointer-events-none"
+                />
+              </div>
+            </div>
           )}
         </div>
       ) : (
@@ -690,6 +819,94 @@ export default function TripSearchSection({
           <p className="text-center text-briefing-cream/50 font-sans">{emptyText}</p>
         )}
       </div>
+        </>
+      )}
+
+      {/* Mobile region map: a static AssistiveTouch-style floating button
+          (cloud-white circle, map glyph) opens the map + legend as a bottom
+          sheet — the SAME regionList filter as the desktop panel. lg+ hides
+          both (the sticky panel exists there instead). */}
+      {regionMap && (
+        <>
+          {/* Mobile region-map button — a STATIC OVERLAY (AssistiveTouch
+              style: fixed, stays put while the page scrolls), resting just
+              below the search bar's filter button on load. Opens the map
+              sheet. lg+ has the sticky map panel instead. */}
+          <button
+            type="button"
+            onClick={() => setMapSheetOpen(true)}
+            aria-label="Open region map"
+            className="fixed right-4 top-[255px] z-40 grid size-11 place-items-center rounded-full border border-zen-black/10 bg-briefing-cream text-graphite shadow-[0_8px_24px_rgba(0,0,0,0.35)] lg:hidden"
+          >
+            <MapIcon size={18} strokeWidth={1.75} />
+          </button>
+          <AnimatePresence>
+            {mapSheetOpen && (
+              <>
+                <motion.div
+                  key="map-sheet-backdrop"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setMapSheetOpen(false)}
+                  className="fixed inset-0 z-[69] bg-noir/50 lg:hidden"
+                  aria-hidden
+                />
+                <motion.div
+                  key="map-sheet"
+                  initial={{ y: '100%' }}
+                  animate={{ y: 0 }}
+                  exit={{ y: '100%' }}
+                  transition={{ type: 'tween', duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+                  className="fixed inset-x-0 bottom-0 z-[70] rounded-t-3xl border-t border-briefing-cream/10 bg-graphite p-5 pb-8 lg:hidden"
+                  role="dialog"
+                  aria-label="8 Regions map filter"
+                >
+                  <div className="flex items-center justify-between">
+                    <h3 className="pl-2 font-detail text-lg font-light tracking-wide text-briefing-cream">
+                      8 Regions
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setMapSheetOpen(false)}
+                      aria-label="Close map"
+                      className="grid size-8 place-items-center rounded-full bg-briefing-cream/10 text-briefing-cream"
+                    >
+                      <X className="size-4" />
+                    </button>
+                  </div>
+                  {/* Negative margins pull the header/chips into the map
+                      box's transparent sea zones — the svg's portrait viewBox
+                      letterboxes inside this landscape-ish slot, leaving dead
+                      space above and below the drawing. */}
+                  <div className="-mb-10 -mt-6">
+                    <JapanMap3D
+                      interactive
+                      depth={14}
+                      topColor="#F7F9FC"
+                      sideColor="#122C4F"
+                      shadowColor="#000000"
+                      highlightedRegions={regionList}
+                      onRegionClick={toggleRegion}
+                      width="100%"
+                      height="52vh"
+                      className="pointer-events-none"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {JAPAN_REGIONS.map((r) => (
+                      <RegionChip
+                        key={r.id}
+                        region={r}
+                        active={regionList.includes(r.id)}
+                        onToggle={() => toggleRegion(r.id)}
+                      />
+                    ))}
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
         </>
       )}
 

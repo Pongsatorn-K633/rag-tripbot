@@ -31,6 +31,10 @@ export default function DiscoverPage() {
           openFromQueryParam
           headingTag="h1"
           compactCards
+          // Desktop-only sticky right panel: title + 3D map + region legend,
+          // with regions as a multi-select filter on the card list. The whole
+          // panel lives inside TripSearchSection — it needs the filter state.
+          regionMap
         />
       </div>
     </main>

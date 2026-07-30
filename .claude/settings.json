@@ -26,7 +26,31 @@
       "PowerShell(Get-Item \"public\\\\japan-hero.jpg\" | Select-Object Name, @{n='MB';e={[math]::Round\\($_.Length/1MB,2\\)}}; Add-Type -AssemblyName System.Drawing; $img=[System.Drawing.Image]::FromFile\\(\"$PWD\\\\public\\\\japan-hero.jpg\"\\); \"$\\($img.Width\\) x $\\($img.Height\\)\"; $img.Dispose\\(\\))",
       "PowerShell(node -e \"const sharp=require\\('sharp'\\);sharp\\('public/japan-hero.jpg'\\).resize\\({width:2560}\\).jpeg\\({quality:82,mozjpeg:true}\\).toFile\\('public/japan-hero.tmp.jpg'\\).then\\(i=>console.log\\('done',i.width+'x'+i.height,Math.round\\(i.size/1024\\)+'KB'\\)\\)\")",
       "PowerShell(Move-Item -Force public\\\\japan-hero.tmp.jpg public\\\\japan-hero.jpg; Get-Item public\\\\japan-hero.jpg | Select-Object Name, @{n='KB';e={[math]::Round\\($_.Length/1KB\\)}})",
-      "Bash(grep -o 'blurDataURL[^,]\\\\{0,40\\\\}\\\\|japan-hero[^\"]*')"
+      "Bash(grep -o 'blurDataURL[^,]\\\\{0,40\\\\}\\\\|japan-hero[^\"]*')",
+      "PowerShell(Get-ChildItem -Recurse Kimi_Agent_3DJapanMap -File | Select-Object @{n='Path';e={$_.FullName.Replace\\(\"$PWD\\\\\",''\\)}}, @{n='KB';e={[math]::Round\\($_.Length/1KB,1\\)}})",
+      "PowerShell(Copy-Item Kimi_Agent_3DJapanMap\\\\app\\\\src\\\\data\\\\japanRegions.ts lib\\\\japan-regions.ts; $c = Get-Content Kimi_Agent_3DJapanMap\\\\app\\\\src\\\\components\\\\JapanMap3D.tsx -Raw; $c = $c.Replace\\(\"from '@/data/japanRegions'\", \"from '@/lib/japan-regions'\"\\); Set-Content app\\\\components\\\\JapanMap3D.tsx -Value $c -Encoding utf8 -NoNewline; Add-Content .gitignore \"`n# Kimi 3D Japan map reference bundle \\(integrated: app/components/JapanMap3D.tsx + lib/japan-regions.ts\\)`nKimi_Agent_3DJapanMap/\" -Encoding utf8; \"done\")",
+      "PowerShell(Get-Item japanmap.jpg | Select-Object Name, @{n='KB';e={[math]::Round\\($_.Length/1KB\\)}}; node -e \"require\\('sharp'\\)\\('japanmap.jpg'\\).metadata\\(\\).then\\(m=>console.log\\(m.width+'x'+m.height, m.format\\)\\)\")",
+      "PowerShell(node \"$env:LOCALAPPDATA\\\\Temp\\\\claude\\\\c--Users-WindowS-10-Documents-VSCode-rag-tripbot\\\\f3fda904-1143-41d1-bcf8-8205d29d07a6\\\\scratchpad\\\\trace-kyushu.js\")",
+      "PowerShell(node \"$env:LOCALAPPDATA\\\\Temp\\\\claude\\\\c--Users-WindowS-10-Documents-VSCode-rag-tripbot\\\\f3fda904-1143-41d1-bcf8-8205d29d07a6\\\\scratchpad\\\\apply-kyushu.js\"; npx tsc --noEmit)",
+      "PowerShell(Copy-Item \"$env:LOCALAPPDATA\\\\Temp\\\\claude\\\\c--Users-WindowS-10-Documents-VSCode-rag-tripbot\\\\f3fda904-1143-41d1-bcf8-8205d29d07a6\\\\scratchpad\\\\trace-kyushu.js\" Kimi_Agent_3DJapanMap\\\\trace-region.js; \"saved\")",
+      "PowerShell(Copy-Item \"$env:LOCALAPPDATA\\\\Temp\\\\claude\\\\c--Users-WindowS-10-Documents-VSCode-rag-tripbot\\\\f3fda904-1143-41d1-bcf8-8205d29d07a6\\\\scratchpad\\\\trace-kyushu.js\" Kimi_Agent_3DJapanMap\\\\trace-region.js -Force; Copy-Item \"$env:LOCALAPPDATA\\\\Temp\\\\claude\\\\c--Users-WindowS-10-Documents-VSCode-rag-tripbot\\\\f3fda904-1143-41d1-bcf8-8205d29d07a6\\\\scratchpad\\\\apply-kyushu.js\" Kimi_Agent_3DJapanMap\\\\apply-region.js -Force; \"synced\")",
+      "PowerShell(node \"$env:LOCALAPPDATA\\\\Temp\\\\claude\\\\c--Users-WindowS-10-Documents-VSCode-rag-tripbot\\\\f3fda904-1143-41d1-bcf8-8205d29d07a6\\\\scratchpad\\\\trace-honshu.js\")",
+      "PowerShell(node \"$env:LOCALAPPDATA\\\\Temp\\\\claude\\\\c--Users-WindowS-10-Documents-VSCode-rag-tripbot\\\\f3fda904-1143-41d1-bcf8-8205d29d07a6\\\\scratchpad\\\\apply-honshu.js\"; npx tsc --noEmit)",
+      "PowerShell(Copy-Item \"$env:LOCALAPPDATA\\\\Temp\\\\claude\\\\c--Users-WindowS-10-Documents-VSCode-rag-tripbot\\\\f3fda904-1143-41d1-bcf8-8205d29d07a6\\\\scratchpad\\\\trace-honshu.js\" Kimi_Agent_3DJapanMap\\\\trace-honshu.js -Force; Copy-Item \"$env:LOCALAPPDATA\\\\Temp\\\\claude\\\\c--Users-WindowS-10-Documents-VSCode-rag-tripbot\\\\f3fda904-1143-41d1-bcf8-8205d29d07a6\\\\scratchpad\\\\apply-honshu.js\" Kimi_Agent_3DJapanMap\\\\apply-honshu.js -Force; \"synced\")",
+      "PowerShell(try { Stop-Process -Id 15624 -Force -Confirm:$false -ErrorAction Stop; \"killed 15624\" } catch { $_.Exception.Message }; Get-NetTCPConnection -LocalPort 3002 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { try { Stop-Process -Id $_.OwningProcess -Force -Confirm:$false -ErrorAction Stop; \"killed 3002 owner\" } catch {} })",
+      "PowerShell(node \"$env:LOCALAPPDATA\\\\Temp\\\\claude\\\\c--Users-WindowS-10-Documents-VSCode-rag-tripbot\\\\f3fda904-1143-41d1-bcf8-8205d29d07a6\\\\scratchpad\\\\find-strays.js\")",
+      "PowerShell(node \"$env:LOCALAPPDATA\\\\Temp\\\\claude\\\\c--Users-WindowS-10-Documents-VSCode-rag-tripbot\\\\f3fda904-1143-41d1-bcf8-8205d29d07a6\\\\scratchpad\\\\remove-strays.js\"; npx tsc --noEmit)",
+      "Bash(\"/c/Program Files/Google/Chrome/Application/chrome.exe\" --headless=new --disable-gpu --window-size=430,930 --virtual-time-budget=12000 --dump-dom http://localhost:3000/discover)",
+      "PowerShell(node \"$env:LOCALAPPDATA\\\\Temp\\\\claude\\\\c--Users-WindowS-10-Documents-VSCode-rag-tripbot\\\\f3fda904-1143-41d1-bcf8-8205d29d07a6\\\\scratchpad\\\\backfill-area-code.js\")",
+      "PowerShell(node \"$env:LOCALAPPDATA\\\\Temp\\\\claude\\\\c--Users-WindowS-10-Documents-VSCode-rag-tripbot\\\\f3fda904-1143-41d1-bcf8-8205d29d07a6\\\\scratchpad\\\\backfill-kyoto.js\" 2>$null)",
+      "Bash(curl -s http://localhost:3000/api/templates)",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{const j=JSON.parse\\(d\\);j.templates.forEach\\(t=>console.log\\(t.title.padEnd\\(30\\), JSON.stringify\\(t.regions\\)\\)\\)}\\)\")",
+      "PowerShell(node \"$env:LOCALAPPDATA\\\\Temp\\\\claude\\\\c--Users-WindowS-10-Documents-VSCode-rag-tripbot\\\\f3fda904-1143-41d1-bcf8-8205d29d07a6\\\\scratchpad\\\\backfill-area-code-prod.js\" 2>$null)",
+      "PowerShell($env:USE_PROD_DB='1'; npx tsx scripts/export-dopamichi.ts; $env:USE_PROD_DB=$null; git diff --stat data/snapshots/)",
+      "PowerShell(git push origin main)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\WindowS 10\\Documents\\VSCode\\rag-tripbot"
     ]
   }
 }

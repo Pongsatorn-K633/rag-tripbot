@@ -40,9 +40,18 @@ export async function GET() {
   // Per-cover place captions, keyed by index to `coverImages`. V3 only; v1/v2
   // itineraries simply have none and their cards render no caption.
   const templates = rows.map(({ itinerary, ...t }) => {
-    const ov = (itinerary as { overview?: { cover_places?: string[]; card_tilt?: string } } | null)
-      ?.overview
-    return { ...t, coverPlaces: ov?.cover_places ?? [], cardTilt: ov?.card_tilt ?? null }
+    const ov = (itinerary as {
+      overview?: { cover_places?: string[]; card_tilt?: string; area_code?: string }
+    } | null)?.overview
+    // Region ids from overview.area_code (comma/space separated, e.g.
+    // "kanto,chubu") — the /discover region-map filter matches these EXACTLY;
+    // a trip with no area_code matches no region filter. Valid ids are the 8
+    // in lib/japan-regions.ts.
+    const regions = (ov?.area_code ?? '')
+      .split(/[\s,]+/)
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean)
+    return { ...t, coverPlaces: ov?.cover_places ?? [], cardTilt: ov?.card_tilt ?? null, regions }
   })
 
   return NextResponse.json({ templates })
