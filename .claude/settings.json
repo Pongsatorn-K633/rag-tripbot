@@ -21,7 +21,8 @@
       "PowerShell(git rev-list --left-right --count origin/main...main)",
       "PowerShell($env:USE_PROD_DB='1'; npx tsx scripts/export-dopamichi.ts; $env:USE_PROD_DB=$null; git diff --stat data/snapshots/)",
       "PowerShell(git push origin main)",
-      "PowerShell(git add .claude/settings.json)"
+      "PowerShell(git add .claude/settings.json)",
+      "PowerShell(git check-ignore .env .env.local)"
     ],
     "additionalDirectories": [
       "C:\\Users\\WindowS 10\\Documents\\VSCode\\rag-tripbot"
