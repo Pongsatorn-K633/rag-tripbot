@@ -46,31 +46,38 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   /**
    * BOTTOM overscroll on dark pages. iOS paints the rubber-band zone from the
    * root background-COLOR alone — one colour for both ends, and it ignores
-   * everything else out there (phone-verified, all three: the fixed-attachment
-   * gradient below; a fixed block parked under the viewport, culled as a
+   * everything else out there (phone-verified, all three: a fixed-attachment
+   * 50/50 gradient; a fixed block parked under the viewport, culled as a
    * never-visible layer; a 100vh footer box-shadow, clipped from the bounce
    * compositing). So dark-top + cream-bottom is only possible by CHANGING that
-   * one colour with scroll position: cream while the footer is on screen (a
-   * bottom bounce can only happen then), graphite otherwise. Unlike the old
-   * theme-color meta retint (which iOS ignores), root background changes are
-   * ordinary CSS repaints — iOS honours them.
+   * one colour with scroll position. Unlike the old theme-color meta retint
+   * (which iOS ignores), root background changes are ordinary CSS repaints —
+   * iOS honours them.
    *
-   * The inline style overrides the SSR <style> below; the cleanup clears it on
-   * every route change so a stranded cream can't survive navigation.
+   * Cream ONLY at the absolute bottom, not "footer visible": iOS's bottom
+   * browser chrome wears this same colour, and creaming it while the footer
+   * is merely approaching reads as a white bar stuck to a dark page. At the
+   * true bottom the chrome overlays the cream footer, so it blends. A page
+   * too short to scroll never creams — its top bounce (graphite, status bar)
+   * outranks its bottom corner.
+   *
+   * The inline style overrides the SSR <style> below; the cleanup clears it
+   * on every route change so a stranded cream can't survive navigation.
    */
   useEffect(() => {
+    if (!isDark) return
     const html = document.documentElement
-    const footer = document.querySelector('footer')
-    if (!isDark || !footer) return
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        html.style.backgroundColor = entry.isIntersecting ? '#F7F9FC' : ''
-      },
-      { threshold: 0 },
-    )
-    io.observe(footer)
+    const apply = () => {
+      const scrollable = html.scrollHeight > window.innerHeight
+      const atBottom = window.innerHeight + window.scrollY >= html.scrollHeight - 2
+      html.style.backgroundColor = scrollable && atBottom ? '#F7F9FC' : ''
+    }
+    apply()
+    window.addEventListener('scroll', apply, { passive: true })
+    window.addEventListener('resize', apply)
     return () => {
-      io.disconnect()
+      window.removeEventListener('scroll', apply)
+      window.removeEventListener('resize', apply)
       html.style.backgroundColor = ''
     }
   }, [isDark, pathname])
@@ -86,16 +93,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           globals.css — an opaque body would paint over the -z-10 canvas div
           and turn the dark pages white.
 
-          Dark routes end on a cream footer, so their bounce colours must
-          differ per END. The viewport-FIXED 50/50 gradient handles that on
-          DESKTOP elastic scroll (glued to the screen: top gap graphite,
-          bottom gap cream; `no-repeat` because a document-sized repeating
-          gradient tiles the OPPOSITE half at each end). iOS ignores it — it
-          paints the bounce from background-color alone — so iOS is handled by
-          the footer IntersectionObserver above swapping that colour. */}
-      <style>{isDark
-        ? 'html{background-color:#334155;background-image:linear-gradient(#334155 50%,#F7F9FC 50%);background-repeat:no-repeat;background-attachment:fixed}'
-        : 'html{background-color:#F7F9FC}'}</style>
+          SOLID colour only — never a gradient. A fixed-attachment 50/50
+          gradient was tried for two-tone bounce colours: iOS ignores it in
+          the bounce zone (background-color only there) AND leaks its cream
+          half as a white band behind the bottom browser chrome on dark
+          routes, in the strip the -z-10 canvas div doesn't cover. Two-tone
+          bounce is handled by the at-bottom colour swap above instead. */}
+      <style>{`html{background-color:${isDark ? '#334155' : '#F7F9FC'}}`}</style>
       {/* Page CANVAS + transition backdrop, in one fixed layer.
           The page above fades to/from TRANSPARENT, so whatever sits behind it
           is what shows mid-transition. `body` is cream, which made dark→dark
