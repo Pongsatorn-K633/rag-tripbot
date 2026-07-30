@@ -83,6 +83,17 @@ export default function Home() {
           }}
         />
 
+        {/* Top fade — dissolves the iOS status bar into the photo so there's no
+            seam. Starts on EXACTLY #334155 (Graphite), the root background the
+            status bar is painted from; mirror of the bottom fade below. */}
+        <div
+          className="absolute inset-x-0 top-0 z-10 h-[12%] pointer-events-none"
+          style={{
+            background:
+              'linear-gradient(180deg, #334155 0%, rgba(51,65,85,0.55) 35%, rgba(51,65,85,0) 100%)',
+          }}
+        />
+
         {/* Bottom fade — dissolves the photo into the dark section below so there's
             no seam. Ends on EXACTLY #0A1B33, the top color of the next section. */}
         <div

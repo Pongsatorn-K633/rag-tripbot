@@ -183,7 +183,7 @@ export default function Navbar() {
   const headerClass = isHome
     ? 'bg-transparent border-b border-transparent'
     : isGraphite
-      ? `bg-graphite/90 backdrop-blur-md border-b ${isScrolled ? 'border-white/10' : 'border-transparent'}`
+      ? `bg-gradient-to-b from-graphite to-graphite/80 backdrop-blur-md border-b ${isScrolled ? 'border-white/10' : 'border-transparent'}`
       : `bg-briefing-cream/80 backdrop-blur-md border-b ${isScrolled ? 'border-zen-black/5' : 'border-transparent'}`
 
   return (
