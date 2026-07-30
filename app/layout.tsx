@@ -22,16 +22,18 @@ export const metadata: Metadata = {
 }
 
 /**
- * Tints the browser's own chrome (iOS status bar, Android address bar) to
- * Midnight, so it meets the photo hero instead of the browser choosing a colour
- * of its own — that mismatch is the seam visible at the top of the page.
+ * Tints the browser chrome (Android address bar; some desktop browsers) to
+ * Graphite, matching the dark page canvas.
  *
- * ONE value for the whole site: `viewport` is a Server Component export and
- * app/page.tsx is 'use client', so it can't declare its own. Midnight is the
- * right global pick now that home, /discover, /my-trip and /create are all dark.
+ * ONE static value, never touched from JS: iOS ignores runtime updates to this
+ * meta on client navigation (it paints its bars from the <html> background
+ * instead — see ClientLayout's per-route root style), and the old
+ * IntersectionObserver retint stranded a cream bar on dark pages. Graphite is
+ * the right global pick now that home, /discover, /my-trip and /create are all
+ * on the graphite canvas.
  */
 export const viewport: Viewport = {
-  themeColor: '#122C4F',
+  themeColor: '#334155',
 }
 
 export default function RootLayout({

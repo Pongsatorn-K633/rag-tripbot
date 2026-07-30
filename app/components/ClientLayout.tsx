@@ -44,36 +44,58 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const isDark = isGraphiteCanvas(pathname)
 
   /**
-   * Re-tint the browser's own chrome (iOS status bar / bottom toolbar) to match
-   * whichever end of the page you're looking at: Midnight over a dark page, and
-   * Cloud once the cream footer is on screen. iOS applies ONE theme-color to
-   * both bars, so a single static value can only ever match one end.
+   * BOTTOM overscroll on dark pages. iOS paints the rubber-band zone from the
+   * root background-COLOR alone — one colour for both ends, and it ignores
+   * everything else out there (phone-verified, all three: the fixed-attachment
+   * gradient below; a fixed block parked under the viewport, culled as a
+   * never-visible layer; a 100vh footer box-shadow, clipped from the bounce
+   * compositing). So dark-top + cream-bottom is only possible by CHANGING that
+   * one colour with scroll position: cream while the footer is on screen (a
+   * bottom bounce can only happen then), graphite otherwise. Unlike the old
+   * theme-color meta retint (which iOS ignores), root background changes are
+   * ordinary CSS repaints — iOS honours them.
    *
-   * IntersectionObserver, not a scroll listener: this does no work at all while
-   * scrolling — the browser calls back only when the footer crosses the
-   * viewport edge, so there's no per-frame cost and no layout reads.
+   * The inline style overrides the SSR <style> below; the cleanup clears it on
+   * every route change so a stranded cream can't survive navigation.
    */
   useEffect(() => {
-    const meta = document.querySelector('meta[name="theme-color"]')
-    if (!meta) return
-    const pageTint = isDark ? '#122C4F' : '#F7F9FC'
-    const footerTint = '#F7F9FC' // the footer is cream on every route
-    meta.setAttribute('content', pageTint)
-
-    // Null on /chat and /liff/*, where the Footer renders nothing.
+    const html = document.documentElement
     const footer = document.querySelector('footer')
-    if (!footer || pageTint === footerTint) return
-
+    if (!isDark || !footer) return
     const io = new IntersectionObserver(
-      ([entry]) => meta.setAttribute('content', entry.isIntersecting ? footerTint : pageTint),
+      ([entry]) => {
+        html.style.backgroundColor = entry.isIntersecting ? '#F7F9FC' : ''
+      },
       { threshold: 0 },
     )
     io.observe(footer)
-    return () => io.disconnect()
+    return () => {
+      io.disconnect()
+      html.style.backgroundColor = ''
+    }
   }, [isDark, pathname])
 
   return (
     <>
+      {/* ROOT canvas colour, per route. iOS paints the status-bar area and the
+          overscroll bounce from the DOCUMENT ROOT background — not from the
+          theme-color meta (it ignores JS updates to it on client navigation)
+          and not from the viewport-only fixed canvas div below. This <style>
+          ships in the SSR HTML (correct on hard load) and re-renders with the
+          pathname (correct after client navigation). body stays TRANSPARENT in
+          globals.css — an opaque body would paint over the -z-10 canvas div
+          and turn the dark pages white.
+
+          Dark routes end on a cream footer, so their bounce colours must
+          differ per END. The viewport-FIXED 50/50 gradient handles that on
+          DESKTOP elastic scroll (glued to the screen: top gap graphite,
+          bottom gap cream; `no-repeat` because a document-sized repeating
+          gradient tiles the OPPOSITE half at each end). iOS ignores it — it
+          paints the bounce from background-color alone — so iOS is handled by
+          the footer IntersectionObserver above swapping that colour. */}
+      <style>{isDark
+        ? 'html{background-color:#334155;background-image:linear-gradient(#334155 50%,#F7F9FC 50%);background-repeat:no-repeat;background-attachment:fixed}'
+        : 'html{background-color:#F7F9FC}'}</style>
       {/* Page CANVAS + transition backdrop, in one fixed layer.
           The page above fades to/from TRANSPARENT, so whatever sits behind it
           is what shows mid-transition. `body` is cream, which made dark→dark
@@ -89,6 +111,11 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           isDark ? 'bg-graphite' : 'bg-briefing-cream'
         }`}
       />
+      {/* BOTTOM overscroll: handled by a 100vh cream box-shadow on Footer.tsx —
+          NOT a fixed block parked below the viewport (tried; iOS culls
+          never-visible fixed layers from the bounce compositing, so it never
+          showed). The TOP bounce needs nothing: the <html> background above
+          already matches each page's top. */}
       {/* NO exit animation, and no mode="wait".
           With them, the outgoing page stayed mounted for 300ms while the router
           had already reset the scroll to the top — so leaving a scrolled page

@@ -27,8 +27,18 @@
 }
 
 @layer base {
+  html {
+    /* Root-canvas fallback — ClientLayout overrides this per route with an
+       SSR'd <style>. iOS paints the status-bar area and overscroll bounce from
+       the ROOT background, so the route colour must live on <html>. */
+    @apply bg-briefing-cream;
+  }
   body {
-    @apply bg-briefing-cream text-zen-black font-sans antialiased;
+    /* MUST stay transparent: once <html> has its own background, CSS stops
+       promoting body's background to the root canvas — an opaque body would
+       paint ON TOP of ClientLayout's fixed -z-10 canvas div and turn the dark
+       pages white. */
+    @apply bg-transparent text-zen-black font-sans antialiased;
   }
 }
 
