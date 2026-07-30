@@ -22,11 +22,13 @@ import type { PlanTemplate } from '@/app/components/PlanCard'
  */
 
 // Per-depth resting pose, front → back (Kimi's stack config).
+// Back cards stay OPAQUE — the deck reads as a real stack (you can see the
+// next trips peeking) instead of ghosts that only exist for one swipe.
 const STACK = [
   { y: 0, scale: 1, opacity: 1, shadow: '0 20px 60px rgba(0,0,0,0.35)' },
-  { y: 8, scale: 0.96, opacity: 0.55, shadow: '0 15px 45px rgba(0,0,0,0.28)' },
-  { y: 16, scale: 0.92, opacity: 0.3, shadow: '0 10px 30px rgba(0,0,0,0.2)' },
-  { y: 24, scale: 0.88, opacity: 0.15, shadow: '0 5px 15px rgba(0,0,0,0.12)' },
+  { y: 8, scale: 0.96, opacity: 1, shadow: '0 15px 45px rgba(0,0,0,0.28)' },
+  { y: 16, scale: 0.92, opacity: 1, shadow: '0 10px 30px rgba(0,0,0,0.2)' },
+  { y: 24, scale: 0.88, opacity: 1, shadow: '0 5px 15px rgba(0,0,0,0.12)' },
 ]
 /**
  * Card geometry. The cover is 4:5, so its height depends on the card's width —
@@ -48,13 +50,13 @@ const SWIPE = 36 // fling threshold (px) — distance alone
 // on a phone, and judging on distance ONLY made those feel like nothing
 // happened. px/sec, from Motion's drag-end velocity.
 const SWIPE_V = 380
-const EXIT_X = -400
-const EXIT_MS = 420
+// Input lock after a swipe — long enough for the pop (0.22s) to settle so a
+// rapid second gesture never catches the stack mid-rotation.
+const LOCK_MS = 260
 
 // GSAP easing equivalents
 const EASE_BACK_OUT = [0.34, 1.56, 0.64, 1] as const // back.out(1.4)
 const EASE_IN_OUT = [0.45, 0, 0.55, 1] as const // power2.inOut
-const EASE_IN = [0.11, 0, 0.5, 0] as const // power2.in
 const EASE_OUT = [0.5, 1, 0.89, 1] as const // power2.out
 
 /** EMV-style chip, drawn to match the reference card. `w`/`h` scale it for the
@@ -844,7 +846,6 @@ function DeckCard({
   tpl,
   pos,
   tilt,
-  isExiting,
   locked,
   saved,
   isPending,
@@ -858,7 +859,6 @@ function DeckCard({
   tpl: PlanTemplate
   pos: number
   tilt: number
-  isExiting: boolean
   locked: boolean
   saved: boolean
   isPending: boolean
@@ -877,33 +877,31 @@ function DeckCard({
   // (next()/prev() already no-op, but the card shouldn't even wiggle).
   const pose = STACK[Math.min(Math.max(pos, 0), STACK.length - 1)]
 
-  // Whenever the card settles back into the stack (notably right after its exit
-  // animation, once the order has rotated), snap x home instantly — mirrors the
-  // gsap.set() reset in the original. The back cards are near-invisible, so the
-  // jump isn't perceptible.
+  // Whenever the card changes slot in the stack, snap x home instantly —
+  // mirrors the gsap.set() reset in the original. The pop animation (y/scale)
+  // carries all the visible motion, so the x snap reads as part of it.
   useEffect(() => {
-    if (!isExiting) x.set(0)
-  }, [isExiting, pos, x])
+    x.set(0)
+  }, [pos, x])
 
   return (
     <motion.div
-      drag={isFront && canSwipe && !isExiting && !locked && !reduced ? 'x' : false}
+      drag={isFront && canSwipe && !locked && !reduced ? 'x' : false}
       dragElastic={0.7}
       dragMomentum={false}
-      style={{ x, height: DECK_CARD_H, zIndex: 40 - pos * 10, boxShadow: pose.shadow }}
+      // zIndex tops out BELOW 30: home's fixed status-bar scrim is z-30 and
+      // must paint over the deck; 40 put the front card above it.
+      style={{ x, height: DECK_CARD_H, zIndex: 28 - pos * 6, boxShadow: pose.shadow }}
       animate={{
         y: pose.y,
-        opacity: isExiting ? 0 : pose.opacity,
-        scale: isExiting ? 0.85 : pose.scale,
-        rotate: isExiting ? -10 : tilt,
+        opacity: pose.opacity,
+        scale: pose.scale,
+        rotate: tilt,
       }}
       transition={
         reduced
           ? { duration: 0 }
-          : {
-              duration: isExiting ? EXIT_MS / 1000 : 0.5,
-              ease: isExiting ? EASE_IN : isFront ? EASE_BACK_OUT : EASE_IN_OUT,
-            }
+          : { duration: 0.66, ease: isFront ? EASE_BACK_OUT : EASE_IN_OUT }
       }
       onPointerDown={() => {
         dragged.current = false
@@ -915,20 +913,18 @@ function DeckCard({
         // Distance OR velocity — either alone is enough to count as a swipe.
         const left = info.offset.x < -SWIPE || info.velocity.x < -SWIPE_V
         const right = info.offset.x > SWIPE || info.velocity.x > SWIPE_V
-        if (left) {
-          animate(x, EXIT_X, { duration: EXIT_MS / 1000, ease: EASE_IN })
-          onNext()
-        } else {
-          // Right fling advances backwards; either way this card returns home.
-          animate(x, 0, { duration: 0.3, ease: EASE_OUT })
-          if (right) onPrev()
-        }
+        // BOTH directions: return the dragged card home and reorder instantly,
+        // letting the pop animation carry the motion. Left used to fly the
+        // card off first (a two-beat), which made it feel slower than right.
+        animate(x, 0, { duration: 0.3, ease: EASE_OUT })
+        if (left) onNext()
+        else if (right) onPrev()
       }}
       onClick={() => {
         if (!dragged.current) onOpen(tpl.id)
       }}
       className={`absolute left-0 top-0 flex w-full flex-col overflow-hidden rounded-[20px] bg-briefing-cream ${
-        isFront && !isExiting ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'
+        isFront ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'
       }`}
     >
       <CardFace tpl={tpl} saved={saved} isPending={isPending} onHeart={onHeart} />
@@ -951,7 +947,6 @@ export default function TripDeck({
 }) {
   const reduced = useReducedMotion() ?? false
   const [order, setOrder] = useState<number[]>(() => templates.map((_, i) => i))
-  const [exiting, setExiting] = useState<number | null>(null)
   const [locked, setLocked] = useState(false) // blocks drag during a transition
   const busy = useRef(false)
   const timer = useRef<number | null>(null)
@@ -960,18 +955,17 @@ export default function TripDeck({
   // the trip set changes. Just make sure a pending timer never outlives us.
   useEffect(() => () => { if (timer.current) window.clearTimeout(timer.current) }, [])
 
-  /** Front card flies out left, then restacks to the back. */
+  /** Front card restacks to the back — instant reorder, the pop animation
+   *  carries the motion. Mirrors prev() so both swipe directions feel equal. */
   function next() {
     if (busy.current || templates.length < 2) return
     busy.current = true
     setLocked(true)
-    setExiting(order[0])
+    setOrder((o) => [...o.slice(1), o[0]])
     timer.current = window.setTimeout(() => {
-      setOrder((o) => [...o.slice(1), o[0]])
-      setExiting(null)
       setLocked(false)
       busy.current = false
-    }, EXIT_MS)
+    }, LOCK_MS)
   }
 
   /** Back card returns to the front. */
@@ -983,7 +977,7 @@ export default function TripDeck({
     timer.current = window.setTimeout(() => {
       setLocked(false)
       busy.current = false
-    }, EXIT_MS)
+    }, LOCK_MS)
   }
 
   if (templates.length === 0) return null
@@ -1000,7 +994,6 @@ export default function TripDeck({
               tpl={tpl}
               pos={pos}
               tilt={TILT[i % TILT.length]}
-              isExiting={exiting === i}
               locked={locked}
               saved={savedIds.has(tpl.id)}
               isPending={pending.has(tpl.id)}

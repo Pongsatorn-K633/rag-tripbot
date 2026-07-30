@@ -83,17 +83,6 @@ export default function Home() {
           }}
         />
 
-        {/* Top fade — dissolves the iOS status bar into the photo so there's no
-            seam. Starts on EXACTLY #334155 (Graphite), the root background the
-            status bar is painted from; mirror of the bottom fade below. */}
-        <div
-          className="absolute inset-x-0 top-0 z-10 h-[12%] pointer-events-none"
-          style={{
-            background:
-              'linear-gradient(180deg, #334155 0%, rgba(51,65,85,0.55) 35%, rgba(51,65,85,0) 100%)',
-          }}
-        />
-
         {/* Bottom fade — dissolves the photo into the dark section below so there's
             no seam. Ends on EXACTLY #0A1B33, the top color of the next section. */}
         <div
@@ -308,6 +297,21 @@ export default function Home() {
       </section>
       </div>
 
+      {/* Status-bar top fade — VIEWPORT-fixed and LAST in the page's paint
+          order: iOS paints the status bar flat #334155 (the root background),
+          so this hugs the screen top at every scroll position and dissolves
+          whatever slides under it, hero to footer. It must sit at the END of
+          main — inside the hero it was painted over by the later positioned/
+          transformed sections (coverflow cards) as they scrolled up. z-30:
+          above all page content, below every navbar control (z-40+). */}
+      <div
+        aria-hidden
+        className="fixed inset-x-0 top-0 z-30 h-24 pointer-events-none"
+        style={{
+          background:
+            'linear-gradient(180deg, #334155 0%, rgba(51,65,85,0.55) 35%, rgba(51,65,85,0) 100%)',
+        }}
+      />
     </main>
   )
 }
