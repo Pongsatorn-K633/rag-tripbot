@@ -1,7 +1,11 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import Image from 'next/image'
+// STATIC import, not the IMG string path: it gives next/image the intrinsic
+// size AND an automatic inline blurDataURL, so the hero paints instantly as a
+// blurred preview in the initial HTML instead of a blank block.
+import heroImg from '@/public/japan-hero.jpg'
 import { motion, useScroll, useTransform, useMotionTemplate, useReducedMotion, type MotionValue } from 'motion/react'
 import { IMG } from '@/lib/images'
 import { smoothScrollTo } from '@/lib/smooth-scroll'
@@ -45,6 +49,10 @@ function HeroLetter({
 const PATHWAYS_OFFSET = 30
 
 export default function Home() {
+  // Drives the blur→sharp "focus in" once the hero photo has decoded — the
+  // default placeholder swap is an instant cut, not a transition.
+  const [heroLoaded, setHeroLoaded] = useState(false)
+
   const scrollToPathways = (e?: { preventDefault: () => void }) => {
     e?.preventDefault()
     smoothScrollTo('pathways', 1200, PATHWAYS_OFFSET)
@@ -66,11 +74,18 @@ export default function Home() {
       {/* Full-bleed photo hero */}
       <section ref={heroRef} className="relative w-full h-screen min-h-[660px] overflow-hidden bg-zen-black">
         <Image
-          src={IMG.homeHero}
+          src={heroImg}
           alt="Mt. Fuji rising behind a Lawson convenience store at dusk"
           fill
           priority
-          className="object-cover object-[60%_42%] md:object-[center_42%] z-0"
+          placeholder="blur"
+          onLoad={() => setHeroLoaded(true)}
+          // Starts soft-focused and a touch zoomed (the zoom hides the blur's
+          // translucent edge halo), then eases to sharp once decoded — a
+          // smooth focus-in instead of the placeholder's hard swap.
+          className={`object-cover object-[60%_42%] md:object-[center_42%] z-0 transition-[filter,transform] duration-700 ease-out ${
+            heroLoaded ? 'blur-0 scale-100' : 'blur-md scale-105'
+          }`}
           sizes="100vw"
         />
 

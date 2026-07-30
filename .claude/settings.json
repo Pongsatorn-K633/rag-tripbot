@@ -22,7 +22,11 @@
       "Bash(curl -s -o /dev/null -w \"tunnel:%{http_code}\\\\n\" -H \"ngrok-skip-browser-warning: 1\" https://pearlie-accusable-unintuitively.ngrok-free.dev)",
       "PowerShell(git fetch origin main 2>$null)",
       "PowerShell(git rev-list --left-right --count origin/main...main)",
-      "Bash(curl -s -o /dev/null -w \"tunnel:%{http_code}\" -H \"ngrok-skip-browser-warning: 1\" https://pearlie-accusable-unintuitively.ngrok-free.dev)"
+      "Bash(curl -s -o /dev/null -w \"tunnel:%{http_code}\" -H \"ngrok-skip-browser-warning: 1\" https://pearlie-accusable-unintuitively.ngrok-free.dev)",
+      "PowerShell(Get-Item \"public\\\\japan-hero.jpg\" | Select-Object Name, @{n='MB';e={[math]::Round\\($_.Length/1MB,2\\)}}; Add-Type -AssemblyName System.Drawing; $img=[System.Drawing.Image]::FromFile\\(\"$PWD\\\\public\\\\japan-hero.jpg\"\\); \"$\\($img.Width\\) x $\\($img.Height\\)\"; $img.Dispose\\(\\))",
+      "PowerShell(node -e \"const sharp=require\\('sharp'\\);sharp\\('public/japan-hero.jpg'\\).resize\\({width:2560}\\).jpeg\\({quality:82,mozjpeg:true}\\).toFile\\('public/japan-hero.tmp.jpg'\\).then\\(i=>console.log\\('done',i.width+'x'+i.height,Math.round\\(i.size/1024\\)+'KB'\\)\\)\")",
+      "PowerShell(Move-Item -Force public\\\\japan-hero.tmp.jpg public\\\\japan-hero.jpg; Get-Item public\\\\japan-hero.jpg | Select-Object Name, @{n='KB';e={[math]::Round\\($_.Length/1KB\\)}})",
+      "Bash(grep -o 'blurDataURL[^,]\\\\{0,40\\\\}\\\\|japan-hero[^\"]*')"
     ]
   }
 }
