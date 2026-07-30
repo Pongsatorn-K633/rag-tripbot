@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from 'motion/react'
 import { usePathname } from 'next/navigation'
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useState } from 'react'
 import { LayoutRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime'
 import { isGraphiteCanvas } from '@/lib/theme-routes'
 
@@ -43,44 +43,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const slide = pathname === '/' ? 0 : 10
   const isDark = isGraphiteCanvas(pathname)
 
-  /**
-   * BOTTOM overscroll on dark pages. iOS paints the rubber-band zone from the
-   * root background-COLOR alone — one colour for both ends, and it ignores
-   * everything else out there (phone-verified, all three: a fixed-attachment
-   * 50/50 gradient; a fixed block parked under the viewport, culled as a
-   * never-visible layer; a 100vh footer box-shadow, clipped from the bounce
-   * compositing). So dark-top + cream-bottom is only possible by CHANGING that
-   * one colour with scroll position. Unlike the old theme-color meta retint
-   * (which iOS ignores), root background changes are ordinary CSS repaints —
-   * iOS honours them.
-   *
-   * Cream ONLY at the absolute bottom, not "footer visible": iOS's bottom
-   * browser chrome wears this same colour, and creaming it while the footer
-   * is merely approaching reads as a white bar stuck to a dark page. At the
-   * true bottom the chrome overlays the cream footer, so it blends. A page
-   * too short to scroll never creams — its top bounce (graphite, status bar)
-   * outranks its bottom corner.
-   *
-   * The inline style overrides the SSR <style> below; the cleanup clears it
-   * on every route change so a stranded cream can't survive navigation.
-   */
-  useEffect(() => {
-    if (!isDark) return
-    const html = document.documentElement
-    const apply = () => {
-      const scrollable = html.scrollHeight > window.innerHeight
-      const atBottom = window.innerHeight + window.scrollY >= html.scrollHeight - 2
-      html.style.backgroundColor = scrollable && atBottom ? '#F7F9FC' : ''
-    }
-    apply()
-    window.addEventListener('scroll', apply, { passive: true })
-    window.addEventListener('resize', apply)
-    return () => {
-      window.removeEventListener('scroll', apply)
-      window.removeEventListener('resize', apply)
-      html.style.backgroundColor = ''
-    }
-  }, [isDark, pathname])
+  // BOTTOM overscroll on dark pages: NOT handled here — the bounce zone obeys
+  // only the root background-colour as painted, and iOS ignores every runtime
+  // trick (phone-verified: fixed blocks culled, footer box-shadow clipped,
+  // gradients/fixed-attachment ignored, and JS background-colour swaps never
+  // repaint the bounce). Instead the Footer ends dark routes on a cream→
+  // graphite fade, so the page's last pixels equal the bounce colour and the
+  // graphite band reads as the page continuing. See Footer.tsx.
 
   return (
     <>

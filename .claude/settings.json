@@ -19,7 +19,10 @@
       "Bash(curl -s -o /dev/null -w \"local:%{http_code}\\\\n\" http://localhost:3000)",
       "PowerShell(Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { try { Stop-Process -Id $_.OwningProcess -Force -Confirm:$false -ErrorAction Stop } catch {} }; Start-Sleep 1; Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue; \"cleared\")",
       "Bash(timeout 120 bash -c 'until curl -sf -o /dev/null http://localhost:3000; do sleep 3; done')",
-      "Bash(curl -s -o /dev/null -w \"tunnel:%{http_code}\\\\n\" -H \"ngrok-skip-browser-warning: 1\" https://pearlie-accusable-unintuitively.ngrok-free.dev)"
+      "Bash(curl -s -o /dev/null -w \"tunnel:%{http_code}\\\\n\" -H \"ngrok-skip-browser-warning: 1\" https://pearlie-accusable-unintuitively.ngrok-free.dev)",
+      "PowerShell(git fetch origin main 2>$null)",
+      "PowerShell(git rev-list --left-right --count origin/main...main)",
+      "Bash(curl -s -o /dev/null -w \"tunnel:%{http_code}\" -H \"ngrok-skip-browser-warning: 1\" https://pearlie-accusable-unintuitively.ngrok-free.dev)"
     ]
   }
 }
