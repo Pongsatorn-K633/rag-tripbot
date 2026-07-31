@@ -242,7 +242,6 @@ export default function JapanMap3D({
             .jm-region-${uid} .jm-top {
               transition: transform 240ms ease, filter 240ms ease;
             }
-            .jm-region-${uid}:hover .jm-top,
             .jm-region-${uid}.jm-ext-hover .jm-top {
               transform: translate(-4px, -6px);
               filter: brightness(1.06);
@@ -250,8 +249,21 @@ export default function JapanMap3D({
             .jm-region-${uid} .jm-face { transition: fill 200ms ease; }
             ${JAPAN_REGIONS.map(
               (r) =>
-                `.jm-region-${uid}[data-region-id="${r.id}"]:hover .jm-face, .jm-region-${uid}[data-region-id="${r.id}"].jm-ext-hover .jm-face { fill: ${lighten(r.color, 0.25)}; }`,
+                `.jm-region-${uid}[data-region-id="${r.id}"].jm-ext-hover .jm-face { fill: ${lighten(r.color, 0.25)}; }`,
             ).join('\n')}
+            /* :hover feedback ONLY where hover is real: on touch, :hover
+               STICKS after a tap, so tap-to-unselect left the region wearing
+               its hover fill — unselect looked broken on mobile. */
+            @media (hover: hover) {
+              .jm-region-${uid}:hover .jm-top {
+                transform: translate(-4px, -6px);
+                filter: brightness(1.06);
+              }
+              ${JAPAN_REGIONS.map(
+                (r) =>
+                  `.jm-region-${uid}[data-region-id="${r.id}"]:hover .jm-face { fill: ${lighten(r.color, 0.25)}; }`,
+              ).join('\n')}
+            }
           `}</style>
         )}
       </defs>
