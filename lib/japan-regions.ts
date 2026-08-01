@@ -1,7 +1,8 @@
 /**
  * Japan region outline geometry (8 regions), adapted from the island
  * outlines in `japanPaths.ts` and grouped per the standard 8-region
- * division of Japan. Do not edit by hand.
+ * division of Japan. The PATH DATA is machine-generated (trace scripts in
+ * Kimi_Agent_3DJapanMap/) — do not edit the outlines by hand.
  *
  * Coordinate space: viewBox 0 0 1024 1536 (portrait) — same as the island data.
  */
@@ -20,6 +21,105 @@ export interface JapanRegion {
   /** SVG path data strings (closed outlines) forming the region. */
   paths: readonly string[];
 }
+
+/** Prefectures per region id — kept separate from the generated geometry
+ *  entries below and merged in, so re-running the trace/apply scripts on the
+ *  path data never risks clobbering hand-maintained content. */
+export const REGION_PREFECTURES: Record<string, readonly string[]> = {
+  hokkaido: ['Hokkaido'],
+  tohoku: ['Aomori', 'Iwate', 'Miyagi', 'Akita', 'Yamagata', 'Fukushima'],
+  kanto: ['Ibaraki', 'Tochigi', 'Gunma', 'Saitama', 'Chiba', 'Tokyo', 'Kanagawa'],
+  chubu: ['Niigata', 'Toyama', 'Ishikawa', 'Fukui', 'Yamanashi', 'Nagano', 'Gifu', 'Shizuoka', 'Aichi'],
+  kinki: ['Mie', 'Shiga', 'Kyoto', 'Osaka', 'Hyogo', 'Nara', 'Wakayama'],
+  chugoku: ['Tottori', 'Shimane', 'Okayama', 'Hiroshima', 'Yamaguchi'],
+  shikoku: ['Tokushima', 'Kagawa', 'Ehime', 'Kochi'],
+  'kyushu-okinawa': ['Fukuoka', 'Saga', 'Nagasaki', 'Kumamoto', 'Oita', 'Miyazaki', 'Kagoshima', 'Okinawa'],
+};
+
+/** A top-of-mind destination CALLOUT: dot on the city, thin leader line
+ *  pulled out to open sea, label fully OFF the landmass (jap-attraction.jpg
+ *  style — text never overlaps the map). `x,y` = city dot; `lx,ly` = line
+ *  end where the label hangs; `anchor` = which way the text grows. */
+export interface CityMarker {
+  name: string;
+  /** Region id the city belongs to — its callout renders INSIDE that region's
+   *  group, so the hover lift carries the city name along with the landmass. */
+  region: string;
+  x: number;
+  y: number;
+  lx: number;
+  ly: number;
+  anchor: 'start' | 'end';
+  /** Attraction glyph drawn BESIDE the label ("MT. FUJI △" reference style).
+   *  Glyphs live in JapanMap3D. Markers WITH an icon take the Kogane gold
+   *  treatment; plain city labels stay cream. */
+  icon?: 'mountain' | 'torii' | 'village' | 'onsen' | 'sakura' | 'momiji';
+  /** Small timing suffix rendered after the name (e.g. 'early Apr') — the
+   *  season layers' peak-window hint. */
+  sub?: string;
+}
+
+/** Thai-market top-of-mind destinations, shown by JapanMap3D's `showCities`.
+ *  Label rails: NW sea stacks Shirakawa-go/Takayama/Kyoto; the east sea
+ *  stacks Sendai/Nikko/Tokyo/Hakone; the southern sea takes Nagoya/Nara/
+ *  Osaka; the west takes Hiroshima/Fukuoka. */
+export const CITY_MARKERS: readonly CityMarker[] = [
+  { name: 'Sapporo', region: 'hokkaido', x: 760, y: 245, lx: 800, ly: 70, anchor: 'start' },
+  { name: 'Sendai', region: 'tohoku', x: 745, y: 565, lx: 852, ly: 545, anchor: 'start' },
+  { name: 'Nikko', region: 'kanto', x: 688, y: 660, lx: 855, ly: 625, anchor: 'start' },
+  { name: 'Tokyo', region: 'kanto', x: 697, y: 715, lx: 855, ly: 705, anchor: 'start' },
+  { name: 'Kamakura', region: 'kanto', x: 675, y: 745, lx: 830, ly: 800, anchor: 'start' },
+  { name: 'Nagoya', region: 'chubu', x: 585, y: 776, lx: 648, ly: 905, anchor: 'start' },
+  { name: 'Takayama', region: 'chubu', x: 565, y: 700, lx: 435, ly: 610, anchor: 'end' },
+  { name: 'Kyoto', region: 'kinki', x: 487, y: 770, lx: 375, ly: 685, anchor: 'end' },
+  { name: 'Osaka', region: 'kinki', x: 461, y: 812, lx: 380, ly: 982, anchor: 'end' },
+  { name: 'Nara', region: 'kinki', x: 502, y: 822, lx: 560, ly: 960, anchor: 'start' },
+  { name: 'Hiroshima', region: 'chugoku', x: 300, y: 826, lx: 175, ly: 745, anchor: 'end' },
+  { name: 'Fukuoka', region: 'kyushu-okinawa', x: 208, y: 888, lx: 115, ly: 800, anchor: 'end' },
+  { name: 'Okinawa', region: 'kyushu-okinawa', x: 48, y: 1367, lx: 150, ly: 1400, anchor: 'start' },
+];
+
+/** Attractions layer — headline sights with their glyphs. */
+export const ATTRACTION_MARKERS: readonly CityMarker[] = [
+  // Label row sits ABOVE the dot so the vertical leader rises (user call).
+  { name: 'Mt. Fuji', region: 'chubu', icon: 'mountain', x: 640, y: 745, lx: 830, ly: 690, anchor: 'start' },
+  { name: 'Hakone', region: 'kanto', icon: 'onsen', x: 656, y: 757, lx: 830, ly: 870, anchor: 'start' },
+  { name: 'Fushimi Inari', region: 'kinki', icon: 'torii', x: 497, y: 780, lx: 355, ly: 665, anchor: 'end' },
+  { name: 'Shirakawa-go', region: 'chubu', icon: 'village', x: 545, y: 675, lx: 420, ly: 540, anchor: 'end' },
+  // Miyajima's floating torii is just off Hiroshima's coast; its label sits
+  // in the open sea EAST of Kyushu (user call).
+  { name: 'Miyajima', region: 'chugoku', icon: 'torii', x: 285, y: 843, lx: 330, ly: 985, anchor: 'start' },
+];
+
+/** Sakura layer — famous hanami spots, north-marching bloom windows. */
+export const SAKURA_MARKERS: readonly CityMarker[] = [
+  { name: 'Goryokaku', region: 'hokkaido', x: 688, y: 318, lx: 595, ly: 260, anchor: 'end', sub: 'late Apr' },
+  { name: 'Hirosaki', region: 'tohoku', x: 718, y: 392, lx: 855, ly: 392, anchor: 'start', sub: 'late Apr' },
+  { name: 'Ueno Park', region: 'kanto', x: 697, y: 712, lx: 855, ly: 705, anchor: 'start', sub: 'late Mar' },
+  { name: 'Chureito', region: 'chubu', x: 645, y: 748, lx: 830, ly: 800, anchor: 'start', sub: 'mid Apr' },
+  { name: "Philosopher's Path", region: 'kinki', x: 487, y: 770, lx: 375, ly: 685, anchor: 'end', sub: 'early Apr' },
+  { name: 'Yoshino', region: 'kinki', x: 495, y: 848, lx: 560, ly: 960, anchor: 'start', sub: 'early Apr' },
+  { name: 'Kumamoto', region: 'kyushu-okinawa', x: 205, y: 945, lx: 170, ly: 1000, anchor: 'end', sub: 'late Mar' },
+];
+
+/** Autumn layer — famous koyo spots, south-marching foliage windows. */
+export const AUTUMN_MARKERS: readonly CityMarker[] = [
+  { name: 'Daisetsuzan', region: 'hokkaido', x: 815, y: 240, lx: 610, ly: 140, anchor: 'end', sub: 'mid Sep' },
+  { name: 'Naruko Gorge', region: 'tohoku', x: 740, y: 530, lx: 852, ly: 480, anchor: 'start', sub: 'mid Oct' },
+  { name: 'Nikko', region: 'kanto', x: 688, y: 660, lx: 855, ly: 625, anchor: 'start', sub: 'late Oct' },
+  { name: 'Korankei', region: 'chubu', x: 592, y: 772, lx: 648, ly: 905, anchor: 'start', sub: 'late Nov' },
+  { name: 'Arashiyama', region: 'kinki', x: 478, y: 772, lx: 375, ly: 690, anchor: 'end', sub: 'late Nov' },
+  { name: 'Momijidani', region: 'chugoku', x: 285, y: 843, lx: 330, ly: 1000, anchor: 'start', sub: 'mid Nov' },
+];
+
+/** The map's toggleable marker layers. */
+export const MAP_LAYERS = {
+  cities: CITY_MARKERS,
+  attractions: ATTRACTION_MARKERS,
+  sakura: SAKURA_MARKERS,
+  autumn: AUTUMN_MARKERS,
+} as const;
+export type MapLayerId = keyof typeof MAP_LAYERS;
 
 /** All 8 regions of Japan, north to south. */
 export const JAPAN_REGIONS: readonly JapanRegion[] = [

@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'motion/react'
-import { ArrowRight, Search, SlidersHorizontal, X, ChevronDown, Check, Map as MapIcon } from 'lucide-react'
+import { ArrowRight, Search, SlidersHorizontal, X, ChevronDown, Check, Map as MapIcon, RotateCcw } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
 import { evaluateTrip } from '@/lib/availability'
 import DateRangePicker from '@/app/components/DateRangePicker'
@@ -12,7 +12,63 @@ import TripDeck, { TripCardCompact, TripCoverflow, DECK_CARD_W, DECK_CARD_H } fr
 import PlanPreviewModal from '@/app/components/PlanPreviewModal'
 import { useSavedTemplates } from '@/app/hooks/useSavedTemplates'
 import JapanMap3D from '@/app/components/JapanMap3D'
-import { JAPAN_REGIONS } from '@/lib/japan-regions'
+import { JAPAN_REGIONS, REGION_PREFECTURES, MAP_LAYERS, type MapLayerId } from '@/lib/japan-regions'
+
+/** The map's layer control — expanding-pill toggle: every option rests as a
+ *  bare emoji; the ACTIVE one opens up to emoji + label in a softly filled
+ *  pill (no outer frame), collapsing whichever was open before. */
+const MAP_LAYER_OPTIONS: readonly { id: MapLayerId; emoji: string; label: string }[] = [
+  { id: 'cities', emoji: '🗾', label: 'Cities' },
+  { id: 'attractions', emoji: '⛩️', label: 'Attractions' },
+  { id: 'sakura', emoji: '🌸', label: 'Sakura' },
+  { id: 'autumn', emoji: '🍁', label: 'Autumn' },
+]
+
+function MapLayerControls({
+  layer,
+  onChange,
+}: {
+  layer: MapLayerId
+  onChange: (id: MapLayerId) => void
+}) {
+  return (
+    <div className="inline-flex items-center gap-1 rounded-lg bg-briefing-cream p-0.5 shadow-[0_4px_16px_rgba(0,0,0,0.25)]">
+      {MAP_LAYER_OPTIONS.map((o) => {
+        const active = layer === o.id
+        return (
+          <motion.button
+            key={o.id}
+            layout
+            type="button"
+            onClick={() => onChange(o.id)}
+            aria-pressed={active}
+            aria-label={o.label}
+            transition={{ type: 'tween', duration: 0.22, ease: 'easeOut' }}
+            className={`flex items-center gap-1.5 overflow-hidden rounded-md px-2.5 py-1 font-sans text-xs transition-colors ${
+              active
+                ? 'bg-zen-black/10 font-semibold text-zen-black'
+                : 'text-graphite/70 hover:bg-zen-black/5'
+            }`}
+          >
+            <span className="text-[14px] leading-none" aria-hidden>
+              {o.emoji}
+            </span>
+            {active && (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.18, delay: 0.06 }}
+                className="whitespace-nowrap font-semibold"
+              >
+                {o.label}
+              </motion.span>
+            )}
+          </motion.button>
+        )
+      })}
+    </div>
+  )
+}
 
 /**
  * TripSearchSection — the ENTIRE "Ready-to-go Trips" experience as one shared
@@ -80,6 +136,78 @@ function RegionChip({
     </button>
   )
 }
+/** Prefecture popup for a clicked (selected) region. One FIXED home for
+ *  every region — the map's empty top-left sea area (per-region floating
+ *  popovers were tried and hopped around confusingly). `anchored` = desktop
+ *  panel; the mobile sheet letterboxes the drawing, so there it renders
+ *  centered over the map instead. Staying inside the map box also matters
+ *  mechanically: a popup poking outside extends the page's scrollable area,
+ *  and its close shrank the page → scroll clamped → viewport jumped. */
+function RegionPrefecturePopup({
+  regionId,
+  anchored,
+  onClose,
+}: {
+  regionId: string
+  anchored: boolean
+  onClose: () => void
+}) {
+  const region = JAPAN_REGIONS.find((r) => r.id === regionId)
+  const prefs = REGION_PREFECTURES[regionId] ?? []
+  if (!region) return null
+  return (
+    <div
+      className="pointer-events-none absolute z-20"
+      // Same fixed home on both views: the map's empty top-left sea. The
+      // sheet's letterboxed drawing floats centre-right, so its top-left is
+      // just as free as the desktop panel's.
+      style={anchored ? { left: '2%', top: '10%' } : { left: '2%', top: '4%' }}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.92 }}
+        transition={{ duration: 0.18 }}
+        // Cloud "paper" card — same surface language as the trip cards and
+        // the map's own top faces; the region's accent tints the border and
+        // the prefecture pills, so the card visibly belongs to its region.
+        // Mobile (non-anchored) runs NARROWER so it stacks tall in the
+        // letterboxed sheet's side sea instead of spanning the drawing.
+        className={`pointer-events-auto w-max rounded-xl border bg-briefing-cream p-3 shadow-[0_12px_32px_rgba(0,0,0,0.35)] ${
+          anchored ? 'max-w-[250px]' : 'max-w-[188px]'
+        }`}
+        style={{ borderColor: `${region.color}99` }}
+      >
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <span className="flex items-center gap-2 whitespace-nowrap font-detail text-xs font-semibold tracking-wide text-zen-black">
+            <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: region.color }} aria-hidden />
+            {region.name.replace(' Region', '')}
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close prefectures"
+            className="grid size-5 place-items-center rounded-full text-graphite/50 transition-colors hover:bg-zen-black/10 hover:text-graphite"
+          >
+            <X className="size-3" strokeWidth={2.5} />
+          </button>
+        </div>
+        <div className={`flex flex-wrap gap-1 ${anchored ? 'max-w-[220px]' : 'max-w-[148px]'}`}>
+          {prefs.map((p) => (
+            <span
+              key={p}
+              className="rounded-md px-1.5 py-0.5 font-sans text-[11px] leading-snug text-graphite"
+              style={{ backgroundColor: `${region.color}40` }}
+            >
+              {p}
+            </span>
+          ))}
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
 // ± flex widens the picked window by N days on EACH side, so a slightly-off
 // availability window still matches. Default ตรงเป๊ะ (0).
 const FLEX_CHIPS = [
@@ -269,13 +397,26 @@ export default function TripSearchSection({
   const [destList, setDestList] = useState<string[]>([])
   // Multi-select REGIONS from the 3D map panel — same OR semantics.
   const [regionList, setRegionList] = useState<string[]>([])
-  const toggleRegion = (id: string) =>
-    setRegionList((prev) => (prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id]))
+  // The prefecture popup follows the LAST region selected; deselecting that
+  // region (or ×) closes it. Other selections stay untouched.
+  const [popupRegion, setPopupRegion] = useState<string | null>(null)
+  const toggleRegion = (id: string) => {
+    const selecting = !regionList.includes(id)
+    setRegionList((prev) => (selecting ? [...prev, id] : prev.filter((r) => r !== id)))
+    setPopupRegion((cur) => (selecting ? id : cur === id ? null : cur))
+  }
+  const resetRegions = () => {
+    setRegionList([])
+    setPopupRegion(null)
+  }
   // Legend-chip hover, mirrored onto the map (lift + accent) via the map's
   // externalHoverRegion prop — CSS :hover can't cross from chip to SVG.
   const [hoverRegion, setHoverRegion] = useState<string | null>(null)
   // Mobile: the floating map button opens the region map as a bottom sheet.
   const [mapSheetOpen, setMapSheetOpen] = useState(false)
+  // Which marker layer the map shows (cities / attractions / sakura / autumn)
+  // — shared between the desktop panel and the mobile sheet.
+  const [mapLayer, setMapLayer] = useState<MapLayerId>('cities')
   const [filterOpen, setFilterOpen] = useState(false)
   // Destination dropdown open state (the only dropdown in the modal).
   const [ddOpen, setDdOpen] = useState<'dest' | null>(null)
@@ -327,6 +468,23 @@ export default function TripSearchSection({
         })
     : base
 
+  // Anti-jump: filtering shrinks the card list, the page gets shorter, and
+  // the browser CLAMPS the scroll position — the viewport visibly jumps and
+  // the sticky map shifts. The list area's UNFILTERED height is measured into
+  // state and held as a permanent min-height: it's already in the DOM when a
+  // filter lands, so the page never shortens under the user. (Kept in state,
+  // not a ref — refs must not be read during render.)
+  const listAreaRef = useRef<HTMLDivElement>(null)
+  const [listMinH, setListMinH] = useState(0)
+  useLayoutEffect(() => {
+    if (!filtering && listAreaRef.current) {
+      const h = listAreaRef.current.offsetHeight
+      if (h > 0 && h !== listMinH) setListMinH(h)
+    }
+    // shown.length + tripsLoading: the unfiltered height must be re-measured
+    // once the real cards replace the loading skeletons.
+  }, [filtering, listMinH, shown.length, tripsLoading])
+
   useEffect(() => {
     let active = true
     fetch('/api/templates')
@@ -357,8 +515,10 @@ export default function TripSearchSection({
   return (
     <>
       {/* Tighter above the compact list (/discover) than above home's coverflow,
-          which needs room for the fanned cards to breathe. */}
-      <div className={compactCards ? 'mb-8' : 'mb-16'}>
+          which needs room for the fanned cards to breathe. The extra margin
+          also RESERVES the line the absolutely-positioned filter bubbles hang
+          into below the search bar. */}
+      <div className={compactCards ? 'mb-16' : 'mb-24'}>
         <div className="md:flex md:items-center md:gap-14">
           <div className="shrink-0">
             <HeadingTag className="font-headline font-bold text-3xl md:text-5xl tracking-tight">{title}</HeadingTag>
@@ -415,9 +575,40 @@ export default function TripSearchSection({
             </div>
 
 
-            {/* Active-filter bubbles — each removable ONLY via its × */}
-            {activeFilterCount > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
+            {/* Active-filter bubbles — each removable ONLY via its ×.
+                Regions picked on the 3D map appear here too, like any other
+                filter. ABSOLUTELY positioned below the input: chips
+                appearing/disappearing must never move the search bar (its
+                vertical centering ignores this row); the space they hang
+                into is reserved statically by the header block's bottom
+                margin below. */}
+            {
+              <div className="absolute left-0 top-full mt-3 flex w-full flex-wrap items-start gap-2">
+                {regionList.map((id) => {
+                  const region = JAPAN_REGIONS.find((r) => r.id === id)
+                  if (!region) return null
+                  return (
+                    <span
+                      key={id}
+                      className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 py-1 pl-3 pr-1.5 text-xs font-semibold text-briefing-cream backdrop-blur-sm"
+                    >
+                      <span
+                        className="size-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: region.color }}
+                        aria-hidden
+                      />
+                      {region.name.replace(' Region', '')}
+                      <button
+                        type="button"
+                        onClick={() => toggleRegion(id)}
+                        aria-label={`Remove ${region.name}`}
+                        className="grid size-5 place-items-center rounded-full text-briefing-cream/60 transition-colors hover:bg-white/15 hover:text-briefing-cream"
+                      >
+                        <X className="size-3" strokeWidth={2.5} aria-hidden />
+                      </button>
+                    </span>
+                  )
+                })}
                 {destList.map((d) => (
                   <span
                     key={d}
@@ -451,7 +642,7 @@ export default function TripSearchSection({
                   </span>
                 )}
               </div>
-            )}
+            }
           </div>
           {viewAllHref && (
             /* Desktop: View all — right edge of the same row, centered
@@ -694,7 +885,14 @@ export default function TripSearchSection({
            content, so the page reads symmetric (left gutter ≈ middle gap ≈
            right gutter). Below lg the map is hidden entirely — the mobile
            layout is exactly what it was. */
-        <div className={regionMap ? 'lg:grid lg:grid-cols-2 lg:items-start lg:gap-10' : undefined}>
+        <div
+          ref={listAreaRef}
+          className={regionMap ? 'lg:grid lg:grid-cols-2 lg:items-start lg:gap-10' : undefined}
+          // overflowAnchor none: even at frozen height, swapping the card list
+          // lets the browser's scroll anchoring re-anchor to a moved node and
+          // nudge the viewport — filtering must never move the scroll at all.
+          style={{ overflowAnchor: 'none', ...(listMinH > 0 ? { minHeight: listMinH } : undefined) }}
+        >
           <div className="flex flex-col items-center gap-5 md:items-start md:pl-16 lg:min-w-0 lg:items-center lg:pl-0">
             {tripsLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
@@ -742,30 +940,47 @@ export default function TripSearchSection({
                sides (default slate would vanish against graphite). Selected
                regions fill with their own accent colour (mono-variant
                highlight), matching their legend dot. */
-            <div className="hidden w-full max-w-[560px] lg:sticky lg:top-24 lg:block lg:justify-self-center lg:self-start xl:max-w-[660px]">
+            <div className="hidden w-full max-w-[560px] lg:sticky lg:top-24 lg:block lg:justify-self-start lg:self-start xl:max-w-[660px]">
               {/* Title, then the legend as a 4×2 chip row, then the map at the
                   panel's full width. A chip is the same multi-select toggle
                   as clicking the region on the map; selected regions fill
                   with their accent colour, and hovering a chip mirrors the
                   map's own hover (lift + accent). */}
-              <h3 className="mb-3 text-center font-detail text-xl font-light tracking-[0.08em] text-briefing-cream xl:text-2xl">
-                8 Regions
-              </h3>
-              <div className="grid grid-cols-4 gap-1.5">
-                {JAPAN_REGIONS.map((r) => (
-                  <RegionChip
-                    key={r.id}
-                    region={r}
-                    active={regionList.includes(r.id)}
-                    onToggle={() => toggleRegion(r.id)}
-                    onHoverChange={setHoverRegion}
-                  />
-                ))}
+              {/* relative z-10: the map below overlaps this row (-mt-10);
+                  keep the chips above the svg so their clicks/hover never get
+                  stolen by a region path that reaches up this far. The ghost
+                  reset trails the grid — beside the Kyushu-Okinawa chip. */}
+              <div className="relative z-10 flex items-end gap-2">
+                <div className="grid flex-1 grid-cols-4 gap-1.5">
+                  {JAPAN_REGIONS.map((r) => (
+                    <RegionChip
+                      key={r.id}
+                      region={r}
+                      active={regionList.includes(r.id)}
+                      onToggle={() => toggleRegion(r.id)}
+                      onHoverChange={setHoverRegion}
+                    />
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={resetRegions}
+                  disabled={regionList.length === 0}
+                  className="-mr-2 mb-1 ml-2 flex translate-x-2 items-center gap-1.5 font-sans text-xs text-briefing-cream/80 transition-opacity hover:text-briefing-cream disabled:opacity-35"
+                >
+                  <RotateCcw className="size-3" strokeWidth={2.25} aria-hidden />
+                  Reset
+                </button>
               </div>
-              {/* -mt pulls the map's empty top sea band up under the chips;
-                  pointer-events-none on the svg keeps the overlapped chips
-                  clickable (regions re-enable their own events). */}
-              <div className="-mt-10">
+              {/* Layer toggles — swap the callout set (cities / attractions /
+                  seasons). z-10 keeps them above the overlapping map. */}
+              <div className="relative z-10 mt-5">
+                <MapLayerControls layer={mapLayer} onChange={setMapLayer} />
+              </div>
+              {/* -mt pulls the map's empty top sea band up under the rows
+                  above; pointer-events-none on the svg keeps the overlapped
+                  controls clickable (regions re-enable their own events). */}
+              <div className="relative -mt-10">
                 <JapanMap3D
                   interactive
                   depth={14}
@@ -775,8 +990,19 @@ export default function TripSearchSection({
                   highlightedRegions={regionList}
                   onRegionClick={toggleRegion}
                   externalHoverRegion={hoverRegion}
+                  markers={MAP_LAYERS[mapLayer]}
                   className="pointer-events-none"
                 />
+                <AnimatePresence>
+                  {popupRegion && (
+                    <RegionPrefecturePopup
+                      key={popupRegion}
+                      regionId={popupRegion}
+                      anchored
+                      onClose={() => setPopupRegion(null)}
+                    />
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           )}
@@ -862,10 +1088,13 @@ export default function TripSearchSection({
                   role="dialog"
                   aria-label="8 Regions map filter"
                 >
-                  <div className="flex items-center justify-between">
-                    <h3 className="pl-2 font-detail text-lg font-light tracking-wide text-briefing-cream">
-                      8 Regions
-                    </h3>
+                  {/* relative z-10: the map wrapper below pulls the svg UP
+                      under this row (-mt-6), and Hokkaido's clickable paths
+                      sit exactly beneath the × — without the lift, taps on ×
+                      hit the region instead (the close button went dead). */}
+                  <div className="relative z-10 flex items-center justify-between">
+                    {/* Layer toggles share the header line with the ×. */}
+                    <MapLayerControls layer={mapLayer} onChange={setMapLayer} />
                     <button
                       type="button"
                       onClick={() => setMapSheetOpen(false)}
@@ -879,7 +1108,7 @@ export default function TripSearchSection({
                       box's transparent sea zones — the svg's portrait viewBox
                       letterboxes inside this landscape-ish slot, leaving dead
                       space above and below the drawing. */}
-                  <div className="-mb-10 -mt-6">
+                  <div className="relative -mb-10 -mt-6">
                     <JapanMap3D
                       interactive
                       depth={14}
@@ -889,11 +1118,40 @@ export default function TripSearchSection({
                       highlightedRegions={regionList}
                       onRegionClick={toggleRegion}
                       width="100%"
-                      height="52vh"
+                      height="64vh"
+                      markers={MAP_LAYERS[mapLayer]}
+                      cityScale={1.6}
                       className="pointer-events-none"
                     />
+                    <AnimatePresence>
+                      {popupRegion && (
+                        <RegionPrefecturePopup
+                          key={popupRegion}
+                          regionId={popupRegion}
+                          anchored={false}
+                          onClose={() => setPopupRegion(null)}
+                        />
+                      )}
+                    </AnimatePresence>
+                    {/* Bare ghost reset (no pill), right-aligned directly
+                        ABOVE the chip grid's right column (the Tohoku chip) —
+                        always rendered, dimmed when nothing is selected. */}
+                    <button
+                      type="button"
+                      onClick={resetRegions}
+                      disabled={regionList.length === 0}
+                      className="absolute bottom-[12%] right-1 z-20 flex items-center gap-1.5 font-sans text-xs text-briefing-cream/80 transition-opacity disabled:opacity-35"
+                    >
+                      <RotateCcw className="size-3" strokeWidth={2.25} aria-hidden />
+                      Reset
+                    </button>
                   </div>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  {/* relative z-10: the map wrapper above is POSITIONED (for
+                      its popup/reset overlays) and overlaps this grid via
+                      -mb-10 — without the lift, the Okinawa island trail's
+                      clickable paths sat over some chips and stole their
+                      taps. */}
+                  <div className="relative z-10 grid grid-cols-2 gap-1.5">
                     {JAPAN_REGIONS.map((r) => (
                       <RegionChip
                         key={r.id}

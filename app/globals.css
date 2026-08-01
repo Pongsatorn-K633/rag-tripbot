@@ -15,6 +15,7 @@
   --color-basel-brick: #5B88B2;     /* Ocean — the single accent (buttons/links/hover/active) */
   --color-noir: #000000;            /* Noir — true black, for deep contrast moments */
   --color-graphite: #334155;        /* Graphite — cool dark grey (Midnight's hue, desaturated); text on light glass/milk surfaces */
+  --color-kogane: #C9A227;          /* Kogane — muted gold; map-content accent (city callout dots/lines), NOT a UI accent */
   --color-hinomaru: #D80027;        /* Hinomaru — Japan-flag red. CONTENT color only (flag badge), never a UI accent — the no-red rule stands */
 
   /* Opacity-only fade-in (trip-card cover captions). Pure opacity on purpose:

@@ -1,6 +1,6 @@
-﻿import { useId, useMemo } from 'react';
-import type { CSSProperties, MouseEvent } from 'react';
-import { JAPAN_REGIONS, JAPAN_REGION_VIEW_BOX } from '@/lib/japan-regions';
+﻿import { useId, useMemo, useState } from 'react';
+import type { CSSProperties, MouseEvent, ReactElement } from 'react';
+import { JAPAN_REGIONS, JAPAN_REGION_VIEW_BOX, type CityMarker } from '@/lib/japan-regions';
 
 /**
  * Props for {@link JapanMap3D}. Every prop is optional โ€” the component renders a
@@ -90,6 +90,18 @@ export interface JapanMap3DProps {
    * mirror the map's own hover feedback.
    */
   externalHoverRegion?: string | null;
+  /**
+   * Callout markers to draw (a layer from `MAP_LAYERS`, or any custom set).
+   * Non-interactive; rendered above the region faces. Omit for a bare map.
+   */
+  markers?: readonly CityMarker[];
+  /**
+   * Multiplier for the city label text size (viewBox units scale with the
+   * rendered map, so a small mobile map needs a larger multiplier to keep
+   * labels legible).
+   * @default 1
+   */
+  cityScale?: number;
   /** Extra class names forwarded to the root `<svg>` element. */
   className?: string;
 }
@@ -106,6 +118,57 @@ const LABELS: Record<string, { text: string; dx?: number; dy?: number }> = {
   chugoku: { text: 'CHUGOKU', dx: 12, dy: -4 },
   shikoku: { text: 'SHIKOKU', dx: 8, dy: 4 },
   'kyushu-okinawa': { text: 'KYUSHU', dx: 20 },
+};
+
+/**
+ * A region's visual centre (vertex average of its main landmass) as
+ * PERCENTAGES of the rendered svg box, for anchoring HTML overlays (the
+ * /discover prefecture popup) over the map. Mirrors the component's viewBox
+ * math — keep `depth` in sync with the rendered map's prop.
+ */
+export function regionAnchorPercent(regionId: string, depth = 14): { x: number; y: number } | null {
+  const region = JAPAN_REGIONS.find((r) => r.id === regionId);
+  if (!region) return null;
+  const nums = (region.paths[0].match(/-?[\d.]+/g) ?? []).map(Number);
+  let sx = 0, sy = 0, n = 0;
+  for (let i = 0; i + 1 < nums.length; i += 2) { sx += nums[i]; sy += nums[i + 1]; n++; }
+  if (n === 0) return null;
+  const pad = Math.max(24, depth * 1.6 + 26);
+  const [vx, vy, vw, vh] = JAPAN_REGION_VIEW_BOX;
+  const boxX = vx - pad, boxY = vy - pad;
+  const boxW = vw + depth + pad * 2, boxH = vh + depth + pad * 2;
+  return { x: ((sx / n - boxX) / boxW) * 100, y: ((sy / n - boxY) / boxH) * 100 };
+}
+
+/** Attraction glyphs drawn beside callout labels (16×16 design box, stroked
+ *  in the layer accent so they read as part of the label). */
+const GLYPHS: Record<string, ReactElement> = {
+  // Snow-capped peak
+  mountain: <path d="M1 13 L6 3 L8.5 7.5 L10 5 L15 13 Z" />,
+  // Torii gate: curved top beam, second lintel, two pillars
+  torii: <path d="M2 4 C5 2.8 11 2.8 14 4 M3 7.5 H13 M4.5 3.6 V14 M11.5 3.6 V14" />,
+  // Gassho-zukuri farmhouse: steep thatched roof + door
+  village: <path d="M2 13 L8 3.5 L14 13 Z M6 13 V9.8 H10 V13" />,
+  // Onsen: bath + three rising steam curls
+  onsen: (
+    <>
+      <path d="M2.5 11 a5.5 2.8 0 0 0 11 0" />
+      <path d="M5.3 8.5 c0 -1.6 1.2 -1.6 1.2 -3.2 M7.9 9 c0 -1.6 1.2 -1.6 1.2 -3.2 M10.5 8.5 c0 -1.6 1.2 -1.6 1.2 -3.2" />
+    </>
+  ),
+  // Sakura blossom: five petals around a core
+  sakura: (
+    <>
+      {[0, 72, 144, 216, 288].map((a) => (
+        <ellipse key={a} cx={8} cy={4.4} rx={1.8} ry={2.6} transform={`rotate(${a} 8 8)`} />
+      ))}
+      <circle cx={8} cy={8} r={1.1} />
+    </>
+  ),
+  // Momiji maple leaf: stylized five-lobe star + stem
+  momiji: (
+    <path d="M8 14.5 V11 M8 11 L3.2 11.6 L4.8 8.8 L2 7.2 L5.6 6.6 L5 3.6 L8 5.8 L11 3.6 L10.4 6.6 L14 7.2 L11.2 8.8 L12.8 11.6 Z" />
+  ),
 };
 
 /** Mix a `#rrggbb` hex color with white. `amount` 0 keeps the color, 1 gives white. */
@@ -157,11 +220,25 @@ export default function JapanMap3D({
   onRegionHover,
   showLabels = false,
   externalHoverRegion = null,
+  markers,
+  cityScale = 1,
   className,
 }: JapanMap3DProps) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const shadowFilterId = `jm-shadow-${uid}`;
   const sheenId = `jm-sheen-${uid}`;
+
+  // Internal hover tracking, for lifting a region's CITY callouts with it.
+  // The callouts must render in a layer ABOVE all regions (inside a region's
+  // group, a later-drawn neighbour paints over border dots — Hakone under
+  // Chubu), so CSS :hover can't reach them; React state carries it instead.
+  // Only tracked on true hover devices — on touch, mouseenter fires on tap
+  // and sticks (the same sticky-hover bug the CSS rules guard against).
+  const [innerHover, setInnerHover] = useState<string | null>(null);
+  const canHover = useMemo(
+    () => typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches,
+    [],
+  );
 
   const sideMidColor = useMemo(() => lighten(sideColor, 0.42), [sideColor]);
   const highlighted = useMemo(() => new Set(highlightedRegions ?? []), [highlightedRegions]);
@@ -195,6 +272,10 @@ export default function JapanMap3D({
 
   const handleClick = (regionId: string) => (event: MouseEvent<SVGGElement>) => {
     event.stopPropagation();
+    // UNSELECT drops the city-callout lift immediately: the pointer is still
+    // over the region after the click, so no mouseleave will ever fire — the
+    // lift read as stuck. (Re-hovering after moving away lifts again.)
+    if (highlighted.has(regionId)) setInnerHover(null);
     onRegionClick?.(regionId);
   };
 
@@ -323,8 +404,14 @@ export default function JapanMap3D({
             className={groupClass}
             data-region-id={region.id}
             onClick={onRegionClick ? handleClick(region.id) : undefined}
-            onMouseEnter={onRegionHover ? () => onRegionHover(region.id) : undefined}
-            onMouseLeave={onRegionHover ? () => onRegionHover(null) : undefined}
+            onMouseEnter={() => {
+              if (canHover) setInnerHover(region.id);
+              onRegionHover?.(region.id);
+            }}
+            onMouseLeave={() => {
+              if (canHover) setInnerHover(null);
+              onRegionHover?.(null);
+            }}
           >
             <g className="jm-top">
               {region.paths.map((d, i) => (
@@ -348,6 +435,118 @@ export default function JapanMap3D({
           </g>
         );
       })}
+
+      {/* City CALLOUTS (jap-attraction.jpg style): dot on the city,
+          right-angle leader out to open sea, cream label fully OFF the
+          landmass. TOP layer, above every region face — inside a region's
+          group, a later-drawn neighbour paints over border dots (Hakone
+          under Chubu). Grouped per region so the hover lift (React-tracked
+          innerHover / externalHoverRegion) still carries a region's city
+          names with its landmass. */}
+      {markers && markers.length > 0 && (
+        <g pointerEvents="none" aria-hidden="true">
+          {JAPAN_REGIONS.map((region) => {
+            const lifted = innerHover === region.id || externalHoverRegion === region.id;
+            return (
+              <g
+                key={`cities-${region.id}`}
+                style={{
+                  transition: 'transform 240ms ease',
+                  transform: lifted ? 'translate(-4px, -6px)' : 'none',
+                }}
+              >
+                {markers.filter((c) => c.region === region.id).map((c) => {
+                  // With a glyph, the icon sits between the line end and the
+                  // text; the text shifts outward to make room. The icon
+                  // renders MUCH larger than the text (34 vs 18 units) — it
+                  // is the marker's emblem.
+                  const iconBox = 34 * cityScale;
+                  const textPad = 8 + (c.icon ? iconBox + 6 : 0);
+                  return (
+                    <g key={c.name}>
+                      {/* Kogane gold (globals.css token) — a deliberate warm
+                          MAP-CONTENT accent (UI stays Ocean-only); reads on
+                          both cream land and the graphite sea. Dot matches
+                          the line so the callout reads as one piece. */}
+                      <polyline
+                        points={`${c.x},${c.y} ${c.x},${c.ly} ${c.lx},${c.ly}`}
+                        fill="none"
+                        strokeOpacity={0.85}
+                        strokeWidth={2.5}
+                        strokeLinejoin="round"
+                        style={{ stroke: 'var(--color-kogane)' }}
+                      />
+                      <circle
+                        cx={c.x}
+                        cy={c.y}
+                        r={5.5}
+                        stroke="#F7F9FC"
+                        strokeWidth={2.5}
+                        style={{ fill: 'var(--color-kogane)' }}
+                      />
+                      {/* Attractions (iconed) speak in Kogane — label + glyph
+                          match their gold dot/line; CITY labels stay cream. */}
+                      {c.icon && GLYPHS[c.icon] && (
+                        <g
+                          transform={`translate(${
+                            c.anchor === 'start' ? c.lx + 8 : c.lx - 8 - iconBox
+                          } ${c.ly - iconBox / 2}) scale(${iconBox / 16})`}
+                          fill="none"
+                          stroke="#F7F9FC"
+                          strokeOpacity={0.92}
+                          strokeWidth={1.6}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          {GLYPHS[c.icon]}
+                        </g>
+                      )}
+                      {/* Text is cream on every layer (user call) — the gold
+                          stays on dots, lines, and glyphs. A timing `sub`
+                          renders on its OWN line under the name; the leader
+                          line points at the block's vertical middle. */}
+                      <text
+                        x={c.lx + (c.anchor === 'start' ? textPad : -textPad)}
+                        y={c.sub ? c.ly - 9 * cityScale : c.ly}
+                        textAnchor={c.anchor}
+                        dominantBaseline="middle"
+                        fill="#F7F9FC"
+                        fillOpacity={0.92}
+                        style={{
+                          fontSize: 18 * cityScale,
+                          fontWeight: 600,
+                          letterSpacing: '0.04em',
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        {c.name}
+                      </text>
+                      {c.sub && (
+                        <text
+                          x={c.lx + (c.anchor === 'start' ? textPad : -textPad)}
+                          y={c.ly + 10 * cityScale}
+                          textAnchor={c.anchor}
+                          dominantBaseline="middle"
+                          fill="#F7F9FC"
+                          fillOpacity={0.75}
+                          style={{
+                            fontSize: 14 * cityScale,
+                            fontWeight: 500,
+                            letterSpacing: '0.04em',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          {c.sub}
+                        </text>
+                      )}
+                    </g>
+                  );
+                })}
+              </g>
+            );
+          })}
+        </g>
+      )}
 
       {/* Region name labels — LAST layer, above every top face: inside the
           region groups, later-drawn neighbours overpainted parts of earlier

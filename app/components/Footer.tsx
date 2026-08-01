@@ -67,7 +67,10 @@ export default function Footer() {
       {isGraphiteCanvas(pathname) && (
         <div
           aria-hidden
-          className="h-28 w-full"
+          // MOBILE ONLY: the fade exists for iOS's bottom rubber-band (the
+          // bounce paints the graphite root colour). Desktop keeps the pure
+          // Cloud footer (user call).
+          className="h-28 w-full lg:hidden"
           // Smoothstep-shaped fade, sampled every 10% (11 stops): zero-speed
           // ends kill the hard start/stop edges a 2-stop linear blend shows,
           // and this stop density is fine enough to render as one continuous
