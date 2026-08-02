@@ -35,14 +35,16 @@ const STACK = [
  * which means the card height must track the width too, otherwise a fixed height
  * leaves dead space under the content. Height = chrome + cover, where
  * cover = (cardWidth − horizontal padding) × 1.25.
- * Chrome assumes the fixed 3-line text block (tagline / แนะนำ / เปิดให้เที่ยว).
+ * Chrome assumes the fixed 4-line text block (2-line tagline / แนะนำ / เปิดให้เที่ยว).
  */
 const CARD_MAX_W = 300 // px — the only size dial; the 4:5 cover makes height follow
 export const DECK_CARD_W = `min(${CARD_MAX_W}px, calc(100vw - 3rem))`
-// 258 not 256: the cover's dot row moved OUT of the image (+10px: mt-1 + a 6px
-// dot), offset by tightening the rule below it from mt-4 to mt-2 (−8px).
-// Without tracking this the fixed-height card would clip its own barcode.
-export const DECK_CARD_H = `calc(258px + (min(${CARD_MAX_W}px, 100vw - 3rem) - 40px) * 1.25)`
+// 281 = 258 + 23: the tagline grew to a two-line clamp (one extra leading-[23px]
+// row in the text block below). The 258 base: the cover's dot row moved OUT of
+// the image (+10px: mt-1 + a 6px dot), offset by tightening the rule below it
+// from mt-4 to mt-2 (−8px). Without tracking this the fixed-height card would
+// clip its own barcode.
+export const DECK_CARD_H = `calc(281px + (min(${CARD_MAX_W}px, 100vw - 3rem) - 40px) * 1.25)`
 
 const TILT = [-1.5, 2, -2.5, 1.8] // per-card resting rotation (deg)
 const SWIPE = 36 // fling threshold (px) — distance alone
@@ -420,18 +422,23 @@ function CardFace({
           half-leading, so the gaps read uneven). 23px also clears Thai's stacked marks,
           which a line-clamp box — exactly one line-height tall — would otherwise shave.
           Periods clamp by range count, never mid-date: a cut range reads as a wrong one. */}
-      {/* min-h = 3 × leading-[23px]: the card's height budget assumes a full
-          three-line block (tagline / แนะนำ / เปิดให้เที่ยว), but a trip missing one
-          — e.g. no `available` window — would otherwise leave that line's slack
-          for mt-auto to absorb, so its barcode and tear line sat at a different
-          height than a full card's. Reserving the band keeps every card
-          identical whatever the data. */}
-      <div className="mx-5 mb-2.5 mt-3 min-h-[69px]">
+      {/* min-h = 4 × leading-[23px]: the card's height budget assumes a full
+          four-line block (TWO-line tagline / แนะนำ / เปิดให้เที่ยว), but a trip
+          missing one — a short tagline, no `available` window — would otherwise
+          leave that line's slack for mt-auto to absorb, so its barcode and tear
+          line sat at a different height than a full card's. Reserving the band
+          keeps every card identical whatever the data. */}
+      <div className="mx-5 mb-2.5 mt-3 flex min-h-[92px] flex-col">
         {tpl.description && (
-          <p className="line-clamp-1 font-sans text-[13px] leading-[23px] text-zen-black/80">
+          <p className="line-clamp-2 font-sans text-[13px] leading-[23px] text-zen-black/80">
             {tpl.description}
           </p>
         )}
+        {/* mt-auto pins the period pair to the block's BOTTOM on every card:
+            with a one-line tagline the slack sits between tagline and
+            periods, so แนะนำ/เปิดตามฤดูกาล align at the same height across
+            the whole deck (they hugged the tagline before). */}
+        <div className="mt-auto">
         {rec.length > 0 && (
           <p className="line-clamp-1 text-[11px] font-bold leading-[23px] text-basel-brick">
             <span className="mr-1 tracking-widest text-basel-brick/75">แนะนำ</span>
@@ -450,6 +457,7 @@ function CardFace({
             )}
           </p>
         )}
+        </div>
       </div>
 
       {/* Perforation + decorative barcode — mt-auto pins the pair flush to the

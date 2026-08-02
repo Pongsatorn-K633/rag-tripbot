@@ -7,7 +7,8 @@ import Link from 'next/link'
 // size AND an automatic inline blurDataURL, so the hero paints instantly as a
 // blurred preview in the initial HTML instead of a blank block.
 import heroImg from '@/public/japan-hero.jpg'
-import { motion, useScroll, useTransform, useMotionTemplate, useReducedMotion, type MotionValue } from 'motion/react'
+import { motion, useScroll, useTransform, useReducedMotion, type MotionValue } from 'motion/react'
+import { Compass, Ticket } from 'lucide-react'
 import { IMG } from '@/lib/images'
 import { smoothScrollTo } from '@/lib/smooth-scroll'
 import TripSearchSection from '@/app/components/TripSearchSection'
@@ -32,22 +33,18 @@ function HeroLetter({
 }) {
   const start = 0.15 + stagger
   const end = 0.45 + stagger
+  // Transform + opacity ONLY — both composited, so scrolling repaints
+  // nothing after the first raster. The scroll-linked blur() this used to
+  // have was the lag: every radius change re-rasterized five ~350px glyph
+  // layers (plus their text-shadow extents); quantizing helped but still
+  // stuttered on weaker GPUs, and with the letters fading to 0 anyway the
+  // blur read as marginal. Killed the whole channel (user call).
   const opacity = useTransform(progress, [0, start, end], reduced ? [0.94, 0.94, 0.94] : [0.94, 0.94, 0])
   const y = useTransform(progress, [0, start, end], reduced ? ['0%', '0%', '0%'] : ['0%', `${-20 * drift}%`, `${-85 * drift}%`])
   const x = useTransform(progress, [0, start, end], reduced ? [0, 0, 0] : [0, 0.25 * xScatter, xScatter])
   const rotate = useTransform(progress, [0, start, end], reduced ? [0, 0, 0] : [0, 0.4 * rot, rot])
-  // Blur is the one non-composited channel here: every UNIQUE radius forces
-  // the glyph's huge layer (clamp'd up to 350px type + its text-shadow
-  // extent) to re-rasterize — five letters at per-frame precision made the
-  // scroll stutter. Two fixes, both invisible at speed: quantize to 2px
-  // steps (a handful of re-rasters per scroll-through instead of hundreds)
-  // and cap at 8px — opacity is ~0 by max blur, so the old 14px tail was
-  // pure wasted paint. Transforms/opacity above stay continuous (composited).
-  const blurRaw = useTransform(progress, [0, 0.2 + stagger, end], reduced ? [0, 0, 0] : [0, 3, 8])
-  const blurPx = useTransform(blurRaw, (v) => Math.round(v / 2) * 2)
-  const filter = useMotionTemplate`blur(${blurPx}px)`
   return (
-    <motion.span className="inline-block will-change-transform" style={{ opacity, y, x, rotate, filter }}>
+    <motion.span className="inline-block will-change-transform" style={{ opacity, y, x, rotate }}>
       {char}
     </motion.span>
   )
@@ -56,6 +53,87 @@ function HeroLetter({
 // How far PAST the Featured Trips top edge the hero cues land. Bump this to sink
 // the landing lower into the section; 0 puts the section's top at the viewport top.
 const PATHWAYS_OFFSET = 30
+
+/** Statement block with the edge0-style per-word scroll reveal, running as
+ *  ONE continuous wave through the headline AND the body: each word slice
+ *  transitions muted slate → Ocean (the "reading edge") → settled bright, in
+ *  reading order, scrubbed by scroll (backwards on scroll-up). Ocean, not the
+ *  reference's orange: the palette has one accent. Thai has no spaces, so
+ *  both texts are PRE-CHUNKED at natural word boundaries and rendered as
+ *  adjacent spans (which also become the only wrap points — fine here). */
+const HEAD_CHUNKS = ['หมดปัญหา', 'เรื่อง', 'การจัดทริป', 'ที่ยุ่งยาก!'] as const
+// Body is TWO authored lines (explicit break — user call); chunked per line.
+const BODY_LINE1 = [
+  'เรา', 'คัดสรร', 'สถานที่ฮิต ', 'ร้านอาหารเด็ด ', 'และ', 'จัดตาราง', 'การเดินทาง',
+  'ไว้ให้คุณ', 'อย่างลงตัว', 'ในแต่ละวัน', ' ไม่ต้องเสียเวลา', 'หาข้อมูลเอง'
+] as const
+const BODY_LINE2 = [
+  'เลือก', 'ทริปที่ใช่', 'และแพ็คกระเป๋า', 'เดินทาง', 'ได้ทันที',
+] as const
+
+/** Per-chunk [start, end] slices by CHARACTER position within the line — the
+ *  reveal edge sits at the same horizontal fraction on every line, so all
+ *  three lines sweep left→right TOGETHER (user call; the first cut revealed
+ *  in reading order, line after line). */
+function lineSlices(chunks: readonly string[]): [number, number][] {
+  const total = chunks.reduce((n, c) => n + c.length, 0)
+  let acc = 0
+  return chunks.map((c) => {
+    const s = acc / total
+    acc += c.length
+    return [s, acc / total]
+  })
+}
+const HEAD_SLICES = lineSlices(HEAD_CHUNKS)
+// The BODY is one continuous sequence across its two lines (the edge flows
+// through line 1 then line 2) — sliced over the COMBINED text, it runs ~2×
+// the per-line speed and finishes exactly when the headline does (user call).
+const BODY_SLICES = lineSlices([...BODY_LINE1, ...BODY_LINE2])
+const BODY1_SLICES = BODY_SLICES.slice(0, BODY_LINE1.length)
+const BODY2_SLICES = BODY_SLICES.slice(BODY_LINE1.length)
+
+function RevealChunk({
+  progress, start, end, colors, children,
+}: {
+  progress: MotionValue<number>
+  start: number
+  end: number
+  /** [unread, reading edge, settled] */
+  colors: [string, string, string]
+  children: React.ReactNode
+}) {
+  const color = useTransform(progress, [start, (start + end) / 2, end], colors)
+  return <motion.span style={{ color }}>{children}</motion.span>
+}
+
+function ScrollRevealStatement() {
+  const ref = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start 0.9', 'start 0.25'] })
+  const headColors: [string, string, string] = ['#74879D', '#5B88B2', '#F7F9FC']
+  // Body settles DIMMER than the headline (hierarchy holds even fully read);
+  // its unread state is darker still.
+  const bodyColors: [string, string, string] = ['#5C7089', '#5B88B2', '#C9D4E0']
+  const line = (chunks: readonly string[], slices: [number, number][], colors: [string, string, string]) =>
+    chunks.map((c, i) => (
+      <RevealChunk key={i} progress={scrollYProgress} start={slices[i][0]} end={slices[i][1]} colors={colors}>
+        {c}
+      </RevealChunk>
+    ))
+  return (
+    <div ref={ref}>
+      {/* leading 1.3: Thai stacked vowels/tone marks clip on tight display
+          leading. No max-w cap — the headline runs the content width. */}
+      <h2 className="mt-5 font-headline text-4xl font-extrabold leading-[1.3] md:text-6xl">
+        {line(HEAD_CHUNKS, HEAD_SLICES, headColors)}
+      </h2>
+      <p className="mt-5 font-sans text-base leading-relaxed md:text-lg">
+        {line(BODY_LINE1, BODY1_SLICES, bodyColors)}
+        <br />
+        {line(BODY_LINE2, BODY2_SLICES, bodyColors)}
+      </p>
+    </div>
+  )
+}
 
 export default function Home() {
   // Drives the blur→sharp "focus in" once the hero photo has decoded — the
@@ -136,7 +214,10 @@ export default function Home() {
               <HeroLetter key={i} {...l} progress={scrollYProgress} reduced={reduced} />
             ))}
           </h1>
-          <div className="-translate-y-[22%] mt-[clamp(28px,4vh,52px)]">
+          {/* items-stretch: the CTA stack is one column whose width is set by
+              its widest line (the ghost row); the capsule stretches to match
+              (w-full below), so both lines are always EXACTLY as wide. */}
+          <div className="-translate-y-[22%] mt-[clamp(28px,4vh,52px)] flex flex-col items-stretch">
             {/* Two layers on purpose: this motion.div owns the scroll-driven
                 transforms, the button owns the hover transform in CSS. Putting a
                 whileHover scale on the same element as style={{ scale }} would give
@@ -170,7 +251,7 @@ export default function Home() {
                   the button. The white/40 fill + glow carry the milk without it. */}
               <button
                 onClick={scrollToPathways}
-                className="pointer-events-auto relative z-20 inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-full border border-white/30 bg-white/40 px-[clamp(17px,2vw,36px)] py-[clamp(10px,1.4vh,17px)] font-headline text-[clamp(17px,1.5vw,26px)] font-semibold tracking-[-0.01em] text-graphite md:backdrop-blur-[50px] shadow-[0_8px_32px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.5),inset_0_-1px_0_rgba(255,255,255,0.1),inset_0_0_30px_15px_rgba(255,255,255,1)] transition-[transform,box-shadow,background-color] duration-[350ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] group-hover:-translate-y-[2px] group-hover:bg-briefing-cream/80 group-hover:shadow-[0_8px_32px_rgba(91,136,178,0.22),0_24px_60px_rgba(91,136,178,0.28),inset_0_1px_0_rgba(255,255,255,0.5),inset_0_-1px_0_rgba(255,255,255,0.1),inset_0_0_30px_15px_rgba(255,255,255,1)] active:translate-y-0 active:scale-[0.985]"
+                className="pointer-events-auto relative z-20 inline-flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-full border border-white/30 bg-white/40 px-[clamp(17px,2vw,36px)] py-[clamp(13px,1.4vh,17px)] font-headline text-[clamp(23px,1.5vw,26px)] font-semibold tracking-[-0.01em] text-graphite md:backdrop-blur-[50px] shadow-[0_8px_32px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.5),inset_0_-1px_0_rgba(255,255,255,0.1),inset_0_0_30px_15px_rgba(255,255,255,1)] transition-[transform,box-shadow,background-color] duration-[350ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] group-hover:-translate-y-[2px] group-hover:bg-briefing-cream/80 group-hover:shadow-[0_8px_32px_rgba(91,136,178,0.22),0_24px_60px_rgba(91,136,178,0.28),inset_0_1px_0_rgba(255,255,255,0.5),inset_0_-1px_0_rgba(255,255,255,0.1),inset_0_0_30px_15px_rgba(255,255,255,1)] active:translate-y-0 active:scale-[0.985]"
               >
                 {/* Light-catch rims: 1px top + left edge highlights. */}
                 <span
@@ -188,6 +269,39 @@ export default function Home() {
                 <JapanIcon className="mr-3 h-[1.35em] w-[1.35em] shrink-0" />
                 Explore!
               </button>
+            </motion.div>
+            {/* Secondary CTA row — link-weight ghosts UNDER the primary (one
+                hero object, two quiet destinations): the catalog, and the
+                user's own trips (/my-trip itself bounces guests to sign-in).
+                OUTSIDE the `group` above so hovering these never blooms
+                Explore!'s halo; own motion.div reusing the same scroll values
+                (minus scale — at ghost size the shrink read as jitter). NO
+                backdrop-blur: these move with the scroll transforms, and a
+                moving backdrop filter resamples every frame (the exact
+                hero-lag class we just removed). */}
+            <motion.div
+              style={{ opacity: btnOpacity, y: btnY }}
+              className="pointer-events-auto mt-[clamp(14px,2.2vh,24px)] grid grid-cols-2 gap-3"
+            >
+              {/* grid-cols-2: both ghosts get IDENTICAL widths (sized by the
+                  longer label), and the row's edges align with the capsule
+                  above (the column stretches it to match). Soft white fill +
+                  icon + hover lift give them real click-appeal while staying
+                  clearly subordinate to the milk glass. */}
+              <Link
+                href="/discover"
+                className="group/g1 flex items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/40 bg-white/15 px-4 py-2.5 font-headline text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-[2px] hover:border-white/70 hover:bg-white/25 hover:shadow-[0_6px_20px_rgba(91,136,178,0.35)]"
+              >
+                <Compass size={15} strokeWidth={2.25} className="shrink-0 transition-transform duration-300 group-hover/g1:rotate-45" aria-hidden />
+                Browse Trips
+              </Link>
+              <Link
+                href="/my-trip"
+                className="group/g2 flex items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/40 bg-white/15 px-4 py-2.5 font-headline text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-[2px] hover:border-white/70 hover:bg-white/25 hover:shadow-[0_6px_20px_rgba(91,136,178,0.35)]"
+              >
+                <Ticket size={15} strokeWidth={2.25} className="shrink-0 transition-transform duration-300 group-hover/g2:-rotate-12" aria-hidden />
+                My Trips
+              </Link>
             </motion.div>
           </div>
         </motion.div>
@@ -248,6 +362,20 @@ export default function Home() {
           fading from the hero's Midnight seam (#0A1B33) down to Cloud (#F7F9FC)
           so it blends into the light footer. */}
       <div style={{ background: 'linear-gradient(180deg,#0A1B33 0%,#F7F9FC 100%)' }}>
+        {/* Value statement — the "why dopamichi" promise between the brand
+            moment (hero) and the proof (trips): kicker / gradient-sweep
+            headline (the pitch's first sentence) / muted body (the rest).
+            Statement-block anatomy per the user's reference; the sweep is
+            Ocean-only — the palette has no warm accent. */}
+        <section className="px-8 pt-16 md:pt-24">
+          <div className="mx-auto w-full max-w-[1536px]">
+            <p className="font-headline text-xs font-bold uppercase tracking-[0.35em] text-briefing-cream/50">
+              01 / Why dopamichi
+            </p>
+            <ScrollRevealStatement />
+          </div>
+        </section>
+
         {/* Second viewport — Featured trips. Newest published templates, opened via
             the shared PlanPreviewModal (same as /discover). Keeps the #pathways id so
             Start Journey / Learn More still scroll here. */}
