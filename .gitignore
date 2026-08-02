@@ -57,9 +57,5 @@ node_modules/.prisma/
 # Kimi 3D Japan map reference bundle (integrated: app/components/JapanMap3D.tsx + lib/japan-regions.ts)
 Kimi_Agent_3DJapanMap/
 
-# Region-map trace reference (watermarked stock image - do not commit)
-japanmap.jpg
-jap-attraction.jpg
-jap-prefecture.png
-jap-castle.jpg
-jap-discoverbg.png
+# Third-party reference images (JNTO/stock/agency graphics - do not commit)
+docs/image-ref/

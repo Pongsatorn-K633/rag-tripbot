@@ -152,8 +152,12 @@ function CoverCarousel({
 
   /** Tap the photo → next cover, wrapping at the end. Never opens the trip.
    *  Not reached after a drag (onClickCapture halts that click) nor from the
-   *  arrows (they stopPropagation first), so neither double-advances. */
+   *  arrows (they stopPropagation first), so neither double-advances.
+   *  Exception: a single-cover TALL card has nothing to advance, so the tap
+   *  falls through and opens the trip as before. (The compact thumb swallows
+   *  it either way — its click must never open the trip.) */
   function onTapAdvance(e: React.MouseEvent) {
+    if (images.length <= 1 && !compact) return
     e.stopPropagation()
     if (images.length > 1) step(1)
   }
@@ -208,14 +212,13 @@ function CoverCarousel({
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
         onClickCapture={onClickCapture}
-        // Compact: the thumb is a gallery in its own right, so a click on it
-        // must NOT fall through to the card and open the trip — and rather than
-        // being a dead zone it advances to the next cover. A tap needs no reach
-        // arc, which a swipe at the screen's left edge does: that edge is the
-        // hardest place for a right thumb to drag. Bubble phase, not capture —
-        // the arrows sit inside and need their click first (they stopPropagation
-        // themselves, so they never reach this).
-        onClick={compact ? onTapAdvance : undefined}
+        // BOTH cards: the photo is a gallery in its own right, so a click on
+        // it advances to the next cover instead of opening the trip (a tap
+        // needs no reach arc, unlike a swipe or the small arrows). Opening
+        // stays on the rest of the card (+ PREVIEW). Bubble phase, not
+        // capture — the arrows sit inside and need their click first (they
+        // stopPropagation themselves, so they never reach this).
+        onClick={onTapAdvance}
         // select-none: without it a mouse drag starts selecting the page
         // instead of swiping. touch-pan-y keeps vertical scrolling native while
         // the horizontal axis is ours.

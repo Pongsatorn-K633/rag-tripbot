@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 // STATIC import, not the IMG string path: it gives next/image the intrinsic
 // size AND an automatic inline blurDataURL, so the hero paints instantly as a
 // blurred preview in the initial HTML instead of a blank block.
@@ -35,7 +36,15 @@ function HeroLetter({
   const y = useTransform(progress, [0, start, end], reduced ? ['0%', '0%', '0%'] : ['0%', `${-20 * drift}%`, `${-85 * drift}%`])
   const x = useTransform(progress, [0, start, end], reduced ? [0, 0, 0] : [0, 0.25 * xScatter, xScatter])
   const rotate = useTransform(progress, [0, start, end], reduced ? [0, 0, 0] : [0, 0.4 * rot, rot])
-  const blurPx = useTransform(progress, [0, 0.2 + stagger, end], reduced ? [0, 0, 0] : [0, 3, 14])
+  // Blur is the one non-composited channel here: every UNIQUE radius forces
+  // the glyph's huge layer (clamp'd up to 350px type + its text-shadow
+  // extent) to re-rasterize — five letters at per-frame precision made the
+  // scroll stutter. Two fixes, both invisible at speed: quantize to 2px
+  // steps (a handful of re-rasters per scroll-through instead of hundreds)
+  // and cap at 8px — opacity is ~0 by max blur, so the old 14px tail was
+  // pure wasted paint. Transforms/opacity above stay continuous (composited).
+  const blurRaw = useTransform(progress, [0, 0.2 + stagger, end], reduced ? [0, 0, 0] : [0, 3, 8])
+  const blurPx = useTransform(blurRaw, (v) => Math.round(v / 2) * 2)
   const filter = useMotionTemplate`blur(${blurPx}px)`
   return (
     <motion.span className="inline-block will-change-transform" style={{ opacity, y, x, rotate, filter }}>
@@ -183,10 +192,12 @@ export default function Home() {
           </div>
         </motion.div>
 
-        {/* Learn More cue (bottom-left) */}
-        <button
-          onClick={scrollToPathways}
-          aria-label="Learn more"
+        {/* Learn More cue (bottom-left) — navigates to /discover, giving the
+            hero's two CTAs two DISTINCT destinations: Explore! scrolls the
+            on-page story, this one jumps straight to the full catalog. */}
+        <Link
+          href="/discover"
+          aria-label="Learn more — browse all trips"
           className="group absolute left-[clamp(28px,4vw,72px)] bottom-[clamp(28px,4vh,56px)] z-20 flex flex-col items-center gap-3.5 cursor-pointer"
         >
           <span
@@ -199,7 +210,7 @@ export default function Home() {
           >
             Learn More
           </span>
-        </button>
+        </Link>
 
         {/* Socials (bottom-right) — official Simple Icons: one consistent grid, uniform size, centered */}
         <div className="absolute right-[clamp(28px,4vw,72px)] bottom-[clamp(28px,4vh,56px)] z-20 flex items-center gap-4 text-white/85">

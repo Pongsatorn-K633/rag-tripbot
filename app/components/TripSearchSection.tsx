@@ -12,7 +12,7 @@ import TripDeck, { TripCardCompact, TripCoverflow, DECK_CARD_W, DECK_CARD_H } fr
 import PlanPreviewModal from '@/app/components/PlanPreviewModal'
 import { useSavedTemplates } from '@/app/hooks/useSavedTemplates'
 import JapanMap3D from '@/app/components/JapanMap3D'
-import { JAPAN_REGIONS, REGION_PREFECTURES, MAP_LAYERS, type MapLayerId } from '@/lib/japan-regions'
+import { JAPAN_REGIONS, REGION_PREFECTURES, MAP_LAYERS, SEASON_RAMPS, SEASON_TINTS, type MapLayerId } from '@/lib/japan-regions'
 
 /** The map's layer control — expanding-pill toggle: every option rests as a
  *  bare emoji; the ACTIVE one opens up to emoji + label in a softly filled
@@ -22,7 +22,13 @@ const MAP_LAYER_OPTIONS: readonly { id: MapLayerId; emoji: string; label: string
   { id: 'attractions', emoji: '⛩️', label: 'Attractions' },
   { id: 'sakura', emoji: '🌸', label: 'Sakura' },
   { id: 'autumn', emoji: '🍁', label: 'Autumn' },
+  { id: 'ski', emoji: '⛷️', label: 'Ski' },
 ]
+
+/** The layers whose land is TINTED by timing and that show the legend card. */
+type SeasonLayerId = Exclude<MapLayerId, 'cities' | 'attractions'>
+const asSeasonLayer = (id: MapLayerId): SeasonLayerId | null =>
+  id === 'cities' || id === 'attractions' ? null : id
 
 function MapLayerControls({
   layer,
@@ -67,6 +73,89 @@ function MapLayerControls({
         )
       })}
     </div>
+  )
+}
+
+/** Legend for the season layers' JNTO-style land fade + date glyphs: a small
+ *  cream card (same paper language as the prefecture popup) with a dark→light
+ *  gradient strip reading Early → Late, and the two date emoji explained.
+ *  Positioned by the caller into an empty sea corner of its map box. */
+function SeasonLegend({
+  layer,
+  compact = false,
+  className,
+}: {
+  layer: SeasonLayerId
+  /** Mobile sheet: smaller type + tighter padding — the sheet's map is dense
+   *  and the full-size card covered the southern labels. */
+  compact?: boolean
+  className?: string
+}) {
+  const ramp = SEASON_RAMPS[layer]
+  // Ski's fade encodes season LENGTH (snow country → mild south), not
+  // earliness — its bar reads differently from the two bloom layers.
+  const { bar, keys } = {
+    sakura: {
+      bar: ['Early', 'Late'],
+      keys: [
+        { emoji: '🌸', label: 'First Bloom' },
+        { emoji: '💮', label: 'Full Bloom' },
+      ],
+    },
+    autumn: {
+      bar: ['Early', 'Late'],
+      keys: [
+        { emoji: '🍂', label: 'Ginkgo' },
+        { emoji: '🍁', label: 'Maple' },
+      ],
+    },
+    ski: {
+      bar: ['Long season', 'Short'],
+      keys: [{ emoji: '❄️', label: 'Ski Season' }],
+    },
+  }[layer]
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.92 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.92 }}
+      transition={{ duration: 0.18 }}
+      // min-w keeps the card (and its full-width gradient bar) comfortably
+      // wide even when the key row is a single short entry (the Ski layer).
+      className={`pointer-events-none rounded-xl border border-zen-black/10 bg-briefing-cream shadow-[0_8px_24px_rgba(0,0,0,0.35)] ${
+        compact ? 'min-w-[140px] px-2.5 py-2' : 'min-w-[176px] px-3 py-2.5'
+      } ${className ?? ''}`}
+    >
+      {/* JNTO-style year header — the dates on the markers are this year's
+          (typical/forecast) windows. Bump yearly. */}
+      <div className={`mb-1.5 font-headline font-bold tracking-wide text-zen-black ${compact ? 'text-[10px]' : 'text-[11px]'}`}>
+        2026 Forecast
+      </div>
+      {/* Bar + key run the card's full width — the glyph key sits in ONE row
+          (side by side), keeping the card short. */}
+      <div
+        className="h-1.5 w-full rounded-full"
+        style={{ background: `linear-gradient(90deg, ${ramp.join(', ')})` }}
+        aria-hidden
+      />
+      {/* gap-3: with a wide left label (ski's "Long season") the two ends
+          otherwise touch — the gap forces the card wider instead. */}
+      <div className={`mt-1 flex justify-between gap-3 font-sans font-medium text-graphite/70 ${compact ? 'text-[9px]' : 'text-[10px]'}`}>
+        <span>{bar[0]}</span>
+        <span>{bar[1]}</span>
+      </div>
+      <div className={`flex items-center ${compact ? 'mt-1 gap-2.5' : 'mt-1.5 gap-3'}`}>
+        {keys.map((k) => (
+          <div
+            key={k.label}
+            className={`flex items-center gap-1.5 whitespace-nowrap font-sans font-medium text-graphite ${compact ? 'text-[10px]' : 'text-[11px]'}`}
+          >
+            <span aria-hidden>{k.emoji}</span>
+            {k.label}
+          </div>
+        ))}
+      </div>
+    </motion.div>
   )
 }
 
@@ -160,8 +249,9 @@ function RegionPrefecturePopup({
       className="pointer-events-none absolute z-20"
       // Same fixed home on both views: the map's empty top-left sea. The
       // sheet's letterboxed drawing floats centre-right, so its top-left is
-      // just as free as the desktop panel's.
-      style={anchored ? { left: '2%', top: '10%' } : { left: '2%', top: '4%' }}
+      // just as free as the desktop panel's. (Mobile used to sit at 4% but
+      // slid under the sheet's layer-toggle header row — 10% clears it.)
+      style={{ left: '2%', top: '10%' }}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.92 }}
@@ -409,6 +499,13 @@ export default function TripSearchSection({
     setRegionList([])
     setPopupRegion(null)
   }
+  /** Layer switch CLEARS the region selection (and its popup): a filter
+   *  picked while reading one layer shouldn't silently keep filtering the
+   *  list under the next one (user call). */
+  const switchMapLayer = (id: MapLayerId) => {
+    if (id !== mapLayer) resetRegions()
+    setMapLayer(id)
+  }
   // Legend-chip hover, mirrored onto the map (lift + accent) via the map's
   // externalHoverRegion prop — CSS :hover can't cross from chip to SVG.
   const [hoverRegion, setHoverRegion] = useState<string | null>(null)
@@ -417,6 +514,7 @@ export default function TripSearchSection({
   // Which marker layer the map shows (cities / attractions / sakura / autumn)
   // — shared between the desktop panel and the mobile sheet.
   const [mapLayer, setMapLayer] = useState<MapLayerId>('cities')
+  const seasonLayer = asSeasonLayer(mapLayer)
   const [filterOpen, setFilterOpen] = useState(false)
   // Destination dropdown open state (the only dropdown in the modal).
   const [ddOpen, setDdOpen] = useState<'dest' | null>(null)
@@ -866,7 +964,10 @@ export default function TripSearchSection({
       {viewAllHref && (
         <Link
           href={viewAllHref}
-          className="group -mt-8 mb-6 ml-auto flex w-fit items-center gap-1.5 font-headline font-bold uppercase tracking-widest text-xs text-briefing-cream/70 transition-colors hover:text-basel-brick md:hidden"
+          // -mt-14 (not -8): claws back most of the header's mb-24 chip-reserve
+          // on phones — View all AND the deck ride up 24px closer to the search
+          // bar, while one wrapped row of filter chips (~38px) still clears.
+          className="group -mt-18 mb-6 ml-auto flex w-fit items-center gap-1.5 font-headline font-bold uppercase tracking-widest text-xs text-briefing-cream/70 transition-colors hover:text-basel-brick md:hidden"
         >
           View all
           <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
@@ -975,7 +1076,7 @@ export default function TripSearchSection({
               {/* Layer toggles — swap the callout set (cities / attractions /
                   seasons). z-10 keeps them above the overlapping map. */}
               <div className="relative z-10 mt-5">
-                <MapLayerControls layer={mapLayer} onChange={setMapLayer} />
+                <MapLayerControls layer={mapLayer} onChange={switchMapLayer} />
               </div>
               {/* -mt pulls the map's empty top sea band up under the rows
                   above; pointer-events-none on the svg keeps the overlapped
@@ -991,6 +1092,7 @@ export default function TripSearchSection({
                   onRegionClick={toggleRegion}
                   externalHoverRegion={hoverRegion}
                   markers={MAP_LAYERS[mapLayer]}
+                  regionTints={seasonLayer ? SEASON_TINTS[seasonLayer] : undefined}
                   className="pointer-events-none"
                 />
                 <AnimatePresence>
@@ -1001,6 +1103,16 @@ export default function TripSearchSection({
                       anchored
                       onClose={() => setPopupRegion(null)}
                     />
+                  )}
+                </AnimatePresence>
+                {/* Season legend — STATIC home in the west sea directly below
+                    the prefecture popup's fixed spot (top-left). It never
+                    moves, popup open or not (user call). */}
+                <AnimatePresence>
+                  {seasonLayer && (
+                    <div key={mapLayer} className="absolute left-[8%] top-[25%] z-20">
+                      <SeasonLegend layer={seasonLayer} />
+                    </div>
                   )}
                 </AnimatePresence>
               </div>
@@ -1094,7 +1206,7 @@ export default function TripSearchSection({
                       hit the region instead (the close button went dead). */}
                   <div className="relative z-10 flex items-center justify-between">
                     {/* Layer toggles share the header line with the ×. */}
-                    <MapLayerControls layer={mapLayer} onChange={setMapLayer} />
+                    <MapLayerControls layer={mapLayer} onChange={switchMapLayer} />
                     <button
                       type="button"
                       onClick={() => setMapSheetOpen(false)}
@@ -1120,9 +1232,27 @@ export default function TripSearchSection({
                       width="100%"
                       height="64vh"
                       markers={MAP_LAYERS[mapLayer]}
-                      cityScale={1.6}
+                      // 1.45 (was 1.6): with the 18→21 font bump the east-rail
+                      // labels outgrew even the overflow bleed room; net size
+                      // is still above the original 18×1.6.
+                      cityScale={1.45}
+                      // The sheet's prefecture card spans ~half the drawing —
+                      // it inevitably covers the NW label rail, so the
+                      // callouts fade out while it's open (they return on
+                      // close). Desktop's smaller card clears the labels.
+                      dimMarkers={popupRegion !== null}
+                      regionTints={seasonLayer ? SEASON_TINTS[seasonLayer] : undefined}
                       className="pointer-events-none"
                     />
+                    {/* Season legend — right edge, stacked directly ABOVE the
+                        ghost Reset in the bottom-right corner (user call). */}
+                    <AnimatePresence>
+                      {seasonLayer && (
+                        <div key={mapLayer} className="absolute bottom-[18%] right-1 z-20">
+                          <SeasonLegend layer={seasonLayer} compact />
+                        </div>
+                      )}
+                    </AnimatePresence>
                     <AnimatePresence>
                       {popupRegion && (
                         <RegionPrefecturePopup

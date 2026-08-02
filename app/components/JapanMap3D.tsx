@@ -102,6 +102,21 @@ export interface JapanMap3DProps {
    * @default 1
    */
   cityScale?: number;
+  /**
+   * Fade the callout markers to near-invisible (with a smooth transition).
+   * Used while an HTML overlay (the prefecture popup) sits over the map on
+   * small screens, where the card inevitably covers the NW label rail.
+   * @default false
+   */
+  dimMarkers?: boolean;
+  /**
+   * Seasonal LAND tint per region id (e.g. `SEASON_TINTS.sakura`) — the
+   * JNTO-forecast look where the land colour encodes timing. Replaces
+   * `topColor` on non-highlighted tops; hover lightens the tint instead of
+   * the accent. Highlighted (selected) regions keep their accent fill so the
+   * filter state stays readable on a tinted map.
+   */
+  regionTints?: Record<string, string>;
   /** Extra class names forwarded to the root `<svg>` element. */
   className?: string;
 }
@@ -222,6 +237,8 @@ export default function JapanMap3D({
   externalHoverRegion = null,
   markers,
   cityScale = 1,
+  dimMarkers = false,
+  regionTints,
   className,
 }: JapanMap3DProps) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
@@ -265,7 +282,10 @@ export default function JapanMap3D({
 
   const clickable = interactive || onRegionClick !== undefined || onRegionHover !== undefined;
 
-  const style: CSSProperties = { width, display: 'block' };
+  // overflow visible: callout labels near the viewBox edge may poke past it
+  // (the mobile sheet's scaled-up east rail); clipping cut their tails off,
+  // and the host containers have breathing room for the bleed.
+  const style: CSSProperties = { width, display: 'block', overflow: 'visible' };
   if (height !== undefined) {
     style.height = height;
   }
@@ -279,14 +299,23 @@ export default function JapanMap3D({
     onRegionClick?.(regionId);
   };
 
-  /** Top-face fill for a region, honoring variant + highlight state. */
-  const topFill = (accent: string, isHighlighted: boolean): string => {
+  /** Top-face fill for a region, honoring variant + tint + highlight state.
+   *  On a TINTED (season) map the land colour encodes timing, so a selected
+   *  region does NOT swap to its accent (that read as a bogus ramp step) —
+   *  it brightens its tint instead, with a stronger outline (below). */
+  const topFill = (regionId: string, accent: string, isHighlighted: boolean): string => {
     if (highlightColor !== undefined && isHighlighted) return highlightColor;
     if (variant === 'colored') {
       return isHighlighted ? lighten(accent, 0.22) : accent;
     }
+    const tint = regionTints?.[regionId];
+    if (tint) return isHighlighted ? lighten(tint, 0.32) : tint;
     return isHighlighted ? accent : topColor;
   };
+
+  /** Hover fill: the season tint (lightened) when tinted, else the accent. */
+  const hoverFill = (regionId: string, accent: string): string =>
+    lighten(regionTints?.[regionId] ?? accent, 0.25);
 
   return (
     <svg
@@ -330,7 +359,7 @@ export default function JapanMap3D({
             .jm-region-${uid} .jm-face { transition: fill 200ms ease; }
             ${JAPAN_REGIONS.map(
               (r) =>
-                `.jm-region-${uid}[data-region-id="${r.id}"].jm-ext-hover .jm-face { fill: ${lighten(r.color, 0.25)}; }`,
+                `.jm-region-${uid}[data-region-id="${r.id}"].jm-ext-hover .jm-face { fill: ${hoverFill(r.id, r.color)}; }`,
             ).join('\n')}
             /* :hover feedback ONLY where hover is real: on touch, :hover
                STICKS after a tap, so tap-to-unselect left the region wearing
@@ -342,7 +371,7 @@ export default function JapanMap3D({
               }
               ${JAPAN_REGIONS.map(
                 (r) =>
-                  `.jm-region-${uid}[data-region-id="${r.id}"]:hover .jm-face { fill: ${lighten(r.color, 0.25)}; }`,
+                  `.jm-region-${uid}[data-region-id="${r.id}"]:hover .jm-face { fill: ${hoverFill(r.id, r.color)}; }`,
               ).join('\n')}
             }
           `}</style>
@@ -397,7 +426,10 @@ export default function JapanMap3D({
         const groupClass = clickable
           ? `jm-region-${uid}${externalHoverRegion === region.id ? ' jm-ext-hover' : ''}`
           : undefined;
-        const fill = topFill(region.color, isHighlighted);
+        const fill = topFill(region.id, region.color, isHighlighted);
+        // Tinted layers mark selection with a heavier white outline (the
+        // brightened tint alone is too close to the hover state).
+        const emphasized = isHighlighted && regionTints?.[region.id] !== undefined;
         return (
           <g
             key={region.id}
@@ -423,8 +455,8 @@ export default function JapanMap3D({
                   className="jm-face"
                   fill={fill}
                   stroke="#ffffff"
-                  strokeOpacity={0.55}
-                  strokeWidth={1.25}
+                  strokeOpacity={emphasized ? 0.95 : 0.55}
+                  strokeWidth={emphasized ? 2.75 : 1.25}
                   strokeLinejoin="round"
                 />
               ))}
@@ -444,7 +476,11 @@ export default function JapanMap3D({
           innerHover / externalHoverRegion) still carries a region's city
           names with its landmass. */}
       {markers && markers.length > 0 && (
-        <g pointerEvents="none" aria-hidden="true">
+        <g
+          pointerEvents="none"
+          aria-hidden="true"
+          style={{ opacity: dimMarkers ? 0.24 : 1, transition: 'opacity 200ms ease' }}
+        >
           {JAPAN_REGIONS.map((region) => {
             const lifted = innerHover === region.id || externalHoverRegion === region.id;
             return (
@@ -507,13 +543,13 @@ export default function JapanMap3D({
                           line points at the block's vertical middle. */}
                       <text
                         x={c.lx + (c.anchor === 'start' ? textPad : -textPad)}
-                        y={c.sub ? c.ly - 9 * cityScale : c.ly}
+                        y={c.sub ? c.ly - 10 * cityScale : c.ly}
                         textAnchor={c.anchor}
                         dominantBaseline="middle"
                         fill="#F7F9FC"
                         fillOpacity={0.92}
                         style={{
-                          fontSize: 18 * cityScale,
+                          fontSize: 21 * cityScale,
                           fontWeight: 600,
                           letterSpacing: '0.04em',
                           fontFamily: 'inherit',
@@ -524,13 +560,13 @@ export default function JapanMap3D({
                       {c.sub && (
                         <text
                           x={c.lx + (c.anchor === 'start' ? textPad : -textPad)}
-                          y={c.ly + 10 * cityScale}
+                          y={c.ly + 11.5 * cityScale}
                           textAnchor={c.anchor}
                           dominantBaseline="middle"
                           fill="#F7F9FC"
                           fillOpacity={0.75}
                           style={{
-                            fontSize: 14 * cityScale,
+                            fontSize: 16 * cityScale,
                             fontWeight: 500,
                             letterSpacing: '0.04em',
                             fontFamily: 'inherit',

@@ -83,6 +83,10 @@ export const CITY_MARKERS: readonly CityMarker[] = [
 export const ATTRACTION_MARKERS: readonly CityMarker[] = [
   // Label row sits ABOVE the dot so the vertical leader rises (user call).
   { name: 'Mt. Fuji', region: 'chubu', icon: 'mountain', x: 640, y: 745, lx: 830, ly: 690, anchor: 'start' },
+  // Tateyama–Kurobe: NW sea rail, one slot above Shirakawa-go's.
+  { name: 'Tateyama Kurobe', region: 'chubu', icon: 'mountain', x: 582, y: 674, lx: 420, ly: 470, anchor: 'end', sub: 'Alpine Route' },
+  // Kamikochi: east sea rail, one slot above Mt. Fuji's.
+  { name: 'Kamikochi', region: 'chubu', icon: 'mountain', x: 585, y: 694, lx: 830, ly: 610, anchor: 'start' },
   { name: 'Hakone', region: 'kanto', icon: 'onsen', x: 656, y: 757, lx: 830, ly: 870, anchor: 'start' },
   { name: 'Fushimi Inari', region: 'kinki', icon: 'torii', x: 497, y: 780, lx: 355, ly: 665, anchor: 'end' },
   { name: 'Shirakawa-go', region: 'chubu', icon: 'village', x: 545, y: 675, lx: 420, ly: 540, anchor: 'end' },
@@ -91,25 +95,123 @@ export const ATTRACTION_MARKERS: readonly CityMarker[] = [
   { name: 'Miyajima', region: 'chugoku', icon: 'torii', x: 285, y: 843, lx: 330, ly: 985, anchor: 'start' },
 ];
 
-/** Sakura layer — famous hanami spots, north-marching bloom windows. */
+/** Sakura layer — the JNTO forecast CITIES (jap-sakura.jpg, 2026 dates
+ *  verbatim). Sub line: 🌸 first bloom · 💮 full bloom. The label rails are
+ *  shared with the autumn layer (same 11 cities, same slots). */
 export const SAKURA_MARKERS: readonly CityMarker[] = [
-  { name: 'Goryokaku', region: 'hokkaido', x: 688, y: 318, lx: 595, ly: 260, anchor: 'end', sub: 'late Apr' },
-  { name: 'Hirosaki', region: 'tohoku', x: 718, y: 392, lx: 855, ly: 392, anchor: 'start', sub: 'late Apr' },
-  { name: 'Ueno Park', region: 'kanto', x: 697, y: 712, lx: 855, ly: 705, anchor: 'start', sub: 'late Mar' },
-  { name: 'Chureito', region: 'chubu', x: 645, y: 748, lx: 830, ly: 800, anchor: 'start', sub: 'mid Apr' },
-  { name: "Philosopher's Path", region: 'kinki', x: 487, y: 770, lx: 375, ly: 685, anchor: 'end', sub: 'early Apr' },
-  { name: 'Yoshino', region: 'kinki', x: 495, y: 848, lx: 560, ly: 960, anchor: 'start', sub: 'early Apr' },
-  { name: 'Kumamoto', region: 'kyushu-okinawa', x: 205, y: 945, lx: 170, ly: 1000, anchor: 'end', sub: 'late Mar' },
+  { name: 'Sapporo', region: 'hokkaido', x: 760, y: 245, lx: 800, ly: 70, anchor: 'start', sub: '🌸 4/28 · 💮 5/1' },
+  { name: 'Aomori', region: 'tohoku', x: 722, y: 388, lx: 855, ly: 375, anchor: 'start', sub: '🌸 4/19 · 💮 4/22' },
+  { name: 'Sendai', region: 'tohoku', x: 745, y: 565, lx: 852, ly: 545, anchor: 'start', sub: '🌸 4/5 · 💮 4/10' },
+  // ly 585 (autumn keeps 655): no Tateyama above it on THIS layer, so it
+  // rides the higher slot — clear of the desktop legend per that precedent.
+  { name: 'Kanazawa', region: 'chubu', x: 545, y: 672, lx: 420, ly: 585, anchor: 'end', sub: '🌸 3/31 · 💮 4/6' },
+  { name: 'Tokyo', region: 'kanto', x: 697, y: 715, lx: 855, ly: 705, anchor: 'start', sub: '🌸 3/19 · 💮 3/26' },
+  { name: 'Nagoya', region: 'chubu', x: 585, y: 776, lx: 648, ly: 905, anchor: 'start', sub: '🌸 3/19 · 💮 3/28' },
+  { name: 'Osaka', region: 'kinki', x: 461, y: 812, lx: 560, ly: 970, anchor: 'start', sub: '🌸 3/24 · 💮 3/31' },
+  { name: 'Kochi', region: 'shikoku', x: 335, y: 900, lx: 335, ly: 1040, anchor: 'start', sub: '🌸 3/20 · 💮 3/27' },
+  { name: 'Hiroshima', region: 'chugoku', x: 300, y: 826, lx: 175, ly: 680, anchor: 'end', sub: '🌸 3/21 · 💮 3/30' },
+  { name: 'Fukuoka', region: 'kyushu-okinawa', x: 208, y: 888, lx: 170, ly: 760, anchor: 'end', sub: '🌸 3/20 · 💮 3/29' },
+  { name: 'Kagoshima', region: 'kyushu-okinawa', x: 192, y: 1002, lx: 230, ly: 1130, anchor: 'start', sub: '🌸 3/24 · 💮 4/3' },
 ];
 
-/** Autumn layer — famous koyo spots, south-marching foliage windows. */
+/** Autumn layer — the JNTO forecast CITIES (jap-autumn.jpg dates verbatim;
+ *  🍂 ginkgo peak · 🍁 maple peak) on the same rail slots as the sakura
+ *  layer, PLUS the three ⛰ ALPINE attractions (no ginkgo, and elevation
+ *  turns them a month+ early — single 🍁 with their whole colour window). */
 export const AUTUMN_MARKERS: readonly CityMarker[] = [
-  { name: 'Daisetsuzan', region: 'hokkaido', x: 815, y: 240, lx: 610, ly: 140, anchor: 'end', sub: 'mid Sep' },
-  { name: 'Naruko Gorge', region: 'tohoku', x: 740, y: 530, lx: 852, ly: 480, anchor: 'start', sub: 'mid Oct' },
-  { name: 'Nikko', region: 'kanto', x: 688, y: 660, lx: 855, ly: 625, anchor: 'start', sub: 'late Oct' },
-  { name: 'Korankei', region: 'chubu', x: 592, y: 772, lx: 648, ly: 905, anchor: 'start', sub: 'late Nov' },
-  { name: 'Arashiyama', region: 'kinki', x: 478, y: 772, lx: 375, ly: 690, anchor: 'end', sub: 'late Nov' },
-  { name: 'Momijidani', region: 'chugoku', x: 285, y: 843, lx: 330, ly: 1000, anchor: 'start', sub: 'mid Nov' },
+  { name: 'Sapporo', region: 'hokkaido', x: 760, y: 245, lx: 800, ly: 70, anchor: 'start', sub: '🍂 11/5 · 🍁 11/5' },
+  // Daisetsuzan / Sounkyo Gorge — window format like Kamikochi's (user call).
+  { name: 'Daisetsuzan / Sounkyo Gorge', region: 'hokkaido', icon: 'mountain', x: 815, y: 240, lx: 610, ly: 140, anchor: 'end', sub: '🍁 9/20 – 10/15' },
+  { name: 'Aomori', region: 'tohoku', x: 722, y: 388, lx: 855, ly: 375, anchor: 'start', sub: '🍂 11/6 · 🍁 11/15' },
+  { name: 'Sendai', region: 'tohoku', x: 745, y: 565, lx: 852, ly: 545, anchor: 'start', sub: '🍂 11/30 · 🍁 11/27' },
+  // West stack: Tateyama above Kanazawa — 70-unit pitch clears both rows at
+  // the mobile sheet's 1.45 label scale.
+  { name: 'Tateyama Kurobe', region: 'chubu', icon: 'mountain', x: 582, y: 674, lx: 420, ly: 570, anchor: 'end', sub: '🍁 9/15 – 11/5' },
+  { name: 'Kanazawa', region: 'chubu', x: 545, y: 672, lx: 420, ly: 655, anchor: 'end', sub: '🍂 11/4 · 🍁 12/2' },
+  { name: 'Tokyo', region: 'kanto', x: 697, y: 715, lx: 855, ly: 705, anchor: 'start', sub: '🍂 11/27 · 🍁 12/2' },
+  // Kamikochi below Tokyo's slot on the east rail (user call: downward).
+  { name: 'Kamikochi', region: 'chubu', icon: 'mountain', x: 585, y: 694, lx: 830, ly: 785, anchor: 'start', sub: '🍁 10/15 – 11/5' },
+  { name: 'Nagoya', region: 'chubu', x: 585, y: 776, lx: 648, ly: 905, anchor: 'start', sub: '🍂 11/20 · 🍁 12/5' },
+  { name: 'Osaka', region: 'kinki', x: 461, y: 812, lx: 560, ly: 970, anchor: 'start', sub: '🍂 11/26 · 🍁 12/7' },
+  { name: 'Kochi', region: 'shikoku', x: 335, y: 900, lx: 335, ly: 1040, anchor: 'start', sub: '🍂 11/19 · 🍁 12/13' },
+  { name: 'Hiroshima', region: 'chugoku', x: 300, y: 826, lx: 175, ly: 680, anchor: 'end', sub: '🍂 11/22 · 🍁 11/30' },
+  { name: 'Fukuoka', region: 'kyushu-okinawa', x: 208, y: 888, lx: 170, ly: 760, anchor: 'end', sub: '🍂 12/1 · 🍁 12/12' },
+  { name: 'Kagoshima', region: 'kyushu-okinawa', x: 192, y: 1002, lx: 230, ly: 1130, anchor: 'start', sub: '🍂 12/2 · 🍁 12/16' },
+];
+
+/** JNTO-forecast-style seasonal LAND tints (jap-sakura.jpg / jap-autumn.jpg):
+ *  on the season layers every region's top face takes a timing colour —
+ *  DARKER = EARLIER in the year. Sakura marches north (Kanto/Kinki bloom
+ *  first, Hokkaido last); autumn marches south (Hokkaido turns first,
+ *  Kyushu/Shikoku last). Our map's unit is the region, so this is the
+ *  reference's prefecture fade at coarser grain. */
+export const SEASON_RAMPS: Record<'sakura' | 'autumn' | 'ski', readonly string[]> = {
+  // early → late (dark → light)
+  sakura: ['#DD4573', '#E76D96', '#EF93B4', '#F5B4CB', '#FAD2E0'],
+  autumn: ['#6E3211', '#A04E1C', '#D7603A', '#E9953B', '#F2BC4C'],
+  // ski: deep winter blue → snow white; darker = longer/snowier season
+  // (north + the Japan-Sea snow country), not earlier-in-the-year.
+  ski: ['#2E5E90', '#5581AC', '#82A6C6', '#B4CBDE', '#E8F0F7'],
+};
+
+export const SEASON_TINTS: Record<'sakura' | 'autumn' | 'ski', Record<string, string>> = {
+  sakura: {
+    kanto: SEASON_RAMPS.sakura[0],
+    kinki: SEASON_RAMPS.sakura[0],
+    shikoku: SEASON_RAMPS.sakura[1],
+    chugoku: SEASON_RAMPS.sakura[1],
+    'kyushu-okinawa': SEASON_RAMPS.sakura[1],
+    chubu: SEASON_RAMPS.sakura[2],
+    tohoku: SEASON_RAMPS.sakura[3],
+    hokkaido: SEASON_RAMPS.sakura[4],
+  },
+  autumn: {
+    hokkaido: SEASON_RAMPS.autumn[0],
+    tohoku: SEASON_RAMPS.autumn[1],
+    kanto: SEASON_RAMPS.autumn[2],
+    chubu: SEASON_RAMPS.autumn[2],
+    kinki: SEASON_RAMPS.autumn[3],
+    chugoku: SEASON_RAMPS.autumn[3],
+    shikoku: SEASON_RAMPS.autumn[4],
+    'kyushu-okinawa': SEASON_RAMPS.autumn[4],
+  },
+  ski: {
+    hokkaido: SEASON_RAMPS.ski[0],
+    tohoku: SEASON_RAMPS.ski[1],
+    chubu: SEASON_RAMPS.ski[2],
+    kanto: SEASON_RAMPS.ski[3],
+    kinki: SEASON_RAMPS.ski[3],
+    chugoku: SEASON_RAMPS.ski[3],
+    shikoku: SEASON_RAMPS.ski[4],
+    'kyushu-okinawa': SEASON_RAMPS.ski[4],
+  },
+};
+
+/** Ski layer — resorts from the jap-ski.jpg reference (KA Luxury 2026), with
+ *  their season windows as ❄️ m/d ranges (Early≈1st, Mid≈15th, Late≈25th/31st).
+ *  "Hakkoda" is the correct spelling (the reference's "Hokkoda" is a typo).
+ *  East rail carries the snow-country spine north→south; the west rail takes
+ *  the Chubu/Kinki cluster. */
+export const SKI_MARKERS: readonly CityMarker[] = [
+  { name: 'Furano', region: 'hokkaido', x: 795, y: 255, lx: 855, ly: 120, anchor: 'start', sub: '❄️ 12/1 – 3/31' },
+  { name: 'Niseko', region: 'hokkaido', x: 688, y: 325, lx: 620, ly: 250, anchor: 'end', sub: '❄️ 12/1 – 3/31' },
+  { name: 'Hakkoda', region: 'tohoku', x: 728, y: 388, lx: 855, ly: 360, anchor: 'start', sub: '❄️ 12/25 – 3/31' },
+  { name: 'Appi Kogen', region: 'tohoku', x: 750, y: 445, lx: 852, ly: 440, anchor: 'start', sub: '❄️ 12/25 – 3/31' },
+  { name: 'Zao Onsen', region: 'tohoku', x: 725, y: 565, lx: 852, ly: 545, anchor: 'start', sub: '❄️ 12/1 – 3/31' },
+  { name: 'Gala Yuzawa', region: 'chubu', x: 645, y: 648, lx: 855, ly: 625, anchor: 'start', sub: '❄️ 12/15 – 3/31' },
+  { name: 'Naeba', region: 'chubu', x: 638, y: 662, lx: 830, ly: 690, anchor: 'start', sub: '❄️ 12/15 – 3/31' },
+  // (622,700): Karuizawa sits ON the Nagano/Gunma border — a few units east
+  // and the point-in-polygon test lands it in the Kanto outline.
+  { name: 'Karuizawa', region: 'chubu', x: 622, y: 700, lx: 830, ly: 800, anchor: 'start', sub: '❄️ 12/15 – 3/31' },
+  { name: 'Hakuba Happo-One', region: 'chubu', x: 605, y: 665, lx: 420, ly: 560, anchor: 'end', sub: '❄️ 12/15 – 4/5' },
+  { name: 'Takasu', region: 'chubu', x: 555, y: 720, lx: 445, ly: 645, anchor: 'end', sub: '❄️ 12/15 – 3/31' },
+  // South rail, NOT the west stack: three west slots (Hakuba/Takasu/this)
+  // collide at the mobile sheet's 1.45 label scale — the long name drops to
+  // the open sea south of the Kii peninsula instead.
+  { name: 'Gransnow Okuibuki', region: 'kinki', x: 498, y: 762, lx: 560, ly: 960, anchor: 'start', sub: '❄️ 12/15 – 3/5' },
+  // lx 420 (not the 380 Osaka slot): the ❄️ date row at 380 reached back over
+  // Kyushu's east coast.
+  { name: 'Rokkosan', region: 'kinki', x: 447, y: 800, lx: 420, ly: 982, anchor: 'end', sub: '❄️ 12/15 – 2/28' },
 ];
 
 /** The map's toggleable marker layers. */
@@ -118,6 +220,7 @@ export const MAP_LAYERS = {
   attractions: ATTRACTION_MARKERS,
   sakura: SAKURA_MARKERS,
   autumn: AUTUMN_MARKERS,
+  ski: SKI_MARKERS,
 } as const;
 export type MapLayerId = keyof typeof MAP_LAYERS;
 

@@ -148,6 +148,17 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  // ANY route change rolls the menu back up into the hamburger — item clicks
+  // already close it, but this also catches navigations the menu didn't
+  // initiate (redirects, back/forward, deep links from menu content).
+  // Adjust-during-render (not an effect): reacts in the same pass, and the
+  // set-state-in-effect lint rule stays quiet.
+  const [menuPath, setMenuPath] = useState(pathname)
+  if (menuPath !== pathname) {
+    setMenuPath(pathname)
+    setMobileOpen(false)
+  }
+
   /** Close the mobile menu. The morph button never unmounts (see below), so
    *  reverse morph + panel roll-up just run together off this one state flip —
    *  no two-phase timers needed. */
@@ -397,6 +408,14 @@ export default function Navbar() {
 function NavUserMenu({ light = false }: { light?: boolean }) {
   const { data: session, status } = useSession()
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  // Same rule as the mobile menu: any navigation closes the dropdown
+  // (adjust-during-render, same pattern as the hamburger's).
+  const pathname = usePathname()
+  const [dropPath, setDropPath] = useState(pathname)
+  if (dropPath !== pathname) {
+    setDropPath(pathname)
+    setDropdownOpen(false)
+  }
 
   if (status === 'loading') {
     return <div className="w-10 h-10" />
