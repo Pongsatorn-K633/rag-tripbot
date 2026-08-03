@@ -145,7 +145,7 @@ export default function GoPage() {
     // Dark page — ClientLayout paints the Graphite canvas for this route. The
     // trip cards below stay WHITE surfaces with their own dark text; only the
     // page-level type flips to Cloud.
-    <main className="pt-24 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 max-w-7xl mx-auto text-briefing-cream">
+    <main className="pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6 max-w-7xl mx-auto text-briefing-cream">
       {/* Hero */}
       <header className="mb-20">
         <h1 className="text-4xl md:text-5xl lg:text-7xl font-headline font-extrabold tracking-tighter text-briefing-cream mb-6">

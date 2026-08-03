@@ -14,7 +14,7 @@ export const metadata = {
 export default function CreatePage() {
   return (
     // Dark page — ClientLayout paints the Graphite canvas for this route.
-    <main className="pt-32 pb-24 px-6 max-w-7xl mx-auto text-briefing-cream">
+    <main className="pt-36 pb-24 px-6 max-w-7xl mx-auto text-briefing-cream">
       {/* Hero */}
       <header className="mb-16">
         <h1 className="text-4xl md:text-5xl lg:text-7xl font-headline font-extrabold tracking-tighter text-briefing-cream mb-6">

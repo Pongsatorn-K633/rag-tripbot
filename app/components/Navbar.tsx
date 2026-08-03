@@ -187,15 +187,14 @@ export default function Navbar() {
   }
 
   // Home is always transparent — the nav rides in a floating Cloud pill instead
-  // of a solid bar (no more dark sticky bar). Other pages keep the Cloud bar.
-  // Non-home: the hairline under the bar appears only once scrolled — flat
-  // against the page top, it read as a stray line. border-b stays (transparent)
-  // in both states so toggling never shifts layout by 1px.
+  // of a solid bar (no more dark sticky bar). Other pages keep the Cloud bar
+  // with an ALWAYS-ON hairline under it (user call — it was scroll-only
+  // before, which left the bar edgeless at the page top).
   const headerClass = isHome
     ? 'bg-transparent border-b border-transparent'
     : isGraphite
-      ? `bg-gradient-to-b from-graphite to-graphite/80 backdrop-blur-md border-b ${isScrolled ? 'border-white/10' : 'border-transparent'}`
-      : `bg-briefing-cream/80 backdrop-blur-md border-b ${isScrolled ? 'border-zen-black/5' : 'border-transparent'}`
+      ? 'bg-gradient-to-b from-graphite to-graphite/80 backdrop-blur-md border-b border-white/10'
+      : 'bg-briefing-cream/80 backdrop-blur-md border-b border-zen-black/5'
 
   return (
     <>
@@ -336,6 +335,20 @@ export default function Navbar() {
           the Cloud close-tab, merging into the menu card via an inverted-radius
           concave corner, so button and panel read as one continuous surface. */}
       <AnimatePresence>
+        {mobileOpen && (
+          <div
+            key="mobile-menu-backdrop"
+            // Invisible click-catcher UNDER the panel (z-50) and burger
+            // (z-60): tapping anywhere outside the menu closes it (user
+            // call). NOT position:fixed — the header's translateZ(0) makes
+            // fixed children resolve against the HEADER box, so this is
+            // absolute + viewport-height instead (the header itself is
+            // fixed to the viewport top, giving the same coverage).
+            className="absolute inset-x-0 top-0 z-40 h-[100dvh] md:hidden pointer-events-auto"
+            onClick={closeMenu}
+            aria-hidden
+          />
+        )}
         {mobileOpen && (
           <motion.div
             key="mobile-menu"

@@ -86,7 +86,7 @@ export const ATTRACTION_MARKERS: readonly CityMarker[] = [
   // Tateyama–Kurobe: NW sea rail, one slot above Shirakawa-go's.
   { name: 'Tateyama Kurobe', region: 'chubu', icon: 'mountain', x: 582, y: 674, lx: 420, ly: 470, anchor: 'end', sub: 'Alpine Route' },
   // Kamikochi: east sea rail, one slot above Mt. Fuji's.
-  { name: 'Kamikochi', region: 'chubu', icon: 'mountain', x: 585, y: 694, lx: 830, ly: 610, anchor: 'start' },
+  { name: 'Kamikochi', region: 'chubu', icon: 'mountain', x: 598, y: 690, lx: 830, ly: 610, anchor: 'start' },
   { name: 'Hakone', region: 'kanto', icon: 'onsen', x: 656, y: 757, lx: 830, ly: 870, anchor: 'start' },
   { name: 'Fushimi Inari', region: 'kinki', icon: 'torii', x: 497, y: 780, lx: 355, ly: 665, anchor: 'end' },
   { name: 'Shirakawa-go', region: 'chubu', icon: 'village', x: 545, y: 675, lx: 420, ly: 540, anchor: 'end' },
@@ -130,11 +130,11 @@ export const AUTUMN_MARKERS: readonly CityMarker[] = [
   { name: 'Kanazawa', region: 'chubu', x: 545, y: 672, lx: 420, ly: 655, anchor: 'end', sub: '🍂 11/4 · 🍁 12/2' },
   { name: 'Tokyo', region: 'kanto', x: 697, y: 715, lx: 855, ly: 705, anchor: 'start', sub: '🍂 11/27 · 🍁 12/2' },
   // Kamikochi below Tokyo's slot on the east rail (user call: downward).
-  { name: 'Kamikochi', region: 'chubu', icon: 'mountain', x: 585, y: 694, lx: 830, ly: 785, anchor: 'start', sub: '🍁 10/15 – 11/5' },
+  { name: 'Kamikochi', region: 'chubu', icon: 'mountain', x: 598, y: 690, lx: 830, ly: 785, anchor: 'start', sub: '🍁 10/15 – 11/5' },
   { name: 'Nagoya', region: 'chubu', x: 585, y: 776, lx: 648, ly: 905, anchor: 'start', sub: '🍂 11/20 · 🍁 12/5' },
   { name: 'Osaka', region: 'kinki', x: 461, y: 812, lx: 560, ly: 970, anchor: 'start', sub: '🍂 11/26 · 🍁 12/7' },
   { name: 'Kochi', region: 'shikoku', x: 335, y: 900, lx: 335, ly: 1040, anchor: 'start', sub: '🍂 11/19 · 🍁 12/13' },
-  { name: 'Hiroshima', region: 'chugoku', x: 300, y: 826, lx: 175, ly: 680, anchor: 'end', sub: '🍂 11/22 · 🍁 11/30' },
+  { name: 'Hiroshima', region: 'chugoku', x: 300, y: 826, lx: 175, ly: 690, anchor: 'end', sub: '🍂 11/22 · 🍁 11/30' },
   { name: 'Fukuoka', region: 'kyushu-okinawa', x: 208, y: 888, lx: 170, ly: 760, anchor: 'end', sub: '🍂 12/1 · 🍁 12/12' },
   { name: 'Kagoshima', region: 'kyushu-okinawa', x: 192, y: 1002, lx: 230, ly: 1130, anchor: 'start', sub: '🍂 12/2 · 🍁 12/16' },
 ];

@@ -344,6 +344,23 @@ function CoverCarousel({
   )
 }
 
+/** Premium-card sheen: a soft silver highlight bar that sweeps diagonally
+ *  across the card face on hover (credit-card-commercial style). Pure
+ *  composited transform — the bar just translates, nothing repaints — and
+ *  Tailwind's `hover:` variant is hover-capable-only, so touch devices never
+ *  run it. Host card must be `relative group overflow-hidden`. */
+function CardShine() {
+  return (
+    <span aria-hidden className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
+      {/* transition only WHILE hovered: the base is transition-NONE (the CSS
+          initial for transition-property is `all`, so merely omitting the
+          class still animated the return with the 900ms duration). On
+          mouse-leave the bar snaps home invisibly — forward-only shine. */}
+      <span className="absolute left-[-80%] top-[-60%] h-[220%] w-[55%] rotate-[22deg] bg-gradient-to-r from-transparent via-white/40 to-transparent transition-none duration-[900ms] ease-out group-hover:translate-x-[330%] group-hover:transition-transform" />
+    </span>
+  )
+}
+
 /** The boarding-pass card face — shared by the mobile deck (DeckCard) and the
  *  desktop row (TripCard) so the design exists in exactly one place. Expects a
  *  flex-col parent with the DECK_CARD_H height (the barcode pins via mt-auto). */
@@ -352,11 +369,13 @@ function CardFace({
   saved,
   isPending,
   onHeart,
+  onOpen,
 }: {
   tpl: PlanTemplate
   saved: boolean
   isPending: boolean
   onHeart: (id: string, e: React.MouseEvent) => void
+  onOpen: (id: string) => void
 }) {
   // Gallery when authored, else the primary cover alone (resolveCoverImage turns
   // a null into the deterministic per-trip fallback, as before).
@@ -396,23 +415,35 @@ function CardFace({
         <CoverCarousel images={images} alt={tpl.title} places={tpl.coverPlaces ?? []} drag={false} />
       </div>
 
-      {/* Rule → PREVIEW | chip | title → Rule */}
+      {/* Rule → title | chip | PREVIEW → Rule (title left with the wide cell;
+          swapped from PREVIEW-first — user call). */}
       {/* mt-2, not mt-4: the cover's dot row now sits below the image, so this
           rule needs less of its own gap or the pair reads as a big empty band. */}
       <div className="mx-5 mt-2 border-t border-zen-black/80" />
       <div className="mx-5 flex items-stretch">
-        <div className="flex flex-col items-center justify-center py-3 pr-3 font-headline text-[9px] font-bold uppercase leading-[1.5] tracking-[0.14em] text-basel-brick">
-          Preview
-          <ArrowRight className="mt-1 h-3 w-3" strokeWidth={2} />
-        </div>
-        <div className="flex items-center border-x border-zen-black/80 px-3">
-          <Chip />
-        </div>
-        <div className="flex flex-1 items-center pl-3">
+        <div className="flex flex-1 items-center pr-3">
           <h3 className="line-clamp-2 font-headline text-[20px] font-extrabold uppercase leading-[0.95] tracking-[-0.02em] text-zen-black">
             {tpl.title}
           </h3>
         </div>
+        <div className="flex items-center border-x border-zen-black/80 px-3">
+          <Chip />
+        </div>
+        {/* PREVIEW — now the ONLY door into the trip detail (whole-card click
+            removed, user call), so it dresses as a real button: solid Ocean
+            cell filling its band, arrow nudging on hover. */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onOpen(tpl.id)
+          }}
+          aria-label={`Preview ${tpl.title}`}
+          className="group/pv flex cursor-pointer flex-col items-center justify-center bg-basel-brick px-3.5 py-3 font-headline text-[9px] font-bold uppercase leading-[1.5] tracking-[0.14em] text-briefing-cream transition-colors hover:bg-[#4a77a3] active:bg-[#3f6b96]"
+        >
+          Preview
+          <ArrowRight className="mt-1 h-3 w-3 transition-transform group-hover/pv:translate-x-0.5" strokeWidth={2.25} />
+        </button>
       </div>
       <div className="mx-5 border-t border-zen-black/80" />
 
@@ -602,16 +633,22 @@ export function TripCoverflow({
                 left: '50%',
                 marginLeft: -CARD_MAX_W / 2,
               }}
-              onClick={() => (isCentre ? onOpen(tpl.id) : setActive(i))}
-              className={`absolute top-0 flex flex-col overflow-hidden rounded-[20px] bg-briefing-cream shadow-[0_20px_60px_rgba(0,0,0,0.35)] ${
-                isCentre ? 'cursor-pointer' : 'cursor-pointer'
+              // Side cards focus themselves; the CENTRE card no longer opens
+              // on click — PREVIEW (inside CardFace) is the only door now.
+              onClick={() => {
+                if (!isCentre) setActive(i)
+              }}
+              className={`group absolute top-0 flex flex-col overflow-hidden rounded-[20px] bg-briefing-cream shadow-[0_20px_60px_rgba(0,0,0,0.35)] ${
+                isCentre ? '' : 'cursor-pointer'
               }`}
             >
+              <CardShine />
               <CardFace
                 tpl={tpl}
                 saved={savedIds.has(tpl.id)}
                 isPending={pending.has(tpl.id)}
                 onHeart={onHeart}
+                onOpen={onOpen}
               />
             </motion.div>
           )
@@ -658,11 +695,11 @@ export function TripCard({
 }) {
   return (
     <div
-      onClick={() => onOpen(tpl.id)}
       style={{ width: DECK_CARD_W, height: DECK_CARD_H }}
-      className="flex cursor-pointer flex-col overflow-hidden rounded-[20px] bg-briefing-cream shadow-[0_20px_60px_rgba(0,0,0,0.35)] transition-[transform,box-shadow] duration-300 hover:-translate-y-2 hover:shadow-[0_28px_70px_rgba(0,0,0,0.45)]"
+      className="group relative flex flex-col overflow-hidden rounded-[20px] bg-briefing-cream shadow-[0_20px_60px_rgba(0,0,0,0.35)] transition-[transform,box-shadow] duration-300 hover:-translate-y-2 hover:shadow-[0_28px_70px_rgba(0,0,0,0.45)]"
     >
-      <CardFace tpl={tpl} saved={saved} isPending={isPending} onHeart={onHeart} />
+      <CardShine />
+      <CardFace tpl={tpl} saved={saved} isPending={isPending} onHeart={onHeart} onOpen={onOpen} />
     </div>
   )
 }
@@ -758,17 +795,19 @@ export function TripCardCompact({
 
   return (
     <div
-      onClick={() => onOpen(tpl.id)}
+      // No card-wide onClick — the PREVIEW button in the title row is the
+      // only way into the trip detail, matching the tall card (user call).
       // max-w-md (448px) not 3xl (768px): at full width the row stretched, all
       // the content bunched left and the right half sat empty. Mobile is
       // unaffected — below 448px this is simply w-full.
       // The tilt is a Tailwind rotate utility so it COMPOSES with the hover
       // translate (both write the same transform variables) — a raw
       // `transform` in style would clobber the lift instead.
-      className={`flex w-full max-w-md cursor-pointer overflow-hidden rounded-xl bg-briefing-cream shadow-[0_10px_30px_rgba(0,0,0,0.28)] transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:rotate-0 hover:shadow-[0_16px_40px_rgba(0,0,0,0.38)] ${
+      className={`group relative flex w-full max-w-md overflow-hidden rounded-xl bg-briefing-cream shadow-[0_10px_30px_rgba(0,0,0,0.28)] transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:rotate-0 hover:shadow-[0_16px_40px_rgba(0,0,0,0.38)] ${
         tilt === 'left' ? '-rotate-[1.2deg]' : tilt === 'right' ? 'rotate-[1.2deg]' : ''
       }`}
     >
+      <CardShine />
       {/* Left group — a column: [cover | title block] on top, then the travel
           periods as a band spanning both. The periods get the card's full width
           that way, instead of being squeezed into the narrow text column (on a
@@ -811,13 +850,28 @@ export function TripCardCompact({
           )}
         </div>
 
-        {/* Rule → title → Rule. No PREVIEW cue or chip glyph here (the tall
-            card keeps both): at this size they crowded the title, and the whole
-            card is already a click target. */}
+        {/* Rule → title | PREVIEW → Rule. No chip glyph here (the tall card
+            keeps it): at this size it crowded the title. PREVIEW is the same
+            solid Ocean button cell as the tall card's — the obvious way into
+            the trip detail. */}
         <div className="mt-2 border-t border-zen-black/80" />
-        <h3 className="py-2 font-headline text-[15px] font-extrabold uppercase leading-[1.1] tracking-[-0.02em] text-zen-black">
-          {tpl.title}
-        </h3>
+        <div className="flex items-stretch">
+          <h3 className="min-w-0 flex-1 py-2 pr-2 font-headline text-[15px] font-extrabold uppercase leading-[1.1] tracking-[-0.02em] text-zen-black">
+            {tpl.title}
+          </h3>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onOpen(tpl.id)
+            }}
+            aria-label={`Preview ${tpl.title}`}
+            className="group/pv flex shrink-0 cursor-pointer flex-col items-center justify-center bg-basel-brick px-2.5 font-headline text-[8px] font-bold uppercase leading-[1.4] tracking-[0.12em] text-briefing-cream transition-colors hover:bg-[#4a77a3] active:bg-[#3f6b96]"
+          >
+            Preview
+            <ArrowRight className="mt-0.5 h-2.5 w-2.5 transition-transform group-hover/pv:translate-x-0.5" strokeWidth={2.25} />
+          </button>
+        </div>
         <div className="border-t border-zen-black/80" />
 
             {/* Tagline. leading-[18px] absolute, not a ratio: mixed 12/10px
@@ -882,7 +936,6 @@ function DeckCard({
   onPrev: () => void
 }) {
   const x = useMotionValue(0)
-  const dragged = useRef(false)
   const isFront = pos === 0
   // A single-card deck has nowhere to swipe TO — disable drag entirely
   // (next()/prev() already no-op, but the card shouldn't even wiggle).
@@ -914,12 +967,6 @@ function DeckCard({
           ? { duration: 0 }
           : { duration: 0.66, ease: isFront ? EASE_BACK_OUT : EASE_IN_OUT }
       }
-      onPointerDown={() => {
-        dragged.current = false
-      }}
-      onDragStart={() => {
-        dragged.current = true
-      }}
       onDragEnd={(_, info) => {
         // Distance OR velocity — either alone is enough to count as a swipe.
         const left = info.offset.x < -SWIPE || info.velocity.x < -SWIPE_V
@@ -931,14 +978,11 @@ function DeckCard({
         if (left) onNext()
         else if (right) onPrev()
       }}
-      onClick={() => {
-        if (!dragged.current) onOpen(tpl.id)
-      }}
       className={`absolute left-0 top-0 flex w-full flex-col overflow-hidden rounded-[20px] bg-briefing-cream ${
         isFront ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'
       }`}
     >
-      <CardFace tpl={tpl} saved={saved} isPending={isPending} onHeart={onHeart} />
+      <CardFace tpl={tpl} saved={saved} isPending={isPending} onHeart={onHeart} onOpen={onOpen} />
     </motion.div>
   )
 }

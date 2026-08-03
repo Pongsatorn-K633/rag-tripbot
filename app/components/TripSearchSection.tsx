@@ -38,7 +38,10 @@ function MapLayerControls({
   onChange: (id: MapLayerId) => void
 }) {
   return (
-    <div className="inline-flex items-center gap-1 rounded-lg bg-briefing-cream p-0.5 shadow-[0_4px_16px_rgba(0,0,0,0.25)]">
+    // GHOST styling, same family as the RegionChip legend (transparent +
+    // cream hairlines) — the old solid-cream card was the one opaque element
+    // floating on the map panel and read as a different system (user call).
+    <div className="inline-flex items-center gap-1">
       {MAP_LAYER_OPTIONS.map((o) => {
         const active = layer === o.id
         return (
@@ -50,10 +53,10 @@ function MapLayerControls({
             aria-pressed={active}
             aria-label={o.label}
             transition={{ type: 'tween', duration: 0.22, ease: 'easeOut' }}
-            className={`flex items-center gap-1.5 overflow-hidden rounded-md px-2.5 py-1 font-sans text-xs transition-colors ${
+            className={`flex items-center gap-1.5 overflow-hidden rounded-lg border px-2.5 py-1 font-sans text-xs backdrop-blur-sm transition-[border-color,background-color,color] duration-300 ${
               active
-                ? 'bg-zen-black/10 font-semibold text-zen-black'
-                : 'text-graphite/70 hover:bg-zen-black/5'
+                ? 'border-briefing-cream/45 bg-briefing-cream/20 font-semibold text-briefing-cream'
+                : 'border-white/15 bg-white/10 text-briefing-cream/70 hover:border-basel-brick/60 hover:text-briefing-cream'
             }`}
           >
             <span className="text-[14px] leading-none" aria-hidden>
@@ -214,10 +217,12 @@ function RegionChip({
       onMouseEnter={onHoverChange ? () => onHoverChange(region.id) : undefined}
       onMouseLeave={onHoverChange ? () => onHoverChange(null) : undefined}
       aria-pressed={active}
-      className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left font-sans text-xs transition-colors ${
+      // Same glass as the search bar / Surprise-me button: white/15 hairline
+      // over a white/10 fill with blur; selected deepens to a cream tint.
+      className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left font-sans text-xs backdrop-blur-sm transition-[border-color,background-color,color] duration-300 ${
         active
-          ? 'border-briefing-cream/40 bg-briefing-cream/10 text-briefing-cream'
-          : 'border-briefing-cream/10 text-briefing-cream/60 hover:border-briefing-cream/25 hover:text-briefing-cream'
+          ? 'border-briefing-cream/45 bg-briefing-cream/20 font-semibold text-briefing-cream'
+          : 'border-white/15 bg-white/10 text-briefing-cream/70 hover:border-basel-brick/60 hover:text-briefing-cream'
       }`}
     >
       <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: region.color }} aria-hidden />
@@ -346,7 +351,11 @@ function FilterSelect({
           />
         </button>
         {open && (
-          <div className="absolute left-0 right-0 top-full z-20 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-zen-black/10 bg-white shadow-xl shadow-black/15">
+          // MOBILE: in FLOW (static) — an absolute overlay covered the modal's
+          // Done button, which on a phone has nowhere to escape to. In flow the
+          // card simply grows and Done stays reachable below the list.
+          // md+: back to the absolute overlay (the desktop modal has room).
+          <div className="static z-20 mt-2 max-h-56 overflow-y-auto rounded-2xl border border-zen-black/10 bg-white shadow-xl shadow-black/15 md:absolute md:inset-x-0 md:top-full md:max-h-64">
             {options.map((o) => {
               const active = o.value === '' ? values.length === 0 : values.includes(o.value)
               return (
@@ -482,6 +491,13 @@ export default function TripSearchSection({
   const { savedIds, pending, toggleHeart } = useSavedTemplates(callbackUrl)
 
   const [query, setQuery] = useState('')
+  // "Recommend me ✈️": `planeFlying` runs the takeoff micro-interaction;
+  // bumping `planeKey` remounts the emoji so a fresh plane glides back in.
+  // `recommendOnly` additionally keeps only trips whose ADMIN-RECOMMENDED
+  // (แนะนำ) windows are hit by the chosen travel window.
+  const [planeFlying, setPlaneFlying] = useState(false)
+  const [planeKey, setPlaneKey] = useState(0)
+  const [recommendOnly, setRecommendOnly] = useState(false)
   // Multi-select destinations — a trip matches if it touches ANY selected
   // prefecture (OR), so adding picks widens results instead of zeroing them.
   const [destList, setDestList] = useState<string[]>([])
@@ -530,6 +546,8 @@ export default function TripSearchSection({
   // Flex-widened window used for matching (raw dates still feed the duplicate flow).
   const effStart = startD ? addDaysDate(startD, -flex) : null
   const effEnd = endD ? addDaysDate(endD, flex) : null
+  // " · ±7 วัน" for the date chip when a widening is active (empty at ตรงเป๊ะ).
+  const flexLabel = flex ? ` · ${FLEX_CHIPS.find((c) => c.value === flex)?.label ?? `±${flex} วัน`}` : ''
   const activeFilterCount = (destList.length ? 1 : 0) + (startD ? 1 : 0)
 
   // Auto-collapse the filter modal if the page scrolls far from the search bar
@@ -561,7 +579,13 @@ export default function TripSearchSection({
           if (q && !`${t.title} ${t.description ?? ''}`.toLowerCase().includes(q)) return false
           if (destList.length && !destList.some((d) => t.title.toLowerCase().includes(d.toLowerCase()))) return false
           if (regionList.length && !regionList.some((r) => tripInRegion(t, r))) return false
-          if (effStart && effEnd && !evaluateTrip(t.availability, effStart, effEnd, t.totalDays).matches) return false
+          if (effStart && effEnd) {
+            const ev = evaluateTrip(t.availability, effStart, effEnd, t.totalDays)
+            if (!ev.matches) return false
+            // Recommend-me mode: only trips the ADMIN starred for this window
+            // (a feasible span lands in a แนะนำ range).
+            if (recommendOnly && !ev.recommended) return false
+          }
           return true
         })
     : base
@@ -606,6 +630,29 @@ export default function TripSearchSection({
     return () => { active = false }
   }, [openFromQueryParam])
 
+  // The filter-bubble row hangs BELOW the search bar as an absolute layer (so
+  // chips can never move the bar itself). The header's static bottom margin
+  // only reserves ONE line of it, so a wrapped set used to overlap the cards —
+  // most visible on a phone, where every chip is its own line. Measure the row
+  // and grow the reserve to match. ResizeObserver, not a render-time read:
+  // wrapping depends on layout, and the row also changes as chips animate in.
+  const chipsRef = useRef<HTMLDivElement>(null)
+  const [chipsExtra, setChipsExtra] = useState(0)
+  useEffect(() => {
+    const el = chipsRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const baseReserve = compactCards ? 64 : 96 // mb-16 / mb-24
+    const measure = () => {
+      // 12px = the row's mt-3 hang, 16px = breathing room under the last line.
+      const needed = el.offsetHeight + 12 + 16
+      setChipsExtra(needed > baseReserve ? needed : 0)
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [compactCards])
+
   const emptyText = filtering
     ? 'ไม่พบทริปที่ตรงเงื่อนไข · No matching trips'
     : 'ยังไม่มีแพลนในขณะนี้ · No trips yet.'
@@ -613,10 +660,15 @@ export default function TripSearchSection({
   return (
     <>
       {/* Tighter above the compact list (/discover) than above home's coverflow,
-          which needs room for the fanned cards to breathe. The extra margin
-          also RESERVES the line the absolutely-positioned filter bubbles hang
-          into below the search bar. */}
-      <div className={compactCards ? 'mb-16' : 'mb-24'}>
+          which needs room for the fanned cards to breathe. The margin also
+          RESERVES the line the absolutely-positioned filter bubbles hang into
+          below the search bar — and GROWS with the measured bubble row, so a
+          filter set that wraps to several lines pushes the cards down instead
+          of overlapping them (the reserve is static only up to one line). */}
+      <div
+        className={compactCards ? 'mb-16' : 'mb-24'}
+        style={chipsExtra > 0 ? { marginBottom: chipsExtra } : undefined}
+      >
         <div className="md:flex md:items-center md:gap-14">
           <div className="shrink-0">
             <HeadingTag className="font-headline font-bold text-3xl md:text-5xl tracking-tight">{title}</HeadingTag>
@@ -626,7 +678,11 @@ export default function TripSearchSection({
               no auto-centering); View all takes the right edge via ml-auto.
               Mobile: full-width below the title. Filter button INSIDE the
               field (far right); the chips live below the field. */}
-          <div className="relative mt-5 md:mt-0 w-full max-w-lg md:max-w-4xl">
+          {/* md:flex-1 (no max-w cap): the bar + button line runs the row's
+              full remaining width, ending symmetrically at the content edge
+              (the old 4xl cap left a stray gap on the right — user call). */}
+          <div className="mt-5 flex w-full max-w-lg items-center gap-2.5 md:mt-0 md:max-w-5xl md:flex-1">
+          <div className="relative min-w-0 flex-1">
             <div className="group relative">
               {/* Ocean bloom on focus — the hero button's halo vocabulary
                   (same radial + rgba), answering focus instead of hover. */}
@@ -681,7 +737,7 @@ export default function TripSearchSection({
                 into is reserved statically by the header block's bottom
                 margin below. */}
             {
-              <div className="absolute left-0 top-full mt-3 flex w-full flex-wrap items-start gap-2">
+              <div ref={chipsRef} className="absolute left-0 top-full mt-3 flex w-full flex-wrap items-start gap-2">
                 {regionList.map((id) => {
                   const region = JAPAN_REGIONS.find((r) => r.id === id)
                   if (!region) return null
@@ -725,13 +781,18 @@ export default function TripSearchSection({
                 ))}
                 {startD && (
                   <span className="flex items-center gap-1 rounded-full border border-white/15 bg-white/10 py-1 pl-3 pr-1.5 text-xs font-semibold text-briefing-cream backdrop-blur-sm">
-                    {/* A season quick-pick reads as the season, not raw dates */}
-                    {seasonPick
-                      ? `${SEASONS.find((s) => s.key === seasonPick)?.emoji ?? ''} ${seasonPick}`
-                      : `📅 ${fmtChipDate(startD)}${endD && endD.getTime() !== startD.getTime() ? ` – ${fmtChipDate(endD)}` : ''}`}
+                    {/* Recommend-me mode reads as the promise, a season
+                        quick-pick as the season — raw dates otherwise. A ±flex
+                        widening is part of what's filtering, so it trails the
+                        label instead of hiding inside the modal. */}
+                    {recommendOnly
+                      ? '✈️ ทริปแนะนำ · 2–6 เดือนหน้า'
+                      : seasonPick
+                        ? `${SEASONS.find((s) => s.key === seasonPick)?.emoji ?? ''} ${seasonPick}${flexLabel}`
+                        : `📅 ${fmtChipDate(startD)}${endD && endD.getTime() !== startD.getTime() ? ` – ${fmtChipDate(endD)}` : ''}${flexLabel}`}
                     <button
                       type="button"
-                      onClick={() => { setRange(undefined); setFlex(0); setSeasonPick(null) }}
+                      onClick={() => { setRange(undefined); setFlex(0); setSeasonPick(null); setRecommendOnly(false) }}
                       aria-label="Remove dates"
                       className="grid size-5 place-items-center rounded-full text-briefing-cream/60 transition-colors hover:bg-white/15 hover:text-briefing-cream"
                     >
@@ -741,6 +802,57 @@ export default function TripSearchSection({
                 )}
               </div>
             }
+          </div>
+          {/* "Recommend me ✈️" — OUTSIDE the bar, on its right: one tap sets
+              the travel window to 2–6 months out and keeps only trips whose
+              admin แนะนำ (recommended/"starred") windows are hit. The emoji
+              plays the takeoff micro-interaction on press. Label lg+ only —
+              on phones it's the plane pill beside the bar. */}
+          <button
+            type="button"
+            onClick={() => {
+              const from = new Date()
+              from.setMonth(from.getMonth() + 2)
+              const to = new Date()
+              to.setMonth(to.getMonth() + 6)
+              setRange({ from, to })
+              setSeasonPick(null)
+              setFlex(0)
+              setRecommendOnly(true)
+              if (!planeFlying) setPlaneFlying(true)
+            }}
+            aria-label="Surprise me — trips for the next 2–6 months"
+            // Same glass language as the search bar (border-white/15 +
+            // white/10 fill + blur), answering hover with the bar's Ocean
+            // border, so bar and button read as one instrument.
+            className="flex shrink-0 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-3 font-headline text-sm font-semibold text-briefing-cream backdrop-blur-sm transition-[border-color,box-shadow] duration-[350ms] hover:border-basel-brick/60 hover:shadow-[0_0_24px_rgba(91,136,178,0.22)]"
+          >
+            <motion.span
+              key={planeKey}
+              // leading-5 (20px), NOT leading-none: on mobile the label is
+              // hidden, so this emoji alone sets the button's content height —
+              // matching the input's text-sm line-height keeps the button
+              // exactly as tall as the search bar (it was 4px shorter).
+              className="grid place-items-center text-base leading-5"
+              initial={planeKey === 0 ? false : { x: -30, y: 22, opacity: 0, rotate: -12 }}
+              animate={
+                planeFlying
+                  ? { x: [0, 10, 68], y: [0, -4, -60], rotate: [0, -8, -22], opacity: [1, 1, 0] }
+                  : { x: 0, y: 0, rotate: 0, opacity: 1 }
+              }
+              transition={planeFlying ? { duration: 0.55, ease: 'easeIn' } : { duration: 0.35, ease: 'easeOut' }}
+              onAnimationComplete={() => {
+                if (planeFlying) {
+                  setPlaneFlying(false)
+                  setPlaneKey((k) => k + 1)
+                }
+              }}
+              aria-hidden
+            >
+              ✈️
+            </motion.span>
+            <span className="hidden whitespace-nowrap lg:inline">Surprise me</span>
+          </button>
           </div>
           {viewAllHref && (
             /* Desktop: View all — right edge of the same row, centered
@@ -777,7 +889,9 @@ export default function TripSearchSection({
               // DOWNWARD from inside the card, so the card sits a bit above
               // center to leave the calendar viewport room. overflow-y-auto
               // keeps short screens usable (scrim scrolls, nothing clips).
-              className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto px-4 pt-[max(2rem,16vh)] pb-6"
+              // pt-8 on mobile (the 16vh drop is md+): a phone needs every
+              // pixel once the destination list opens in flow below.
+              className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto px-4 pb-6 pt-8 md:pt-[max(2rem,16vh)]"
               onClick={(e) => {
                 if (e.target === e.currentTarget) setFilterOpen(false)
               }}
@@ -807,6 +921,7 @@ export default function TripSearchSection({
                     setSeasonPick(null)
                     setRange(undefined)
                     setFlex(0)
+                    setRecommendOnly(false)
                   }}
                   className="absolute right-8 top-[30px] text-xs font-semibold text-graphite/70 underline-offset-2 hover:text-basel-brick hover:underline"
                 >
@@ -866,6 +981,9 @@ export default function TripSearchSection({
                       onChange={(r) => {
                         setRange(r)
                         setSeasonPick(null)
+                        // Hand-picking dates leaves recommend-me mode — the
+                        // chip must never claim a promise the range broke.
+                        setRecommendOnly(false)
                       }}
                     />
                   </div>
@@ -880,6 +998,7 @@ export default function TripSearchSection({
                         key={s.key}
                         type="button"
                         onClick={() => {
+                          setRecommendOnly(false)
                           if (seasonPick === s.key) {
                             setSeasonPick(null)
                             setRange(undefined)
@@ -1174,7 +1293,9 @@ export default function TripSearchSection({
             type="button"
             onClick={() => setMapSheetOpen(true)}
             aria-label="Open region map"
-            className="fixed right-4 top-[255px] z-40 grid size-11 place-items-center rounded-full border border-zen-black/10 bg-briefing-cream text-graphite shadow-[0_8px_24px_rgba(0,0,0,0.35)] lg:hidden"
+            // top tracks /discover's pt-32 header (was 255px under the old
+            // pt-26 — the page gained 24px of top padding).
+            className="fixed right-4 top-[279px] z-40 grid size-11 place-items-center rounded-full border border-zen-black/10 bg-briefing-cream text-graphite shadow-[0_8px_24px_rgba(0,0,0,0.35)] lg:hidden"
           >
             <MapIcon size={18} strokeWidth={1.75} />
           </button>

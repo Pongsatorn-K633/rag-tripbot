@@ -23,8 +23,9 @@ export default function DiscoverPage() {
   return (
     // No bg here — ClientLayout's fixed canvas paints Graphite for this route,
     // so it covers the full viewport however short the content is.
-    // pt-26 (104px): the fixed navbar is 94px at rest, so this leaves a 10px
-    // breath under it — any tighter and the title collides with the bar.
+    // pt-32 (128px): the fixed navbar is 94px at rest — this gives the title
+    // a ~34px breath under it (was a tight 10px; user asked for more air,
+    // matching the my-trip/create bump).
     // px-4 on mobile (was px-8): the compact cards are full-width rows, so the
     // page gutter is the only thing limiting how long they can run.
     // NO min-h-screen: it forced main to a full viewport on top of the 94px
@@ -32,7 +33,7 @@ export default function DiscoverPage() {
     // the footer sat just past the fold even with little content. Without it
     // the body's flex column stretches ClientLayout's flex-grow wrapper
     // instead, which parks the footer at the true bottom.
-    <main className="px-4 pb-24 pt-26 text-briefing-cream sm:px-8">
+    <main className="px-4 pb-24 pt-32 text-briefing-cream sm:px-8">
       {/* Fixed wallpaper layer — above ClientLayout's graphite canvas (later
           in DOM at the same -z-10), below all content. */}
       <div

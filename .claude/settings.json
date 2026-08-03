@@ -22,7 +22,10 @@
       "PowerShell($env:USE_PROD_DB='1'; npx tsx scripts/export-dopamichi.ts; $env:USE_PROD_DB=$null; git diff --stat data/snapshots/)",
       "PowerShell(git push origin main)",
       "PowerShell(git add .claude/settings.json)",
-      "PowerShell(git check-ignore .env .env.local)"
+      "PowerShell(git check-ignore .env .env.local)",
+      "Bash(perl -0pi -e \"s/pt-24 sm:pt-32 pb-16/pt-28 sm:pt-36 pb-16/\" app/my-trip/page.tsx)",
+      "Bash(perl -0pi -e \"s/pt-32 pb-24/pt-36 pb-24/\" app/create/page.tsx)",
+      "Bash(perl -0pi -e \"s/\\\\{ name: 'Kamikochi', region: 'chubu', icon: 'mountain', x: 585, y: 694/{ name: 'Kamikochi', region: 'chubu', icon: 'mountain', x: 598, y: 690/g\" lib/japan-regions.ts)"
     ],
     "additionalDirectories": [
       "C:\\Users\\WindowS 10\\Documents\\VSCode\\rag-tripbot"
