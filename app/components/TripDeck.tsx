@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { motion, animate, useMotionValue, useReducedMotion } from 'motion/react'
-import { ArrowRight, ChevronLeft, ChevronRight, Heart } from 'lucide-react'
+import { ArrowRight, Car, ChevronLeft, ChevronRight, Heart } from 'lucide-react'
 import { resolveCoverImage } from '@/lib/cover-image'
 import { formatRanges } from '@/lib/availability'
 import type { PlanTemplate } from '@/app/components/PlanCard'
@@ -35,16 +35,22 @@ const STACK = [
  * which means the card height must track the width too, otherwise a fixed height
  * leaves dead space under the content. Height = chrome + cover, where
  * cover = (cardWidth − horizontal padding) × 1.25.
- * Chrome assumes the fixed 4-line text block (2-line tagline / แนะนำ / เปิดให้เที่ยว).
+ * Chrome assumes the fixed text block: 2-line tagline / แนะนำ / เปิดให้เที่ยว,
+ * plus the reserved car-badge row.
  */
 const CARD_MAX_W = 300 // px — the only size dial; the 4:5 cover makes height follow
 export const DECK_CARD_W = `min(${CARD_MAX_W}px, calc(100vw - 3rem))`
-// 281 = 258 + 23: the tagline grew to a two-line clamp (one extra leading-[23px]
-// row in the text block below). The 258 base: the cover's dot row moved OUT of
-// the image (+10px: mt-1 + a 6px dot), offset by tightening the rule below it
-// from mt-4 to mt-2 (−8px). Without tracking this the fixed-height card would
-// clip its own barcode.
-export const DECK_CARD_H = `calc(281px + (min(${CARD_MAX_W}px, 100vw - 3rem) - 40px) * 1.25)`
+// 323 = 311 + 12: breathing room between the tagline and the badge/period
+// group (that group is bottom-pinned by mt-auto, so the extra height becomes
+// a gap above it and pushes the group down). 311 = 281 + 30 was the
+// car-rental badge row (22px + its 8px gap), RESERVED on every card so the
+// period lines sit at one height whether a trip needs a rental or not.
+// 281 = 258 + 23 was the tagline growing to a two-line clamp
+// (one extra leading-[23px] row). The 258 base: the cover's dot row moved OUT
+// of the image (+10px: mt-1 + a 6px dot), offset by tightening the rule below
+// it from mt-4 to mt-2 (−8px). Without tracking this the fixed-height card
+// would clip its own barcode.
+export const DECK_CARD_H = `calc(323px + (min(${CARD_MAX_W}px, 100vw - 3rem) - 40px) * 1.25)`
 
 const TILT = [-1.5, 2, -2.5, 1.8] // per-card resting rotation (deg)
 const SWIPE = 36 // fling threshold (px) — distance alone
@@ -78,15 +84,40 @@ function Chip({ w = 34, h = 26 }: { w?: number; h?: number }) {
 }
 
 /**
- * Lean for a trip whose admin hasn't picked one — every compact card tilts, so
- * a stack reads as scattered tickets. Derived from the trip id, NOT Math.random:
- * a real random would re-roll on every render, so cards would jump between
- * paints and the server and client HTML wouldn't match. Same trip, same lean.
+ * Hover lean for a trip whose admin hasn't picked one. Derived from the trip
+ * id, NOT Math.random: a real random would re-roll on every render, so cards
+ * would jump between paints and the server and client HTML wouldn't match.
+ * Same trip, same lean.
  */
 function defaultTilt(seed: string): 'left' | 'right' {
   let h = 0
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0
   return (h & 1) === 0 ? 'left' : 'right'
+}
+
+/**
+ * "Needs a rental car" badge — the car glyph alone (the check that used to
+ * follow it read as clutter at this size). Only rendered for trips whose V3
+ * `overview.car_rental.primary` is 'Y'; `compact` shrinks it for the
+ * horizontal card. The duration rides along when the admin authored one.
+ */
+function CarRentalBadge({
+  duration,
+  compact = false,
+}: {
+  duration?: string | null
+  compact?: boolean
+}) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full bg-basel-brick/10 font-semibold text-basel-brick ${
+        compact ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-[11px]'
+      }`}
+    >
+      <Car className={compact ? 'size-3' : 'size-3.5'} strokeWidth={2.25} aria-hidden />
+      <span className="whitespace-nowrap">แนะนำให้เช่ารถ{duration ? ` · ${duration}` : ''}</span>
+    </span>
+  )
 }
 
 /** Deterministic decorative barcode — same trip always gets the same pattern. */
@@ -453,13 +484,14 @@ function CardFace({
           half-leading, so the gaps read uneven). 23px also clears Thai's stacked marks,
           which a line-clamp box — exactly one line-height tall — would otherwise shave.
           Periods clamp by range count, never mid-date: a cut range reads as a wrong one. */}
-      {/* min-h = 4 × leading-[23px]: the card's height budget assumes a full
-          four-line block (TWO-line tagline / แนะนำ / เปิดให้เที่ยว), but a trip
-          missing one — a short tagline, no `available` window — would otherwise
-          leave that line's slack for mt-auto to absorb, so its barcode and tear
-          line sat at a different height than a full card's. Reserving the band
-          keeps every card identical whatever the data. */}
-      <div className="mx-5 mb-2.5 mt-3 flex min-h-[92px] flex-col">
+      {/* min-h = 4 × leading-[23px] + the reserved car-badge row (30px): the
+          card's height budget assumes a full block (TWO-line tagline / แนะนำ /
+          เปิดให้เที่ยว / badge), but a trip missing one — a short tagline, no
+          `available` window, no rental — would otherwise leave that line's
+          slack for mt-auto to absorb, so its barcode and tear line sat at a
+          different height than a full card's. Reserving the band keeps every
+          card identical whatever the data. */}
+      <div className="mx-5 mb-2.5 mt-3 flex min-h-[134px] flex-col">
         {tpl.description && (
           <p className="line-clamp-2 font-sans text-[13px] leading-[23px] text-zen-black/80">
             {tpl.description}
@@ -470,6 +502,13 @@ function CardFace({
             periods, so แนะนำ/เปิดตามฤดูกาล align at the same height across
             the whole deck (they hugged the tagline before). */}
         <div className="mt-auto">
+        {/* Car badge FIRST, then the periods — the periods are the card's
+            last line on every card (user call). ALWAYS reserved (fixed
+            height, empty for trips with no rental) so the period lines below
+            land at the same height whatever the data. */}
+        <div className="mb-2 flex h-[22px] items-center">
+          {tpl.carRental && <CarRentalBadge duration={tpl.carRentalDuration} />}
+        </div>
         {rec.length > 0 && (
           <p className="line-clamp-1 text-[11px] font-bold leading-[23px] text-basel-brick">
             <span className="mr-1 tracking-widest text-basel-brick/75">แนะนำ</span>
@@ -736,8 +775,11 @@ export function TripCardCompact({
   // photo in its header row rather than overlaying the image.
   const [coverIdx, setCoverIdx] = useState(0)
   const place = tpl.coverPlaces?.[coverIdx]
-  // Admin's pick when they've made one (including an explicit 'none'); every
-  // other trip leans one way or the other rather than sitting straight.
+  // Tilt is a HOVER state, never a resting one (user call): a rotated layer
+  // loses subpixel text antialiasing and resamples its photo, so a resting
+  // tilt made every card permanently soft. At rest the card is straight and
+  // crisp; the lean plays only while pointed at, alongside the lift. The
+  // admin's `card_tilt` now picks that hover direction (unset → id-derived).
   const tilt =
     tpl.cardTilt === 'none' || tpl.cardTilt === 'left' || tpl.cardTilt === 'right'
       ? tpl.cardTilt
@@ -800,11 +842,13 @@ export function TripCardCompact({
       // max-w-md (448px) not 3xl (768px): at full width the row stretched, all
       // the content bunched left and the right half sat empty. Mobile is
       // unaffected — below 448px this is simply w-full.
-      // The tilt is a Tailwind rotate utility so it COMPOSES with the hover
-      // translate (both write the same transform variables) — a raw
-      // `transform` in style would clobber the lift instead.
-      className={`group relative flex w-full max-w-md overflow-hidden rounded-xl bg-briefing-cream shadow-[0_10px_30px_rgba(0,0,0,0.28)] transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:rotate-0 hover:shadow-[0_16px_40px_rgba(0,0,0,0.38)] ${
-        tilt === 'left' ? '-rotate-[1.2deg]' : tilt === 'right' ? 'rotate-[1.2deg]' : ''
+      // `rotate` is listed in the transition alongside transform: Tailwind v4
+      // writes the standalone `rotate` property (computed transform stays
+      // `none`), so transitioning transform alone would snap the lean instead
+      // of easing it. 0.8° — slight, since the lean is the accent and the
+      // lift is the main move.
+      className={`group relative flex w-full max-w-md overflow-hidden rounded-xl bg-briefing-cream shadow-[0_10px_30px_rgba(0,0,0,0.28)] transition-[transform,rotate,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(0,0,0,0.38)] ${
+        tilt === 'left' ? 'hover:-rotate-[0.8deg]' : tilt === 'right' ? 'hover:rotate-[0.8deg]' : ''
       }`}
     >
       <CardShine />
@@ -832,7 +876,10 @@ export function TripCardCompact({
 
           {/* min-w-0: without it this flex child refuses to shrink and the text
               below stops wrapping inside the column. */}
-          <div className="flex min-w-0 flex-1 flex-col py-3 pl-3">
+          {/* pb-1.5 (not the pt's 12px): that bottom padding IS the gap between
+              the car badge and the periods' divider below — halved so the
+              badge sits closer to the line. */}
+          <div className="flex min-w-0 flex-1 flex-col pb-1.5 pl-3 pt-3">
         {/* Cover caption only — the day count and save button both live in the
             band at the card's bottom-right now. The caption sits here rather
             than over the photo: off the image it's plain page paint, so it
@@ -881,6 +928,15 @@ export function TripCardCompact({
               <p className="mt-1.5 font-sans text-[12px] leading-[18px] text-zen-black/80">
                 {tpl.description}
               </p>
+            )}
+            {/* Car badge lives in the DESCRIPTION zone (above the periods'
+                divider), pinned by mt-auto to that column's last line — so it
+                sits level with the cover's bottom edge however long the
+                tagline runs. */}
+            {tpl.carRental && (
+              <div className="mt-auto pt-2">
+                <CarRentalBadge duration={tpl.carRentalDuration} compact />
+              </div>
             )}
           </div>
         </div>
@@ -955,12 +1011,18 @@ function DeckCard({
       dragMomentum={false}
       // zIndex tops out BELOW 30: home's fixed status-bar scrim is z-30 and
       // must paint over the deck; 40 put the front card above it.
-      style={{ x, height: DECK_CARD_H, zIndex: 28 - pos * 6, boxShadow: pose.shadow }}
+      // The OUTER element deliberately carries NO rotation — only drag/x/y/
+      // scale/opacity. Motion composites this element, and a composited layer
+      // is rasterized UNROTATED and then transformed, so a rotation here would
+      // resample already-drawn glyphs (real blur, photo included). With
+      // translation only, the texture blits 1:1. The tilt lives on the inner
+      // element below, where it is painted INTO the raster at device
+      // resolution instead of applied to it.
+      style={{ x, height: DECK_CARD_H, zIndex: 28 - pos * 6 }}
       animate={{
         y: pose.y,
         opacity: pose.opacity,
         scale: pose.scale,
-        rotate: tilt,
       }}
       transition={
         reduced
@@ -978,11 +1040,27 @@ function DeckCard({
         if (left) onNext()
         else if (right) onPrev()
       }}
-      className={`absolute left-0 top-0 flex w-full flex-col overflow-hidden rounded-[20px] bg-briefing-cream ${
+      className={`absolute left-0 top-0 w-full ${
         isFront ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'
       }`}
     >
-      <CardFace tpl={tpl} saved={saved} isPending={isPending} onHeart={onHeart} onOpen={onOpen} />
+      {/* Inner = the visible card: the tilt plus ALL the paint (surface,
+          radius, clip, shadow). Because the rotation sits on the painted
+          element rather than the composited one, the glyphs and the photo are
+          rasterized already-rotated — sharp — instead of being resampled from
+          an unrotated texture. */}
+      <motion.div
+        animate={{ rotate: tilt }}
+        transition={
+          reduced
+            ? { duration: 0 }
+            : { duration: 0.66, ease: isFront ? EASE_BACK_OUT : EASE_IN_OUT }
+        }
+        style={{ boxShadow: pose.shadow }}
+        className="flex h-full w-full flex-col overflow-hidden rounded-[20px] bg-briefing-cream"
+      >
+        <CardFace tpl={tpl} saved={saved} isPending={isPending} onHeart={onHeart} onOpen={onOpen} />
+      </motion.div>
     </motion.div>
   )
 }

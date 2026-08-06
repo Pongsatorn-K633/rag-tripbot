@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { useSession, signIn } from 'next-auth/react'
 import { DayPicker, type DateRange } from 'react-day-picker'
 import useEmblaCarousel from 'embla-carousel-react'
-import { ArrowLeft, CalendarDays, CalendarCheck, AlertTriangle, Plane, ChevronLeft, Share2, Check, Copy } from 'lucide-react'
+import { ArrowLeft, CalendarDays, CalendarCheck, AlertTriangle, Plane, ChevronDown, ChevronLeft, Share2, Check, Copy } from 'lucide-react'
 import 'react-day-picker/style.css'
 import Image from 'next/image'
 import { OverviewPanel, ItineraryPanel, DayChips, type DaySel } from '@/app/components/TripPreviewPanels'
@@ -450,8 +450,11 @@ export default function PlanPreviewModal({
               )}
             </>
           ) : (
-            /* Date / saving / done steps — centered card on the cream takeover */
-            <div className="mx-auto max-w-lg px-4 py-8">
+            /* Date / saving / done steps — centered card on the cream takeover.
+               -mt-7 + z-10 mirrors the preview's tab pill: the hero reserves
+               ~48px of cream under the title, so without pulling back over
+               that seam the card floated far below the trip name. */
+            <div className="relative z-10 mx-auto -mt-7 max-w-lg px-4 pb-8">
               <div className="rounded-2xl bg-white p-5 shadow-lg sm:p-6">
                 {saveState === 'done' ? (
                   <div className="text-center py-8 space-y-4">
@@ -507,6 +510,89 @@ export default function PlanPreviewModal({
   )
 }
 
+/**
+ * Single-select dropdown in the app's own control language: a rounded-full
+ * pill trigger with a rotating chevron, and a rounded-2xl popover list — the
+ * same vocabulary as the filter modal's destination select.
+ *
+ * NOT a native <select>: its dropdown is drawn by the OS (unstyleable, and it
+ * highlights with the system blue), and its built-in arrow can't be
+ * positioned — which is exactly what looked off here.
+ */
+function PillSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+  widthClass = 'flex-1',
+  alignRight = false,
+}: {
+  value: string
+  onChange: (v: string) => void
+  options: { value: string; label: string }[]
+  placeholder: string
+  widthClass?: string
+  /** Open the list leftward — for a narrow control near the right edge. */
+  alignRight?: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  // Empty value falls back to the muted placeholder rather than the ''
+  // option's own label, so "not chosen" reads as a hint, not a choice.
+  const current = value ? options.find((o) => o.value === value) : undefined
+  return (
+    <div className={`relative min-w-0 ${widthClass}`}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-1.5 rounded-full border border-zen-black/15 bg-white py-2 pl-4 pr-3 text-sm transition-colors hover:border-basel-brick/50"
+      >
+        <span className={`truncate ${current ? 'font-medium text-zen-black' : 'text-graphite/60'}`}>
+          {current?.label ?? placeholder}
+        </span>
+        <ChevronDown
+          className={`size-4 shrink-0 text-graphite/50 transition-transform ${open ? 'rotate-180' : ''}`}
+          strokeWidth={2.25}
+          aria-hidden
+        />
+      </button>
+      {open && (
+        <>
+          {/* Outside-click catcher, under the list and above everything else. */}
+          <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} aria-hidden />
+          <div
+            className={`absolute top-full z-30 mt-1.5 max-h-56 w-max min-w-full max-w-[15rem] overflow-y-auto rounded-2xl border border-zen-black/10 bg-white p-1 shadow-xl shadow-black/10 ${
+              alignRight ? 'right-0' : 'left-0'
+            }`}
+          >
+            {options.map((o) => {
+              const active = o.value === value
+              return (
+                <button
+                  key={o.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(o.value)
+                    setOpen(false)
+                  }}
+                  className={`flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm transition-colors ${
+                    active
+                      ? 'bg-basel-brick/10 font-semibold text-basel-brick'
+                      : 'text-zen-black hover:bg-zen-black/5'
+                  }`}
+                >
+                  <span className="truncate">{o.label}</span>
+                  {active && <Check className="size-3.5 shrink-0" strokeWidth={3} aria-hidden />}
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 // ── Required travel-date range step ─────────────────────────────────────────
 
 function DateStep({
@@ -558,75 +644,98 @@ function DateStep({
   const depTight = depTime ? departureTooTight(lastDayLastTime, depTime, flight.departure?.nextDay) : false
   const depAfter = depTime ? departureIsAfter(lastDayLastTime, depTime, flight.departure?.nextDay) : false
   return (
-    <div className="space-y-5">
+    // font-detail + space-y-4: the trip-detail panels' own shell, so this step
+    // reads as the same product rather than a different form.
+    <div className="space-y-4 font-detail">
       <div className="flex items-center gap-2">
         <button
           onClick={onBack}
           disabled={saving}
-          className="text-zen-black/40 hover:text-zen-black transition-colors disabled:opacity-40"
+          className="text-graphite/50 transition-colors hover:text-zen-black disabled:opacity-40"
           aria-label="ย้อนกลับ"
         >
           <ArrowLeft size={18} strokeWidth={2.5} />
         </button>
-        <h3 className="font-headline font-black text-xl text-zen-black">เลือกวันเดินทาง</h3>
+        {/* The overview cards' heading scale (was font-headline black xl). */}
+        <h3 className="text-lg font-extrabold tracking-tight text-zen-black">เลือกช่วงวันเดินทางของคุณ </h3>
       </div>
-      <p className="text-sm text-zen-black leading-relaxed">
-        เลือกช่วงวันเดินทางของคุณ (แผนนี้มี {tripDays} วัน — เลือกได้ยาวกว่าได้)
-        สามารถแก้ไขเพิ่มลดจำนวนวันได้ที่ My Trip
-      </p>
+      <p className="text-[13px] leading-relaxed text-graphite">
+        <span className="mr-2">แพลนทริปนี้มี {tripDays} วัน</span>
+        <span className="mr-2">&bull;</span>
+        <span>สามารถเลือกมากกว่า {tripDays} วันได้</span>
+        <br />
+        <span className="text-graphite/70">
+          โดยวันที่เกินมาระบบจะใส่ให้เป็นวันอิสระ (Free Day) <br /> (สามารถแก้ไขเพิ่มลดจำนวนวันได้ที่ My Trip)
+        </span>
+      </p>  
 
-      <div
-        className="rdp-brand flex justify-center border border-zen-black/10 rounded-xl bg-white p-2"
-        style={
-          {
-            '--rdp-accent-color': '#B43325',
-            '--rdp-accent-background-color': '#f1e2de',
-            '--rdp-today-color': '#B43325',
-            '--rdp-range_middle-color': '#231a0e',
-          } as React.CSSProperties
-        }
-      >
-        <DayPicker
-          mode="range"
-          min={1}
-          selected={range}
-          onSelect={onChange}
-          defaultMonth={from ?? today}
-          numberOfMonths={1}
-          disabled={{ before: today }}
-          showOutsideDays
-        />
-      </div>
-
-      {/* Range summary */}
-      {from && (
-        <div className="flex items-center justify-center gap-3 text-sm bg-white border border-zen-black/10 rounded-lg px-4 py-3">
-          <CalendarDays size={16} className="text-basel-brick" strokeWidth={2.5} />
-          <span className="font-semibold text-zen-black">{fmtThai(from)}</span>
-          <span className="text-zen-black/30">→</span>
-          {to ? (
-            <span className="font-semibold text-zen-black">{fmtThai(to)}</span>
-          ) : (
-            <span className="text-zen-black/40">เลือกวันสิ้นสุด</span>
-          )}
-          {valid && <span className="text-zen-black/40 text-xs">· {tripLength} วัน</span>}
+      {/* Calendar — a white rounded-3xl card like every overview section, with
+          the range summary as a cream sub-block inside it. */}
+      <section className="rounded-3xl border border-zen-black/10 bg-white p-4 shadow-sm">
+        {/* text-zen-black is EXPLICIT: this step renders inside the modal's
+            light-on-dark chrome, and the day numbers inherited that near-white
+            colour — invisible on the white card. */}
+        <div className="rdp-brand flex justify-center text-zen-black">
+          <DayPicker
+            mode="range"
+            min={1}
+            selected={range}
+            onSelect={onChange}
+            defaultMonth={from ?? today}
+            numberOfMonths={1}
+            disabled={{ before: today }}
+            showOutsideDays
+            // Vars go on the DayPicker ROOT, not a wrapper: react-day-picker
+            // declares `--rdp-accent-color: blue` on `.rdp-root` itself, so an
+            // ancestor's value is always overridden by the picker's own
+            // declaration (that's why the nav arrows were rdp's default blue).
+            style={
+              {
+                '--rdp-accent-color': '#5B88B2',
+                '--rdp-accent-background-color': '#E7EEF5',
+                '--rdp-today-color': '#5B88B2',
+                '--rdp-range_middle-color': '#122C4F',
+              } as React.CSSProperties
+            }
+          />
         </div>
-      )}
 
-      {/* Too short for the plan */}
+        {/* Range summary */}
+        {from && (
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2 rounded-2xl bg-briefing-cream px-3 py-2.5">
+            <CalendarDays className="size-4 shrink-0 text-basel-brick" strokeWidth={2.25} />
+            <span className="text-sm font-semibold text-zen-black">{fmtThai(from)}</span>
+            <span className="text-graphite/40">→</span>
+            {to ? (
+              <span className="text-sm font-semibold text-zen-black">{fmtThai(to)}</span>
+            ) : (
+              <span className="text-sm font-medium text-graphite/60">เลือกวันสิ้นสุด</span>
+            )}
+            {/* The details panels' pill (same one "Popular" uses). */}
+            {valid && (
+              <span className="rounded-full bg-basel-brick/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-basel-brick">
+                {tripLength} วัน
+              </span>
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* Too short for the plan — BLOCKING, so it gets the loudest on-palette
+          treatment (Ocean tint + Midnight text) rather than the old red. */}
       {tooShort && (
-        <div className="flex items-start gap-2.5 text-[13px] leading-relaxed bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-800">
-          <AlertTriangle size={16} className="text-red-600 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+        <div className="flex items-start gap-2.5 rounded-2xl bg-basel-brick/10 px-4 py-3 text-[13px] leading-relaxed text-zen-black">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-basel-brick" strokeWidth={2.25} />
           <span>
             แผนนี้มี <span className="font-bold">{tripDays} วัน</span> — กรุณาเลือกช่วงให้ครอบคลุมอย่างน้อย {tripDays} วัน
           </span>
         </div>
       )}
 
-      {/* Free days appended */}
+      {/* Free days appended — informational, so the cream sub-block. */}
       {valid && freeDays > 0 && (
-        <div className="flex items-start gap-2.5 text-[13px] leading-relaxed bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 text-emerald-900">
-          <CalendarCheck size={16} className="text-emerald-600 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+        <div className="flex items-start gap-2.5 rounded-2xl bg-briefing-cream px-4 py-3 text-[13px] leading-relaxed text-graphite/80">
+          <CalendarCheck className="mt-0.5 size-4 shrink-0 text-basel-brick" strokeWidth={2.25} />
           <span>
             ช่วงวันที่คุณเลือกยาวกว่าแผนสำเร็จรูป {tripDays} วัน อยู่{' '}
             <span className="font-bold">{freeDays} วัน</span> — ระบบจะเพิ่ม
@@ -636,38 +745,48 @@ function DateStep({
       )}
 
       {/* Optional flights — personalizes the copy: arrival → Day 1, departure → last day */}
-      <div className="space-y-2 border border-zen-black/10 rounded-xl bg-white p-4">
-        <p className="text-[11px] font-black uppercase tracking-widest text-basel-brick flex items-center gap-1.5">
-          <Plane size={12} strokeWidth={2.5} /> เที่ยวบิน · Flights
-          <span className="text-zen-black/40 font-medium normal-case tracking-normal">(ไม่บังคับ)</span>
+      <section className="space-y-2 rounded-3xl border border-zen-black/10 bg-white p-5 shadow-sm">
+        {/* Section label in the overview panels' vocabulary (text-xs bold
+            uppercase tracking-wider Ocean + a size-3.5 glyph). */}
+        <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-basel-brick">
+          <Plane className="size-3.5" strokeWidth={2.25} /> เที่ยวบิน · Flights
+          <span className="font-medium normal-case tracking-normal text-graphite/50">(ไม่บังคับ)</span>
         </p>
         {(['arrival', 'departure'] as const).map((leg) => (
           <div key={leg} className="space-y-1">
+            {/* Label on its OWN line, not a 48px gutter: airport labels run
+                long ("Narita (NRT)") and the side-by-side layout clipped them
+                inside the pill. Full width now goes to the two controls. */}
+            <p className="text-[11px] font-bold uppercase tracking-wider text-graphite/70">
+              {leg === 'arrival' ? 'ขาเข้า · Arrival' : 'ขาออก · Departure'}
+            </p>
             <div className="flex items-center gap-2">
-              <span className="w-12 text-[11px] font-bold text-zen-black/50">{leg === 'arrival' ? 'ขาเข้า' : 'ขาออก'}</span>
-              <select
+              <PillSelect
                 value={flight[leg]?.airport ?? ''}
-                onChange={(e) => onFlightChange({ ...flight, [leg]: { ...flight[leg], airport: e.target.value || undefined } })}
-                className="flex-1 min-w-0 text-sm border border-zen-black/20 rounded-lg px-2 py-1.5 bg-white"
-              >
-                <option value="">สนามบิน · Airport</option>
-                {airports.map((code) => (
-                  <option key={code} value={code}>{AIRPORTS[code]?.label ?? code}</option>
-                ))}
-              </select>
-              <select
+                onChange={(v) => onFlightChange({ ...flight, [leg]: { ...flight[leg], airport: v || undefined } })}
+                placeholder="สนามบิน"
+                options={[
+                  { value: '', label: 'ยังไม่ระบุ · Later' },
+                  ...airports.map((code) => ({ value: code, label: AIRPORTS[code]?.label ?? code })),
+                ]}
+              />
+              <PillSelect
                 value={flight[leg]?.time ?? ''}
-                onChange={(e) => onFlightChange({ ...flight, [leg]: { ...flight[leg], time: e.target.value || undefined } })}
-                className="w-28 text-sm border border-zen-black/20 rounded-lg px-2 py-1.5 bg-white"
-              >
-                <option value="">เวลา</option>
-                {HOURS.map((h) => (
-                  <option key={h} value={h}>{h} น.</option>
-                ))}
-              </select>
+                onChange={(v) => onFlightChange({ ...flight, [leg]: { ...flight[leg], time: v || undefined } })}
+                placeholder="เวลา"
+                // w-32, not w-24: the pill's own padding (16+12) + chevron +
+                // gap eat ~50px, so 96px left barely 46px of text and "01:00
+                // น." truncated. 128px leaves it room to sit whole.
+                widthClass="w-32 shrink-0"
+                alignRight
+                options={[
+                  { value: '', label: 'ยังไม่ระบุ · Later' },
+                  ...HOURS.map((h) => ({ value: h, label: `${h} น.` })),
+                ]}
+              />
             </div>
             {leg === 'departure' && flight.departure?.time && (
-              <label className="flex items-center justify-end gap-1.5 text-[11px] text-zen-black cursor-pointer">
+              <label className="flex cursor-pointer items-center justify-end gap-1.5 text-[11px] text-graphite/80">
                 <input
                   type="checkbox"
                   checked={!!flight.departure?.nextDay}
@@ -681,12 +800,14 @@ function DateStep({
             )}
           </div>
         ))}
-        <p className="text-[10px] text-zen-black/40 leading-relaxed">
+        <p className="text-[11px] leading-relaxed text-graphite/60">
           ใส่เที่ยวบินเพื่อให้ระบบเพิ่มจุดรับ-ส่งสนามบินในวันแรก/วันสุดท้าย (เที่ยวบินกลางคืนถึงเช้า = เที่ยววันแรกได้เต็มวัน)
         </p>
+        {/* Amber stays ONLY on the two real-risk callouts (a missed flight is
+            not a style question) — borderless tint, like the cream blocks. */}
         {valid && flight.arrival?.time && arrivalTooLate(flight.arrival.time, dayOneFirstTime) && (
-          <div className="flex items-start gap-2 text-[11px] leading-relaxed bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-amber-900">
-            <AlertTriangle size={13} className="text-amber-600 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+          <div className="flex items-start gap-2 rounded-2xl bg-amber-50 px-3 py-2.5 text-[11px] leading-relaxed text-amber-900">
+            <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-600" strokeWidth={2.25} />
             <span>
               เครื่องถึง <b>{flight.arrival.time} น.</b> + เผื่อเดินทางจากสนามบิน ~2 ชม. อาจไม่ทันแผนวันแรกที่เริ่ม <b>{dayOneFirstTime} น.</b>
               <br />พี่ ๆ สามารถปรับได้ที่ <b>My Trip</b> หลังยืนยันและคัดลอกครับ —{' '}
@@ -700,8 +821,8 @@ function DateStep({
         )}
         {/* Departure warning — only once BOTH dates are picked AND the flight is too tight / impossible */}
         {valid && depTight && (
-          <div className="flex items-start gap-2 text-[11px] leading-relaxed rounded-lg px-3 py-2 bg-amber-50 border border-amber-200 text-amber-900">
-            <AlertTriangle size={13} className="text-amber-600 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+          <div className="flex items-start gap-2 rounded-2xl bg-amber-50 px-3 py-2.5 text-[11px] leading-relaxed text-amber-900">
+            <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-600" strokeWidth={2.25} />
             <span>
               {depAfter ? (
                 <>กิจกรรมสุดท้ายจบ ~<b>{lastDayLastTime} น.</b> หลังเวลาบิน <b>{depTime} น.</b> — มีบางที่ไปไม่ได้แล้วครับ ลองปรับเวลา แก้ไข/ลบ/สลับกิจกรรม ที่ <b>My Trip</b> ดูนะครับ</>
@@ -711,22 +832,24 @@ function DateStep({
             </span>
           </div>
         )}
-        {/* Airport check-in reminder — always shown */}
-        <div className="flex items-start gap-2 text-[11px] leading-relaxed rounded-lg px-3 py-2 bg-zen-black/[0.03] border border-zen-black/10 text-zen-black/60">
-          <Plane size={13} className="text-zen-black/40 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+        {/* Airport check-in reminder — always shown; the panels' cream block. */}
+        <div className="flex items-start gap-2 rounded-2xl bg-briefing-cream px-3 py-2.5 text-[11px] leading-relaxed text-graphite/70">
+          <Plane className="mt-0.5 size-3.5 shrink-0 text-graphite/50" strokeWidth={2.25} />
           <span>อย่าลืมเผื่อ<b>เดินทางไปสนามบิน ~2 ชม.</b> + เช็คอิน <b>อย่างน้อย 3 ชม.</b> (4 ชม. ถ้าต้องขอคืนภาษี VAT)</span>
         </div>
-      </div>
+      </section>
 
+      {/* Same pill as the preview's own "Duplicate and Edit" CTA — Midnight
+          rounded-full, Ocean on hover (was a wide-tracked uppercase block). */}
       <button
         onClick={onConfirm}
         disabled={!valid || saving}
-        className="w-full py-4 rounded-lg bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all disabled:opacity-50"
+        className="w-full rounded-full bg-zen-black py-3.5 text-sm font-semibold text-white shadow-md shadow-zen-black/25 transition-all hover:bg-basel-brick disabled:opacity-50 disabled:hover:bg-zen-black"
       >
         {saving ? 'กำลังคัดลอก...' : 'ยืนยันและคัดลอกไปยัง My Trip'}
       </button>
       {!valid && !tooShort && (
-        <p className="text-[12px] text-zen-black text-center -mt-2">
+        <p className="-mt-1 text-center text-[12px] text-graphite/70">
           {complete ? 'กรุณาเลือกช่วงวันเดินทาง' : from ? 'เลือกวันสิ้นสุดของการเดินทาง · Pick an end date' : 'เลือกช่วงวันเดินทางก่อน · Pick your travel dates'}
         </p>
       )}

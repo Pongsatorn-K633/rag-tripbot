@@ -219,14 +219,26 @@ function RegionChip({
       aria-pressed={active}
       // Same glass as the search bar / Surprise-me button: white/15 hairline
       // over a white/10 fill with blur; selected deepens to a cream tint.
-      className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left font-sans text-xs backdrop-blur-sm transition-[border-color,background-color,color] duration-300 ${
+      // leading-none + items-center for the vertical: text-xs carries a 16px
+      // line box around 12px glyphs, and that extra half-leading is split by
+      // the font's own ascent/descent rather than evenly, so the label sat
+      // off-centre against the dot. Collapsing the line box to the glyphs
+      // lets the symmetric py-1.5 do the centring. (Same recipe as the
+      // season pills in the filter modal.)
+      className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left font-sans text-xs leading-none backdrop-blur-sm transition-[border-color,background-color,color] duration-300 ${
         active
           ? 'border-briefing-cream/45 bg-briefing-cream/20 font-semibold text-briefing-cream'
           : 'border-white/15 bg-white/10 text-briefing-cream/70 hover:border-basel-brick/60 hover:text-briefing-cream'
       }`}
     >
       <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: region.color }} aria-hidden />
-      {region.name.replace(' Region', '')}
+      {/* 1px optical nudge DOWN. Measured: the dot centres exactly on the
+          chip, but the label's ink does not — the line box is centred, yet
+          the glyphs' visual mass sits above its middle because the descender
+          space stays empty for names like "Hokkaido". A whole pixel (never a
+          fraction — that resamples the glyphs and softens them) squares the
+          label with the dot. Same nudge the season pills use. */}
+      <span className="translate-y-px">{region.name.replace(' Region', '')}</span>
     </button>
   )
 }
@@ -351,11 +363,11 @@ function FilterSelect({
           />
         </button>
         {open && (
-          // MOBILE: in FLOW (static) — an absolute overlay covered the modal's
-          // Done button, which on a phone has nowhere to escape to. In flow the
-          // card simply grows and Done stays reachable below the list.
-          // md+: back to the absolute overlay (the desktop modal has room).
-          <div className="static z-20 mt-2 max-h-56 overflow-y-auto rounded-2xl border border-zen-black/10 bg-white shadow-xl shadow-black/15 md:absolute md:inset-x-0 md:top-full md:max-h-64">
+          // In FLOW at every width (user call): as an absolute overlay this
+          // list covered the modal's Done button. In flow the card simply
+          // grows and Done stays visible below the list. `relative` only for
+          // the z-index, so the shadow paints over the fields beneath.
+          <div className="relative z-20 mt-2 max-h-56 overflow-y-auto rounded-2xl border border-zen-black/10 bg-white shadow-xl shadow-black/15">
             {options.map((o) => {
               const active = o.value === '' ? values.length === 0 : values.includes(o.value)
               return (
@@ -1420,11 +1432,13 @@ export default function TripSearchSection({
       )}
 
       {/* Preview + duplicate modal — the picked travel window pre-fills its
-          date step. */}
+          date step. NOT in Surprise-me mode: that window is a 2–6 month
+          SEARCH range, not a trip the user intends to take, and seeding it
+          would open the date step on a ~120-day trip with ~112 free days. */}
       <PlanPreviewModal
         template={selectedTemplate}
-        defaultStartDate={startD ? toISODate(startD) : ''}
-        defaultEndDate={endD ? toISODate(endD) : ''}
+        defaultStartDate={!recommendOnly && startD ? toISODate(startD) : ''}
+        defaultEndDate={!recommendOnly && endD ? toISODate(endD) : ''}
         callbackUrl={callbackUrl}
         onClose={() => setSelectedId(null)}
       />

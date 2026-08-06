@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import useEmblaCarousel from 'embla-carousel-react'
-import { CalendarDays, CalendarCheck, MapPin, ChevronRight, RefreshCw, Footprints } from 'lucide-react'
+import { CalendarDays, CalendarCheck, Car, MapPin, ChevronRight, RefreshCw, Footprints } from 'lucide-react'
 import { safeHref } from '@/lib/url'
 import JapanIcon from '@/app/components/JapanIcon'
 import type { AnyItinerary, Choice } from '@/lib/itinerary-types'
@@ -329,6 +329,11 @@ export function OverviewPanel({
     { icon: MapPin, label: 'Attractions', value: String(attractionCount) },
     { icon: JapanIcon, label: 'Prefectures', value: String(cityCount || 'XX') },
   ]
+  // Car rental — a planning fact that changes what a traveller must arrange
+  // (an IDP, a driver), so it earns a line on the summary rather than living
+  // only in the logistics guide. `primary === 'Y'` is the admin's checkbox.
+  const carRental = v3?.overview.car_rental?.primary === 'Y' ? v3.overview.car_rental : null
+  const carDuration = carRental?.details?.rentalDuration?.trim()
 
   const [flipped, setFlipped] = useState(false)
   // 3D machinery mounts ONLY while flipping: a permanent perspective/preserve-3d
@@ -375,6 +380,33 @@ export function OverviewPanel({
           </div>
         ))}
       </div>
+      {/* Car-rental note — a full-width row under the stat tiles (it's a
+          sentence, not a number, so it doesn't fit the 3-up grid). Only for
+          trips the admin flagged; the duration is appended when authored. */}
+      {/* pl-5, not px-3: indented so the row sits under the stat tiles'
+          content rather than hugging the card's left edge. */}
+      {carRental && (
+        <div className="mt-3 flex items-center gap-3.5 rounded-2xl bg-briefing-cream py-2.5 pl-5 pr-3">
+          {/* Vector car in the stat tiles' icon language (same Ocean as the
+              Days/Attractions/Prefectures glyphs) — the emoji sat outside the
+              icon system and coloured itself. */}
+          <Car className="size-5 shrink-0 text-basel-brick" strokeWidth={2} aria-hidden />
+          {/* text-xs = the stat tiles' LABEL size ("Attractions"). Midnight
+              for the statement, Ocean for the duration. */}
+          <p className="text-xs font-semibold text-zen-black">
+            Car Rental Recommend
+            {carDuration && (
+              <span className="text-graphite/70">
+                {/* Margin on the dash, not literal spaces: JSX collapses any
+                    run of whitespace to a single space, so mx-* is the only
+                    tunable way to widen the gap on both sides. */}
+                <span className="mx-1.5">—</span>
+                {carDuration}
+              </span>
+            )}
+          </p>
+        </div>
+      )}
     </>
   )
   const backContent = (

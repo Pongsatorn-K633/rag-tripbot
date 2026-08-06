@@ -30,6 +30,11 @@ export interface PlanTemplate {
    *  itinerary's `overview.area_code` by GET /api/templates. The /discover
    *  region-map filter matches these EXACTLY — no area_code, no match. */
   regions?: string[]
+  /** Trip needs a rental car — the V3 `overview.car_rental.primary === 'Y'`
+   *  flag, resolved by GET /api/templates. Drives the cards' car badge. */
+  carRental?: boolean
+  /** Authored rental length (e.g. "4 days"), when the admin filled it in. */
+  carRentalDuration?: string | null
   totalDays: number
   season: string | null
   availability: TripAvailability | null

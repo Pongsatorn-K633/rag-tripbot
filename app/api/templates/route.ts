@@ -41,7 +41,12 @@ export async function GET() {
   // itineraries simply have none and their cards render no caption.
   const templates = rows.map(({ itinerary, ...t }) => {
     const ov = (itinerary as {
-      overview?: { cover_places?: string[]; card_tilt?: string; area_code?: string }
+      overview?: {
+        cover_places?: string[]
+        card_tilt?: string
+        area_code?: string
+        car_rental?: { primary?: string; details?: { rentalDuration?: string } }
+      }
     } | null)?.overview
     // Region ids from overview.area_code (comma/space separated, e.g.
     // "kanto,chubu") — the /discover region-map filter matches these EXACTLY;
@@ -51,7 +56,17 @@ export async function GET() {
       .split(/[\s,]+/)
       .map((s) => s.trim().toLowerCase())
       .filter(Boolean)
-    return { ...t, coverPlaces: ov?.cover_places ?? [], cardTilt: ov?.card_tilt ?? null, regions }
+    // Cards show a car badge when the admin flagged the trip as needing a
+    // rental; the duration rides along so the badge can name it.
+    const carRental = ov?.car_rental?.primary === 'Y'
+    return {
+      ...t,
+      coverPlaces: ov?.cover_places ?? [],
+      cardTilt: ov?.card_tilt ?? null,
+      regions,
+      carRental,
+      carRentalDuration: carRental ? (ov?.car_rental?.details?.rentalDuration?.trim() || null) : null,
+    }
   })
 
   return NextResponse.json({ templates })

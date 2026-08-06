@@ -246,17 +246,18 @@ export default function TripBuilderV3({ initial }: { initial?: V3Initial }) {
               <CoverPicker value={coverImages} onChange={(v) => { setCoverImages(v); setDirty(true); setSavedOk(false) }} max={5} />
             </div>
 
-            {/* Resting tilt of this trip's compact card on /discover — a set
-                of them at mixed angles reads as scattered tickets. Per-trip and
-                admin-chosen rather than random, so it's stable across renders
-                and you can decide how a row of cards sits together. */}
+            {/* HOVER lean of this trip's compact card on /discover. It is not
+                a resting tilt: a permanently rotated card loses subpixel text
+                antialiasing and looks soft, so the card sits straight and
+                leans only while the pointer is on it. Per-trip and
+                admin-chosen rather than random, so it's stable across renders. */}
             <div className="pt-3 border-t border-zen-black/10">
               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-basel-brick mb-2">
-                เอียงการ์ด · Card tilt <span className="text-zen-black/40 normal-case tracking-normal">(การ์ดใน /discover)</span>
+                เอียงตอนชี้ · Hover tilt <span className="text-zen-black/40 normal-case tracking-normal">(การ์ดใน /discover — เอียงเฉพาะตอนเอาเมาส์ชี้)</span>
               </p>
               <div className="flex gap-2">
                 {([
-                  { v: 'none', label: 'ตรง · None' },
+                  { v: 'none', label: 'ไม่เอียง · None' },
                   { v: 'left', label: 'เอียงซ้าย · Left' },
                   { v: 'right', label: 'เอียงขวา · Right' },
                 ] as const).map((o) => {
