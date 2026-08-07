@@ -5,7 +5,7 @@ import type { Itinerary, ItineraryV2, AnyItinerary, Day, DayV2 } from '@/lib/iti
  *
  * When a user's chosen travel window is LONGER than a pre-planned trip, we keep
  * the curated days and append labeled "free days" so the trip spans their full
- * dates. They flesh those days out later in My Trip. Pure module — no DB, no
+ * dates. They flesh those days out later in My Trips. Pure module — no DB, no
  * React — so both the web duplicate flow and the (future) LIFF duplicate can use it.
  *
  * Version-aware: a v2 (node/slot) itinerary gets v2-shaped free days (with the

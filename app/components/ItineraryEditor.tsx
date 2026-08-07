@@ -52,7 +52,7 @@ export default function ItineraryEditor({
   const [openDay, setOpenDay] = useState<number | null>(itin.days[0]?.day ?? null)
   // v2 (node/slot) and v3 (rich) trips: the light day-editor doesn't speak the
   // newer shapes yet, so we keep the start-date edit and skip the day list
-  // (view it richly in My Trip). Full per-day editing for these is a follow-up.
+  // (view it richly in My Trips). Full per-day editing for these is a follow-up.
   const limited = isV2(initialItinerary) || isV3(initialItinerary)
 
   function updateDay(dayIdx: number, updater: (d: Day) => Day) {
@@ -101,7 +101,7 @@ export default function ItineraryEditor({
       {/* Days */}
       {limited && (
         <div className={`border p-4 text-sm leading-relaxed ${t.card} ${t.sub}`}>
-          ทริปนี้ใช้รูปแบบใหม่ — การแก้ไขรายวันแบบละเอียดกำลังจะมา ดูแผนเต็มได้ที่หน้า My Trip
+          ทริปนี้ใช้รูปแบบใหม่ — การแก้ไขรายวันแบบละเอียดกำลังจะมา ดูแผนเต็มได้ที่หน้า My Trips
           ส่วนวันเริ่มเดินทางยังแก้ไขได้ที่นี่
         </div>
       )}

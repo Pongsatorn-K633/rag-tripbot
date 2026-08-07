@@ -363,17 +363,17 @@ export default function DocToTripPage() {
                     </div>
                     <h3 className="font-headline font-black text-xl text-zen-black">บันทึกแล้ว!</h3>
                     <p className="text-sm text-zen-black/60">
-                      แผนถูกเพิ่มในหน้า My Trip แล้ว เมื่อพร้อมเดินทางสร้างรหัส LINE ได้ที่นั่น
+                      แผนถูกเพิ่มในหน้า My Trips แล้ว เมื่อพร้อมเดินทางสร้างรหัส LINE ได้ที่นั่น
                     </p>
                     <p className="text-xs text-zen-black/40">
-                      Trip saved! Generate your LINE code in My Trip when ready.
+                      Trip saved! Generate your LINE code in My Trips when ready.
                     </p>
                     <div className="flex gap-3 pt-2">
                       <Link
-                        href="/my-trip"
+                        href="/my-trips"
                         className="flex-1 py-3 bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all text-center"
                       >
-                        Go to My Trip
+                        Go to My Trips
                       </Link>
                       <button
                         onClick={handleReUpload}
@@ -441,13 +441,13 @@ export default function DocToTripPage() {
       {/* After upload, point user to Go! page to manage their trips */}
       <section className="mb-24 text-center py-12 border-t border-zen-black/10">
         <p className="text-zen-black/50 text-sm font-sans mb-3">
-          แผนที่บันทึกแล้วอยู่ในหน้า My Trip · Your saved trips are in the My Trip page
+          แผนที่บันทึกแล้วอยู่ในหน้า My Trips · Your saved trips are in the My Trips page
         </p>
         <Link
-          href="/my-trip"
+          href="/my-trips"
           className="inline-flex items-center gap-2 px-6 py-3 bg-zen-black text-briefing-cream font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-basel-brick transition-all"
         >
-          Go to My Trip <ArrowRight size={14} />
+          Go to My Trips <ArrowRight size={14} />
         </Link>
       </section>
 

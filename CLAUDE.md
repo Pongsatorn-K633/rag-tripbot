@@ -36,13 +36,13 @@ names are unchanged** — still the `Template` model, `/api/templates`, `/api/up
 |---|---|---|
 | `/` | Photo hero landing | — |
 | `/discover` | Curated pre-planned trip gallery | `/templates` → `/pre-planned` → `/plan` (all redirect; only `/pre-planned` kept) |
-| `/my-trip` | The user's saved / activated trips + ✏️ edit | `/go` |
+| `/my-trips` | The user's saved / activated trips + ✏️ edit | `/go` → `/my-trip` (redirects) |
 | `/create` | Hub → fans out to AI Chat + AI Scanner | (new) |
 | `/ai-scanner` | Upload PDF/image → VLM → editable V3 trip | `/doc-to-trip` (was `/gallery`) |
 | `/chat` | RAG chat — **under maintenance**, redirects to `/maintenance` | — |
 | `/liff/pre-planned` | LINE LIFF twin — **do NOT rename** (tied to LINE console + `LIFF_PREPLANNED_URL`) | — |
 
-Navbar tabs are **Discover · My Trip · Create** — Home was dropped; the logo + "dopamichi"
+Navbar tabs are **Discover · My Trips · Create** — Home was dropped; the logo + "dopamichi"
 wordmark link home.
 
 ## UI / Design Conventions (alignment anchor for new UI/motion)
@@ -257,7 +257,7 @@ on **both** the website and the LINE LIFF — from one shared core. Full spec + 
 **`docs/duplicate-edit-feature.md`**.
 
 - [x] **Phase A** — shared edit core (`lib/trips/edit.ts`) + `GET`/`PATCH /api/trips/[id]`
-- [x] **Phase B** — shared `app/components/ItineraryEditor.tsx` + `app/trips/[id]/edit` + `/my-trip` ✏️ button + `Choice.selected`
+- [x] **Phase B** — shared `app/components/ItineraryEditor.tsx` + `app/trips/[id]/edit` + `/my-trips` ✏️ button + `Choice.selected`
 - [ ] **Phase C** — LIFF identity (`User.lineUserId`, `@line/liff`, `lib/line/liff-auth.ts`),
   `lib/trips/duplicate.ts`, `/api/liff/duplicate` + `/api/liff/trip`, `/liff/edit` reusing the editor
 - [ ] **Phase D** — hardening (rate-limit duplicate, "my LINE trips", security review)

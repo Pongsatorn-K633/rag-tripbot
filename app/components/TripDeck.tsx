@@ -2,8 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { motion, animate, useMotionValue, useReducedMotion } from 'motion/react'
-import { ArrowRight, Car, ChevronLeft, ChevronRight, Heart } from 'lucide-react'
+import { ArrowRight, Car, Check, ChevronLeft, ChevronRight, Copy, Heart, Pencil, Shield, Trash2, Zap } from 'lucide-react'
 import { resolveCoverImage } from '@/lib/cover-image'
 import { formatRanges } from '@/lib/availability'
 import type { PlanTemplate } from '@/app/components/PlanCard'
@@ -954,6 +955,238 @@ export function TripCardCompact({
           into a vertical strip behind a perforation. */}
       {/* pl only, no pr: the bars run flush to the card's right edge, the way
           the tall card's tear line runs edge to edge. */}
+      <div className="flex w-7 shrink-0 flex-col items-stretch overflow-hidden border-l border-dashed border-zen-black/25 py-3 pl-2">
+        {bars.map((b, bi) => (
+          <span key={bi} style={{ flex: b.flex }} className={b.on ? 'bg-zen-black' : 'bg-transparent'} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The SAME boarding pass as `TripCardCompact`, for a trip the user already
+ * owns (/my-trips). Identical silhouette, geometry and type scale — only the
+ * content of the bottom band and the actions differ, because a saved trip
+ * carries different facts than a catalogue entry:
+ *   • the two availability lines → the traveller's CHOSEN dates + the owner
+ *   • the save heart → the LINE share code (or a chip to mint one)
+ *   • PREVIEW → VIEW (opens the trip's own modal)
+ *   • no car badge (a duplicated trip keeps that detail in its itinerary)
+ * Edit / delete ride as hover icons over the cover, with the Published shield
+ * pinned there when the trip is locked.
+ */
+export function MyTripCardCompact({
+  id,
+  title,
+  coverSrc,
+  coverImages,
+  coverPlaces,
+  totalDays,
+  dateLabel,
+  ownerName,
+  ownerImage,
+  tagline,
+  place,
+  shareCode,
+  locked = false,
+  generating = false,
+  copied = false,
+  editHref,
+  onView,
+  onDelete,
+  onCopyCode,
+  onGenerateCode,
+}: {
+  id: string
+  title: string
+  /** Single cover — the fallback when the trip carries no gallery. */
+  coverSrc: string
+  /** Full gallery (V3 `overview.cover_images`, already resolved). A duplicated
+   *  trip keeps its source template's covers, so it deserves the same swipeable
+   *  carousel /discover shows — not a frozen first frame. */
+  coverImages?: string[]
+  /** Per-cover captions (`overview.cover_places`), same order as the gallery. */
+  coverPlaces?: string[]
+  totalDays: number | null
+  /** The traveller's chosen window, pre-formatted ("1 ต.ค. - 8 ต.ค."). */
+  dateLabel: string | null
+  ownerName: string
+  ownerImage?: string | null
+  tagline?: string | null
+  /** Cover caption (V3 overview.cover_places[0]) — the compact card's top line. */
+  place?: string | null
+  shareCode?: string | null
+  locked?: boolean
+  generating?: boolean
+  copied?: boolean
+  editHref?: string
+  onView: () => void
+  onDelete?: () => void
+  onCopyCode?: (e: React.MouseEvent) => void
+  onGenerateCode?: (e: React.MouseEvent) => void
+}) {
+  const bars = barcodeBars(id)
+  const tilt = defaultTilt(id)
+  // Gallery when the trip carries one (it inherits the template's covers),
+  // else the single cover — same rule the catalogue card uses.
+  const images = coverImages?.length ? coverImages : [coverSrc]
+  const [coverIdx, setCoverIdx] = useState(0)
+  const caption = coverPlaces?.[coverIdx] ?? place ?? null
+  return (
+    <div
+      className={`group relative flex w-full max-w-md overflow-hidden rounded-xl bg-briefing-cream shadow-[0_10px_30px_rgba(0,0,0,0.28)] transition-[transform,rotate,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(0,0,0,0.38)] ${
+        tilt === 'left' ? 'hover:-rotate-[0.8deg]' : 'hover:rotate-[0.8deg]'
+      }`}
+    >
+      <CardShine />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 flex-row-reverse">
+          {/* Cover — the SAME swipeable/tappable gallery as the catalogue
+              card, so a duplicated trip keeps every cover it inherited. The
+              edit/delete icons sit above it and stop their own clicks, so they
+              never advance the photo. */}
+          <div className="relative w-[144px] shrink-0 pb-1 pl-3 pr-1.5 pt-3">
+            <CoverCarousel images={images} alt={title} square compact onIndexChange={setCoverIdx} />
+            {locked ? (
+              <span className="absolute right-2.5 top-4 flex items-center gap-1 rounded-full bg-basel-brick px-2 py-0.5 text-briefing-cream shadow-md">
+                <Shield size={9} strokeWidth={3} aria-hidden />
+                <span className="font-headline text-[8px] font-black uppercase tracking-widest">Published</span>
+              </span>
+            ) : (
+              // Hover-only, like the old grid card: they must not compete with
+              // VIEW for attention while browsing.
+              <span className="absolute right-2.5 top-4 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                {editHref && (
+                  <Link
+                    href={editHref}
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label="แก้ไขแผน"
+                    className="grid size-6 place-items-center rounded-full bg-white/85 text-zen-black/50 shadow-sm transition-colors hover:bg-basel-brick hover:text-white"
+                  >
+                    <Pencil size={12} />
+                  </Link>
+                )}
+                {onDelete && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDelete()
+                    }}
+                    aria-label="ลบแผน"
+                    className="grid size-6 place-items-center rounded-full bg-white/85 text-zen-black/50 shadow-sm transition-colors hover:bg-basel-brick hover:text-white"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                )}
+              </span>
+            )}
+          </div>
+
+          <div className="flex min-w-0 flex-1 flex-col pb-1.5 pl-3 pt-3">
+            <div className="flex h-4 items-center">
+              {caption && (
+                // key: replays the fade on each cover change, as on the
+                // catalogue card.
+                <span
+                  key={coverIdx}
+                  className="flex min-w-0 animate-fade-in items-center gap-1 font-headline text-[11px] font-medium tracking-[0.06em] text-graphite"
+                >
+                  <ArrowRight className="size-3 shrink-0" strokeWidth={2} aria-hidden />
+                  <span className="truncate">{caption}</span>
+                </span>
+              )}
+            </div>
+
+            {/* Rule → title | VIEW → Rule (PREVIEW's twin). */}
+            <div className="mt-2 border-t border-zen-black/80" />
+            <div className="flex items-stretch">
+              <h3 className="min-w-0 flex-1 py-2 pr-2 font-headline text-[15px] font-extrabold uppercase leading-[1.1] tracking-[-0.02em] text-zen-black">
+                {title}
+              </h3>
+              <button
+                type="button"
+                onClick={onView}
+                aria-label={`View ${title}`}
+                className="group/pv flex shrink-0 cursor-pointer flex-col items-center justify-center bg-basel-brick px-2.5 font-headline text-[8px] font-bold uppercase leading-[1.4] tracking-[0.12em] text-briefing-cream transition-colors hover:bg-[#4a77a3] active:bg-[#3f6b96]"
+              >
+                View
+                <ArrowRight className="mt-0.5 h-2.5 w-2.5 transition-transform group-hover/pv:translate-x-0.5" strokeWidth={2.25} />
+              </button>
+            </div>
+            <div className="border-t border-zen-black/80" />
+
+            {tagline && (
+              <p className="mt-1.5 line-clamp-2 font-sans text-[12px] leading-[18px] text-zen-black/80">
+                {tagline}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom band — the compact card's two info lines, re-tenanted:
+            the chosen dates take แนะนำ's line, the owner takes
+            เปิดตามฤดูกาล's, and the share code takes the heart's slot. */}
+        <div className="mt-auto border-t border-zen-black/15 px-3 py-2">
+          <div className="flex items-end justify-between gap-2">
+            <div className="min-w-0">
+              {/* -mt-1 lifts the dates toward the divider; the owner row's
+                  mt-1.5 opens the gap between the two lines (they were on one
+                  tight 18px rhythm, which read as a single block). */}
+              <p className="-mt-1 text-[10px] font-bold leading-[18px] text-basel-brick">
+                <span className="mr-1 tracking-widest text-basel-brick/75">วันเดินทาง</span>
+                {dateLabel ?? 'ยังไม่ระบุ'}
+              </p>
+              <p className="mt-1.5 flex items-center gap-1.5 text-[10px] leading-[18px] text-zen-black">
+                <span className="tracking-widest">เจ้าของทริป</span>
+                {ownerImage ? (
+                  <Image
+                    src={ownerImage}
+                    alt=""
+                    width={32}
+                    height={32}
+                    className="size-4 shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="grid size-4 shrink-0 place-items-center rounded-full bg-zen-black/10 text-[8px] font-bold text-zen-black/60">
+                    {ownerName.slice(0, 1).toUpperCase()}
+                  </span>
+                )}
+                <span className="truncate font-semibold">{ownerName}</span>
+              </p>
+            </div>
+
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              {shareCode ? (
+                <button
+                  type="button"
+                  onClick={onCopyCode}
+                  aria-label="คัดลอกรหัส LINE"
+                  className="flex items-center gap-1 rounded-full bg-basel-brick/10 px-2 py-0.5 font-headline text-[10px] font-bold tracking-wider text-basel-brick transition-colors hover:bg-basel-brick/20"
+                >
+                  {copied ? <Check size={10} strokeWidth={3} /> : <Copy size={10} strokeWidth={2.5} />}
+                  {copied ? 'COPIED' : shareCode}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onGenerateCode}
+                  disabled={generating}
+                  className="flex items-center gap-1 rounded-full border border-dashed border-basel-brick/50 px-2 py-0.5 font-headline text-[9px] font-bold uppercase tracking-wider text-basel-brick transition-colors hover:bg-basel-brick hover:text-white disabled:opacity-50"
+                >
+                  <Zap size={9} strokeWidth={2.5} />
+                  {generating ? '...' : 'LINE code'}
+                </button>
+              )}
+              <span className="font-headline text-[10px] font-medium tracking-[0.06em] text-zen-black">
+                {totalDays ?? '?'} DAYS
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="flex w-7 shrink-0 flex-col items-stretch overflow-hidden border-l border-dashed border-zen-black/25 py-3 pl-2">
         {bars.map((b, bi) => (
           <span key={bi} style={{ flex: b.flex }} className={b.on ? 'bg-zen-black' : 'bg-transparent'} />

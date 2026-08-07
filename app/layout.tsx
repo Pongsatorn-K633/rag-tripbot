@@ -29,7 +29,7 @@ export const metadata: Metadata = {
  * meta on client navigation (it paints its bars from the <html> background
  * instead — see ClientLayout's per-route root style), and the old
  * IntersectionObserver retint stranded a cream bar on dark pages. Graphite is
- * the right global pick now that home, /discover, /my-trip and /create are all
+ * the right global pick now that home, /discover, /my-trips and /create are all
  * on the graphite canvas.
  */
 export const viewport: Viewport = {

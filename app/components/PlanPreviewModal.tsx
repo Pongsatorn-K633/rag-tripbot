@@ -48,7 +48,7 @@ function dayCount(from: Date, to: Date): number {
  * The user picks a start AND end (pre-filled from the page's filter window when
  * present, adjustable either way). The trip must span at least the plan length;
  * any days beyond it become labeled free days. The activation code is shown only
- * in My Trip.
+ * in My Trips.
  */
 export default function PlanPreviewModal({
   template,
@@ -56,6 +56,10 @@ export default function PlanPreviewModal({
   defaultEndDate = '',
   callbackUrl,
   viewOnly = false,
+  travelDateLabel,
+  onDeleteTrip,
+  reviewTitle,
+  savedTrip = false,
   onClose,
 }: {
   template: PlanTemplate | null
@@ -66,6 +70,16 @@ export default function PlanPreviewModal({
   callbackUrl: string
   /** Read-only preview — hides the Duplicate-or-Edit flow (e.g. admin dashboard). */
   viewOnly?: boolean
+  /** A SAVED trip's chosen window, shown in the overview ("16 ต.ค. - 24 ต.ค.").
+   *  Templates have no dates, so /discover leaves this unset. */
+  travelDateLabel?: string | null
+  /** SAVED trips only: shows a "Delete this trip" action at the end of the
+   *  overview. The caller owns the confirmation dialog and the request. */
+  onDeleteTrip?: () => void
+  /** Back-face heading of the summary card (default "Admin Review"). */
+  reviewTitle?: string
+  /** Saved-trip layout for the summary card (rows instead of stat tiles). */
+  savedTrip?: boolean
   onClose: () => void
 }) {
   const { data: session } = useSession()
@@ -201,7 +215,7 @@ export default function PlanPreviewModal({
       if (!res.ok) throw new Error('Failed to save template')
       const { trip } = await res.json()
 
-      // Auto-generate a fresh activation code so it's ready to redeem in My Trip
+      // Auto-generate a fresh activation code so it's ready to redeem in My Trips
       // (revealed there, not here — now always bound to the chosen travel dates).
       // Prefix from the template's PROVINCE (e.g. HOK from HOK-001), not the first
       // city (Sapporo→SAP), so the personal code matches the plan's province.
@@ -213,7 +227,7 @@ export default function PlanPreviewModal({
           body: JSON.stringify({ tripId: trip.id, primaryCity: prefix }),
         })
       } catch {
-        // Non-fatal — the user can still generate the code in My Trip.
+        // Non-fatal — the user can still generate the code in My Trips.
       }
       setSaveState('done')
     } catch (err) {
@@ -421,6 +435,10 @@ export default function PlanPreviewModal({
                   <OverviewPanel
                     itinerary={itinerary}
                     tripDays={tripDays}
+                    travelDateLabel={travelDateLabel}
+                    onDeleteTrip={onDeleteTrip}
+                    reviewTitle={reviewTitle}
+                    savedTrip={savedTrip}
                     // Tap a highlight row → that day, in the Itinerary tab.
                     // (No scroll reset — layoutScroll on the shell keeps the
                     // pill's slide correct regardless of scroll position.)
@@ -457,24 +475,31 @@ export default function PlanPreviewModal({
             <div className="relative z-10 mx-auto -mt-7 max-w-lg px-4 pb-8">
               <div className="rounded-2xl bg-white p-5 shadow-lg sm:p-6">
                 {saveState === 'done' ? (
-                  <div className="text-center py-8 space-y-4">
-                    <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
-                      <span className="text-green-600 text-2xl">✓</span>
+                  <div className="space-y-4 py-6 text-center font-detail">
+                    {/* Ocean tint + the lucide check, not a green circle with a
+                        text glyph: the palette carries ONE accent, and the
+                        check mark already says "done" without a second hue. */}
+                    <div className="mx-auto grid size-16 place-items-center rounded-full bg-basel-brick/10">
+                      <Check className="size-7 text-basel-brick" strokeWidth={3} aria-hidden />
                     </div>
-                    <h3 className="font-headline font-black text-xl text-zen-black">คัดลอกเรียบร้อย!</h3>
-                    <p className="text-sm text-zen-black/60">
-                      เพิ่มทริปของคุณในหน้า My Trip แล้ว — แก้ไขได้อิสระ และรับรหัส LINE ได้ที่นั่นเลย
+                    <h3 className="text-lg font-extrabold tracking-tight text-zen-black">คัดลอกเรียบร้อย!</h3>
+                    <p className="mx-auto max-w-sm text-[13px] leading-relaxed text-graphite/80">
+                      เพิ่มทริปของคุณในหน้า My Trips แล้ว — แก้ไขได้อิสระ และรับรหัส LINE ได้ที่นั่นเลย
                     </p>
-                    <div className="flex gap-3 pt-2">
+                    {/* Both buttons are rounded-full pills now (was rounded-lg
+                        uppercase blocks). The secondary also sets text-zen-black
+                        EXPLICITLY — it inherited the modal's light chrome colour
+                        before, which left its label nearly invisible on white. */}
+                    <div className="flex flex-col gap-2 pt-1 sm:flex-row">
                       <Link
-                        href="/my-trip"
-                        className="flex-1 py-3 rounded-lg bg-basel-brick text-white font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black transition-all text-center"
+                        href="/my-trips"
+                        className="flex-1 rounded-full bg-zen-black py-3 text-center text-sm font-semibold text-white shadow-md shadow-zen-black/25 transition-all hover:bg-basel-brick"
                       >
-                        Go to My Trip
+                        Go to My Trips
                       </Link>
                       <button
                         onClick={handleClose}
-                        className="flex-1 py-3 rounded-lg border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-briefing-cream transition-all"
+                        className="flex-1 rounded-full border border-zen-black/15 bg-white py-3 text-sm font-semibold text-zen-black transition-colors hover:border-basel-brick/50 hover:text-basel-brick"
                       >
                         เลือกแพลนอื่น
                       </button>
@@ -665,7 +690,7 @@ function DateStep({
         <span>สามารถเลือกมากกว่า {tripDays} วันได้</span>
         <br />
         <span className="text-graphite/70">
-          โดยวันที่เกินมาระบบจะใส่ให้เป็นวันอิสระ (Free Day) <br /> (สามารถแก้ไขเพิ่มลดจำนวนวันได้ที่ My Trip)
+          โดยวันที่เกินมาระบบจะใส่ให้เป็นวันอิสระ (Free Day) <br /> (สามารถแก้ไขเพิ่มลดจำนวนวันได้ที่ My Trips)
         </span>
       </p>  
 
@@ -739,7 +764,7 @@ function DateStep({
           <span>
             ช่วงวันที่คุณเลือกยาวกว่าแผนสำเร็จรูป {tripDays} วัน อยู่{' '}
             <span className="font-bold">{freeDays} วัน</span> — ระบบจะเพิ่ม
-            <span className="font-bold"> {freeDays} วันอิสระ</span> ต่อท้ายให้ คุณวางแผนเองได้ที่ My Trip
+            <span className="font-bold"> {freeDays} วันอิสระ</span> ต่อท้ายให้ คุณวางแผนเองได้ที่ My Trips
           </span>
         </div>
       )}
@@ -810,7 +835,7 @@ function DateStep({
             <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-600" strokeWidth={2.25} />
             <span>
               เครื่องถึง <b>{flight.arrival.time} น.</b> + เผื่อเดินทางจากสนามบิน ~2 ชม. อาจไม่ทันแผนวันแรกที่เริ่ม <b>{dayOneFirstTime} น.</b>
-              <br />พี่ ๆ สามารถปรับได้ที่ <b>My Trip</b> หลังยืนยันและคัดลอกครับ —{' '}
+              <br />พี่ ๆ สามารถปรับได้ที่ <b>My Trips</b> หลังยืนยันและคัดลอกครับ —{' '}
               {freeDays > 0 ? (
                 <>เนื่องจากเลือกวันยาวกว่าแผน จะ <b>เลื่อนแผนลง 1 วัน</b> เพิ่มวันอิสระวันแรกโดยใช้วันอิสระที่มีอยู่ (<b>ไม่เสียกิจกรรม</b>)</>
               ) : (
@@ -825,9 +850,9 @@ function DateStep({
             <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-600" strokeWidth={2.25} />
             <span>
               {depAfter ? (
-                <>กิจกรรมสุดท้ายจบ ~<b>{lastDayLastTime} น.</b> หลังเวลาบิน <b>{depTime} น.</b> — มีบางที่ไปไม่ได้แล้วครับ ลองปรับเวลา แก้ไข/ลบ/สลับกิจกรรม ที่ <b>My Trip</b> ดูนะครับ</>
+                <>กิจกรรมสุดท้ายจบ ~<b>{lastDayLastTime} น.</b> หลังเวลาบิน <b>{depTime} น.</b> — มีบางที่ไปไม่ได้แล้วครับ ลองปรับเวลา แก้ไข/ลบ/สลับกิจกรรม ที่ <b>My Trips</b> ดูนะครับ</>
               ) : (
-                <>กิจกรรมสุดท้ายจบ ~<b>{lastDayLastTime} น.</b> ใกล้เวลาบิน <b>{depTime} น.</b> — อาจไม่ทันครับ ลองปรับเวลา แก้ไข/ลบ/สลับกิจกรรม ที่ <b>My Trip</b> ดูนะครับ</>
+                <>กิจกรรมสุดท้ายจบ ~<b>{lastDayLastTime} น.</b> ใกล้เวลาบิน <b>{depTime} น.</b> — อาจไม่ทันครับ ลองปรับเวลา แก้ไข/ลบ/สลับกิจกรรม ที่ <b>My Trips</b> ดูนะครับ</>
               )}
             </span>
           </div>
@@ -846,7 +871,7 @@ function DateStep({
         disabled={!valid || saving}
         className="w-full rounded-full bg-zen-black py-3.5 text-sm font-semibold text-white shadow-md shadow-zen-black/25 transition-all hover:bg-basel-brick disabled:opacity-50 disabled:hover:bg-zen-black"
       >
-        {saving ? 'กำลังคัดลอก...' : 'ยืนยันและคัดลอกไปยัง My Trip'}
+        {saving ? 'กำลังคัดลอก...' : 'ยืนยันและคัดลอกไปยัง My Trips'}
       </button>
       {!valid && !tooShort && (
         <p className="-mt-1 text-center text-[12px] text-graphite/70">

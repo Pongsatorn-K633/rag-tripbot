@@ -44,28 +44,38 @@ export default function ConfirmDialog({
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 24, opacity: 0, scale: 0.98 }}
             transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-            className="w-full max-w-sm bg-briefing-cream border border-zen-black/10 shadow-2xl rounded-2xl overflow-hidden"
+            // The trip modal's card language: font-detail, rounded-3xl, white.
+            className="w-full max-w-sm overflow-hidden rounded-3xl border border-zen-black/10 bg-white font-detail shadow-2xl"
           >
             <div className="p-6">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 ${
-                tone === 'danger' ? 'bg-red-100' : 'bg-amber-100'
-              }`}>
-                <Icon size={22} strokeWidth={2.5} className={tone === 'danger' ? 'text-red-600' : 'text-amber-600'} />
+              <div
+                className={`mb-4 grid size-12 place-items-center rounded-full ${
+                  tone === 'danger' ? 'bg-red-50' : 'bg-basel-brick/10'
+                }`}
+              >
+                <Icon size={22} strokeWidth={2.5} className={tone === 'danger' ? 'text-red-600' : 'text-basel-brick'} />
               </div>
-              <h3 className="font-headline font-black text-xl text-zen-black mb-2">{title}</h3>
-              <div className="text-sm text-zen-black/70 leading-relaxed">{message}</div>
+              {/* Card-heading scale (was font-headline black xl); body at the
+                  panels' detail size. */}
+              <h3 className="text-lg font-extrabold tracking-tight text-zen-black">{title}</h3>
+              <div className="mt-1.5 text-[13px] leading-relaxed text-graphite/80">{message}</div>
             </div>
-            <div className="flex gap-3 px-6 pb-6">
+            {/* Rounded-full pills, same as every other CTA pair in the app:
+                outline to dismiss, filled to commit (was rounded-lg uppercase
+                blocks with wide tracking). */}
+            <div className="flex gap-2 px-6 pb-6">
               <button
                 onClick={onCancel}
-                className="flex-1 py-3 rounded-lg border-2 border-zen-black font-headline font-black text-xs uppercase tracking-[0.2em] hover:bg-zen-black hover:text-briefing-cream transition-all"
+                className="flex-1 rounded-full border border-zen-black/15 bg-white py-3 text-sm font-semibold text-zen-black transition-colors hover:border-basel-brick/50 hover:text-basel-brick"
               >
                 {cancelLabel}
               </button>
               <button
                 onClick={onConfirm}
-                className={`flex-1 py-3 rounded-lg text-white font-headline font-black text-xs uppercase tracking-[0.2em] transition-all ${
-                  tone === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-basel-brick hover:bg-zen-black'
+                className={`flex-1 rounded-full py-3 text-sm font-semibold text-white shadow-md transition-colors ${
+                  tone === 'danger'
+                    ? 'bg-red-600 shadow-red-600/25 hover:bg-red-700'
+                    : 'bg-zen-black shadow-zen-black/25 hover:bg-basel-brick'
                 }`}
               >
                 {confirmLabel}

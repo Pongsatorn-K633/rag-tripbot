@@ -473,6 +473,7 @@ export default function TripSearchSection({
   headingTag: HeadingTag = 'h2',
   compactCards = false,
   regionMap = false,
+  myTripsHref,
 }: {
   title: string
   subtitle: string
@@ -482,6 +483,9 @@ export default function TripSearchSection({
   defaultCount?: number
   /** Render the desktop + mobile "View all" links pointing here (home only). */
   viewAllHref?: string
+  /** Show a "My Trips →" link beside the subtitle (/discover): home already
+   *  points at the catalogue with View all, so it doesn't need this. */
+  myTripsHref?: string
   /** Read ?trip=CODE after load and auto-open that trip (shared links). */
   openFromQueryParam?: boolean
   /** 'h1' on pages where this is the main heading (/discover). */
@@ -684,7 +688,25 @@ export default function TripSearchSection({
         <div className="md:flex md:items-center md:gap-14">
           <div className="shrink-0">
             <HeadingTag className="font-headline font-bold text-3xl md:text-5xl tracking-tight">{title}</HeadingTag>
-            <p className="mt-2.5 text-briefing-cream/70 font-sans">{subtitle}</p>
+            {/* Subtitle + an optional "My Trips →" shortcut on the same line,
+                in the View-all link's vocabulary (uppercase, tracked, arrow
+                that nudges on hover). flex-wrap so a narrow phone drops the
+                link to its own row instead of squeezing the Thai copy. */}
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1">
+              <p className="text-briefing-cream/70 font-sans">{subtitle}</p>
+              {myTripsHref && (
+                <Link
+                  href={myTripsHref}
+                  // ml-auto pins it to the right edge of the title block.
+                  // Sentence case (no `uppercase`), so tracking-wide instead of
+                  // -widest — wide tracking on mixed case reads as spaced-out.
+                  className="group ml-auto flex items-center gap-1.5 font-headline text-xs font-bold tracking-wide text-briefing-cream/80 transition-colors hover:text-basel-brick"
+                >
+                  My Trips
+                  <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1" />
+                </Link>
+              )}
+            </div>
           </div>
           {/* Search — desktop: same row, adjacent to the title (row gap only,
               no auto-centering); View all takes the right edge via ml-auto.

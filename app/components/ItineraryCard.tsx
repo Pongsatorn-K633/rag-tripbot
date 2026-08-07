@@ -11,7 +11,7 @@ import { IMG } from '@/lib/images'
  * day-by-day body are rendered by the shared <ItineraryView> — the SAME component
  * the LINE LIFF page uses — so the two look identical. This file only adds the
  * website chrome: the Confirm button. The activation code is NOT shown here — it
- * is minted per-user with real travel dates and revealed only in My Trip.
+ * is minted per-user with real travel dates and revealed only in My Trips.
  */
 
 interface ItineraryCardProps {
@@ -75,7 +75,7 @@ export default function ItineraryCard({
             {viewOnly ? (
               <>พรีวิวสำหรับแอดมิน — คัดลอก/แก้ไขได้จากฝั่งผู้ใช้ <br />Admin preview — duplicate/edit is available on the traveler side.</>
             ) : (
-              <>เลือกวันเดินทางในขั้นถัดไป แล้วแก้ไขเพิ่มเติมได้ที่ My Trip :) <br />Pick your dates next, then fine-tune in My Trip. :)</>
+              <>เลือกวันเดินทางในขั้นถัดไป แล้วแก้ไขเพิ่มเติมได้ที่ My Trips :) <br />Pick your dates next, then fine-tune in My Trips. :)</>
             )}
           </p>
         </div>

@@ -7,7 +7,7 @@
  *
  * ADD A NEW DARK PAGE HERE, and give its own text colours the light treatment.
  */
-export const GRAPHITE_ROUTES = ['/discover', '/my-trip', '/create']
+export const GRAPHITE_ROUTES = ['/discover', '/my-trips', '/create']
 
 /** Dark page → the Navbar bar and Footer take the Graphite treatment. */
 export function isGraphiteRoute(pathname: string): boolean {

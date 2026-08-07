@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import useEmblaCarousel from 'embla-carousel-react'
-import { CalendarDays, CalendarCheck, Car, MapPin, ChevronRight, RefreshCw, Footprints } from 'lucide-react'
+import { CalendarDays, CalendarCheck, Car, MapPin, ChevronRight, Plane, RefreshCw, Footprints, Trash2 } from 'lucide-react'
 import { safeHref } from '@/lib/url'
 import JapanIcon from '@/app/components/JapanIcon'
-import type { AnyItinerary, Choice } from '@/lib/itinerary-types'
-import { getRenderDays, isV3, CATEGORY_EMOJI } from '@/lib/trips/itinerary-model'
+import type { AnyItinerary, Choice, TripFlight } from '@/lib/itinerary-types'
+import { AIRPORTS, getRenderDays, isV3, CATEGORY_EMOJI } from '@/lib/trips/itinerary-model'
 import { parsePeriod } from '@/lib/trips/import-plan'
 
 /**
@@ -265,17 +265,52 @@ export function DayChips({ count, sel, onSel }: { count: number; sel: DaySel; on
   )
 }
 
+/** One horizontal fact row in the Trip-summary card: Ocean glyph, then a
+ *  "Label — value" line. Every row shares this shell so the icon column and
+ *  the indent line up down the whole stack. */
+function SummaryRow({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    // items-CENTER, not items-start: the glyph is 20px and a text-xs line box
+    // is 16px, so top-aligning them left every label sitting ~2px high against
+    // its icon. Centring also reads right for the two-line flights row — the
+    // plane centres against the pair.
+    <div className="flex items-center gap-3.5 rounded-2xl bg-briefing-cream py-2.5 pl-5 pr-3">
+      {icon}
+      <div className="min-w-0">{children}</div>
+    </div>
+  )
+}
+
 // ── Overview tab — Trip summary + Highlights + Admin Review ────────────────
 
 export function OverviewPanel({
   itinerary,
   tripDays,
   onDayTap,
+  travelDateLabel,
+  onDeleteTrip,
+  reviewTitle = 'Admin Review',
+  savedTrip = false,
 }: {
   itinerary: AnyItinerary
   tripDays: number
   /** Tap a highlight row → open that day in the Itinerary tab. */
   onDayTap?: (day: number) => void
+  /** A SAVED trip's chosen window ("16 ต.ค. - 24 ต.ค."). Templates have no
+   *  dates, so this is absent on /discover and the row simply doesn't render.
+   *  The flights beside it come from the itinerary itself (`.flight`), which
+   *  is where the duplicate step stores them. */
+  travelDateLabel?: string | null
+  /** SAVED trips only: a destructive action pinned to the end of the overview
+   *  (a template can't be deleted from here). The caller owns the confirm. */
+  onDeleteTrip?: () => void
+  /** Back-face heading. /my-trips calls it "Notes:" — once a trip is yours the
+   *  text reads as your own notes, not an admin's pitch; /discover keeps the
+   *  default "Admin Review". The flip pill follows this word. */
+  reviewTitle?: string
+  /** /my-trips layout: the three stat tiles collapse into the same row stack
+   *  as the dates/flights/car, and the day count moves into the dates row. */
+  savedTrip?: boolean
 }) {
   const days = getRenderDays(itinerary)
   const v3 = isV3(itinerary) ? itinerary : null
@@ -334,6 +369,12 @@ export function OverviewPanel({
   // only in the logistics guide. `primary === 'Y'` is the admin's checkbox.
   const carRental = v3?.overview.car_rental?.primary === 'Y' ? v3.overview.car_rental : null
   const carDuration = carRental?.details?.rentalDuration?.trim()
+  // Saved-trip facts: the traveller's flights ride INSIDE the itinerary (the
+  // duplicate step writes `itinerary.flight`), so no extra prop is needed.
+  const flight = (itinerary as { flight?: TripFlight }).flight
+  const flightLegs = (['arrival', 'departure'] as const)
+    .map((leg) => ({ leg, info: flight?.[leg] }))
+    .filter((l) => l.info?.airport || l.info?.time)
 
   const [flipped, setFlipped] = useState(false)
   // 3D machinery mounts ONLY while flipping: a permanent perspective/preserve-3d
@@ -360,6 +401,11 @@ export function OverviewPanel({
     setFlipped((f) => !f)
   }
 
+  // The pill names the face it flips TO, so it follows the heading: the
+  // default long "Admin Review" shortens to "Review", a custom one is used
+  // as-is (minus a trailing colon).
+  const reviewPill = reviewTitle === 'Admin Review' ? 'Review' : reviewTitle.replace(/:\s*$/, '')
+
   const faceBase = 'flex flex-col rounded-3xl [grid-area:1/1]'
   const frontSkin = 'border border-zen-black/10 bg-white p-5 shadow-sm'
   const backSkin = 'bg-zen-black p-5 shadow-lg shadow-zen-black/25'
@@ -368,52 +414,107 @@ export function OverviewPanel({
     <>
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-lg font-extrabold tracking-tight text-zen-black">Trip summary</h2>
-        <FlipHint label="Review" dark={false} />
+        <FlipHint label={reviewPill} dark={false} onClick={toggleFlip} />
       </div>
       {tagline?.trim() && <p className="mt-0.5 text-sm font-medium text-graphite/70">{tagline}</p>}
-      <div className="mt-4 grid grid-cols-3 gap-3">
-        {stats.map(({ icon: Icon, label, value }) => (
-          <div key={label} className="rounded-2xl bg-briefing-cream p-3 text-center">
-            <Icon className="mx-auto size-5 text-basel-brick" />
-            <p className="mt-1.5 text-lg font-extrabold text-zen-black">{value}</p>
-            <p className="text-xs font-medium text-graphite/70">{label}</p>
-          </div>
-        ))}
-      </div>
-      {/* Car-rental note — a full-width row under the stat tiles (it's a
-          sentence, not a number, so it doesn't fit the 3-up grid). Only for
-          trips the admin flagged; the duration is appended when authored. */}
-      {/* pl-5, not px-3: indented so the row sits under the stat tiles'
-          content rather than hugging the card's left edge. */}
-      {carRental && (
-        <div className="mt-3 flex items-center gap-3.5 rounded-2xl bg-briefing-cream py-2.5 pl-5 pr-3">
-          {/* Vector car in the stat tiles' icon language (same Ocean as the
-              Days/Attractions/Prefectures glyphs) — the emoji sat outside the
-              icon system and coloured itself. */}
-          <Car className="size-5 shrink-0 text-basel-brick" strokeWidth={2} aria-hidden />
-          {/* text-xs = the stat tiles' LABEL size ("Attractions"). Midnight
-              for the statement, Ocean for the duration. */}
-          <p className="text-xs font-semibold text-zen-black">
-            Car Rental Recommend
-            {carDuration && (
-              <span className="text-graphite/70">
-                {/* Margin on the dash, not literal spaces: JSX collapses any
-                    run of whitespace to a single space, so mx-* is the only
-                    tunable way to widen the gap on both sides. */}
-                <span className="mx-1.5">—</span>
-                {carDuration}
-              </span>
-            )}
-          </p>
+      {/* CATALOGUE trip: the three numbers as 3-up tiles. A SAVED trip drops
+          them — its day count rides in the วันเดินทาง row, and Attractions /
+          Prefectures become rows too, so the card is ONE stack instead of
+          tiles-then-rows (two systems reading against each other). */}
+      {!savedTrip && (
+        <div className="mt-4 grid grid-cols-3 gap-3">
+          {stats.map(({ icon: Icon, label, value }) => (
+            <div key={label} className="rounded-2xl bg-briefing-cream p-3 text-center">
+              <Icon className="mx-auto size-5 text-basel-brick" />
+              <p className="mt-1.5 text-lg font-extrabold text-zen-black">{value}</p>
+              <p className="text-xs font-medium text-graphite/70">{label}</p>
+            </div>
+          ))}
         </div>
       )}
+      {/* ONE container with space-y — every row is separated by the same gap
+          (they each carried their own mt-2 / mt-3 before, so the spacing
+          stepped unevenly down the card). */}
+      <div className="mt-4 space-y-2">
+        {/* Travel window — a SAVED trip's own fact (templates show their
+            recommended/available periods instead, further down the panel).
+            The day count lives here rather than in a tile of its own. */}
+        {travelDateLabel && (
+          <SummaryRow icon={<CalendarDays className="size-5 shrink-0 text-basel-brick" strokeWidth={2} aria-hidden />}>
+            <p className="text-xs font-semibold text-zen-black">
+              วันเดินทาง
+              <span className="text-graphite/70">
+                <span className="mx-1.5">—</span>
+                {travelDateLabel}
+                {savedTrip && ` · ${tripDays} วัน`}
+              </span>
+            </p>
+          </SummaryRow>
+        )}
+        {savedTrip && (
+          <>
+            <SummaryRow icon={<MapPin className="size-5 shrink-0 text-basel-brick" strokeWidth={2} aria-hidden />}>
+              <p className="text-xs font-semibold text-zen-black">
+                Attractions
+                <span className="text-graphite/70"><span className="mx-1.5">—</span>{attractionCount}</span>
+              </p>
+            </SummaryRow>
+            <SummaryRow icon={<JapanIcon className="size-5 shrink-0 text-basel-brick" />}>
+              <p className="text-xs font-semibold text-zen-black">
+                Prefectures
+                <span className="text-graphite/70"><span className="mx-1.5">—</span>{cityCount || 'XX'}</span>
+              </p>
+            </SummaryRow>
+          </>
+        )}
+        {/* Flights the traveller entered when duplicating. The plane carries
+            no mt-0.5 nudge any more — the row centres its icon itself. */}
+        {flightLegs.length > 0 && (
+          <SummaryRow icon={<Plane className="size-5 shrink-0 text-basel-brick" strokeWidth={2} aria-hidden />}>
+            <div className="space-y-0.5">
+              {flightLegs.map(({ leg, info }) => (
+                <p key={leg} className="text-xs font-semibold text-zen-black">
+                  {leg === 'arrival' ? 'ขาเข้า' : 'ขาออก'}
+                  <span className="text-graphite/70">
+                    <span className="mx-1.5">—</span>
+                    {[
+                      info?.airport ? (AIRPORTS[info.airport]?.label ?? info.airport) : null,
+                      info?.time ? `${info.time} น.${leg === 'departure' && info.nextDay ? ' (วันถัดไป)' : ''}` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </span>
+                </p>
+              ))}
+            </div>
+          </SummaryRow>
+        )}
+        {carRental && (
+          <SummaryRow icon={<Car className="size-5 shrink-0 text-basel-brick" strokeWidth={2} aria-hidden />}>
+            {/* text-xs = the stat tiles' LABEL size. Midnight for the
+                statement, graphite for the duration. */}
+            <p className="text-xs font-semibold text-zen-black">
+              Car Rental Recommend
+              {carDuration && (
+                <span className="text-graphite/70">
+                  {/* Margin on the dash, not literal spaces: JSX collapses any
+                      run of whitespace to a single space, so mx-* is the only
+                      tunable way to widen the gap on both sides. */}
+                  <span className="mx-1.5">—</span>
+                  {carDuration}
+                </span>
+              )}
+            </p>
+          </SummaryRow>
+        )}
+      </div>
     </>
   )
   const backContent = (
     <>
       <div className="flex items-start justify-between gap-3">
-        <p className="text-lg font-extrabold tracking-tight text-briefing-cream/90">Admin Review</p>
-        <FlipHint label="Summary" dark />
+        <p className="text-lg font-extrabold tracking-tight text-briefing-cream/90">{reviewTitle}</p>
+        <FlipHint label="Summary" dark onClick={toggleFlip} />
       </div>
       {/* Near-full opacity: this is the pitch, not fine print — and opacity
           dims color EMOJI along with the text, which reads as washed out. */}
@@ -425,22 +526,13 @@ export function OverviewPanel({
 
   return (
     <div className="space-y-4 font-detail">
-      {/* Trip summary ⇄ Admin Review — ONE card, two faces; tap to flip.
-          Both faces stay grid-stacked in every mode, so the card's height is
-          always the taller face and nothing jumps. */}
-      <motion.div
-        role="button"
-        tabIndex={0}
-        aria-label={flipped ? 'ดูสรุปทริป · Show trip summary' : 'ดูรีวิวแอดมิน · Show admin review'}
-        onTap={toggleFlip}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault()
-            toggleFlip()
-          }
-        }}
-        className="cursor-pointer select-none"
-      >
+      {/* Trip summary ⇄ Admin Review — ONE card, two faces. The FLIP CONTROL
+          is the Review/Summary pill in the header, NOT the card (user call):
+          the faces hold their own controls (the delete action, links), and a
+          card-wide tap target swallowed those or turned the card over
+          mid-read. Both faces stay grid-stacked in every mode, so the card's
+          height is always the taller face and nothing jumps. */}
+      <motion.div className="select-none">
         {flipping || teasing ? (
           <div style={{ perspective: 1200 }}>
             <motion.div
@@ -543,6 +635,21 @@ export function OverviewPanel({
           </div>
         </section>
       )}
+
+      {/* Destructive action LAST — below every fact about the trip, so it can
+          never be hit on the way to something else. Red is the codebase's
+          established destructive vocabulary (ConfirmDialog's danger tone), not
+          a UI accent; the caller shows the confirm. */}
+      {onDeleteTrip && (
+        <button
+          type="button"
+          onClick={onDeleteTrip}
+          className="flex w-full items-center justify-center gap-2 rounded-3xl border border-red-200 bg-white py-3.5 text-sm font-semibold text-red-600 shadow-sm transition-colors hover:bg-red-50"
+        >
+          <Trash2 className="size-4" strokeWidth={2.25} aria-hidden />
+          ลบทริปนี้ · Delete this trip
+        </button>
+      )}
     </div>
   )
 }
@@ -574,17 +681,24 @@ function NoteLines({ text }: { text: string }) {
 
 /** Flip affordance — labeled corner chip ("↻ Review"): icon-only proved too
  *  subtle; words name the interaction AND what's on the back. */
-function FlipHint({ label, dark }: { label: string; dark: boolean }) {
+/** The flip control. It IS the button now — the card itself no longer flips
+ *  on tap, so the links, chips and accordions inside a face are safe to use
+ *  without the card turning over under you. */
+function FlipHint({ label, dark, onClick }: { label: string; dark: boolean; onClick: () => void }) {
   return (
-    <span
-      aria-hidden
-      className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-        dark ? 'bg-white/10 text-briefing-cream/70' : 'bg-briefing-cream text-graphite/70'
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label === 'Review' ? 'ดูรีวิวแอดมิน · Show admin review' : 'ดูสรุปทริป · Show trip summary'}
+      className={`flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+        dark
+          ? 'bg-white/10 text-briefing-cream/70 hover:bg-white/20 hover:text-briefing-cream'
+          : 'bg-briefing-cream text-graphite/70 hover:bg-basel-brick/10 hover:text-basel-brick'
       }`}
     >
       <RefreshCw className="size-3" strokeWidth={2.25} />
       {label}
-    </span>
+    </button>
   )
 }
 

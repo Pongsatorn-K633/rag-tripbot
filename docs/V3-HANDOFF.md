@@ -8,7 +8,7 @@
 >
 > **Update — 2026-07 UI pass:** a homepage/navbar redesign landed on top of V3. **User-facing
 > routes were renamed** (full table in `CLAUDE.md` → "Current Route Map"): `/pre-planned`→`/discover`,
-> `/go`→`/my-trip`, `/doc-to-trip`→`/ai-scanner`, plus a new **`/create`** hub. **Dark mode was
+> `/go`→`/my-trips`, `/doc-to-trip`→`/ai-scanner`, plus a new **`/create`** hub. **Dark mode was
 > removed** — single cool palette (Midnight/Cloud/Ocean + Noir); `ThemeProvider` was deleted.
 > Backend/API names are unchanged. **UI/motion SSOT:** [`docs/ui-alignment.md`](ui-alignment.md)
 > (palette, hero anatomy, motion recipes, parallax guardrails, review checklist) — also summarized

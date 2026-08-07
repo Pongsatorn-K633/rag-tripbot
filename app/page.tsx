@@ -272,7 +272,7 @@ export default function Home() {
             </motion.div>
             {/* Secondary CTA row — link-weight ghosts UNDER the primary (one
                 hero object, two quiet destinations): the catalog, and the
-                user's own trips (/my-trip itself bounces guests to sign-in).
+                user's own trips (/my-trips itself bounces guests to sign-in).
                 OUTSIDE the `group` above so hovering these never blooms
                 Explore!'s halo; own motion.div reusing the same scroll values
                 (minus scale — at ghost size the shrink read as jitter). NO
@@ -296,7 +296,7 @@ export default function Home() {
                 Browse Trips
               </Link>
               <Link
-                href="/my-trip"
+                href="/my-trips"
                 className="group/g2 flex items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/40 bg-white/15 px-4 py-2.5 font-headline text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-[2px] hover:border-white/70 hover:bg-white/25 hover:shadow-[0_6px_20px_rgba(91,136,178,0.35)]"
               >
                 <Ticket size={15} strokeWidth={2.25} className="shrink-0 transition-transform duration-300 group-hover/g2:-rotate-12" aria-hidden />

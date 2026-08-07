@@ -33,6 +33,15 @@ const nextConfig: NextConfig = {
         destination: '/discover',
         permanent: true,
       },
+      // ── RENAME: /my-trip → /my-trips (2026-08-03) ───────────────────────
+      // The page lists trips, so both the route and the label went plural.
+      // Kept as a redirect because /my-trip links may already be pasted in
+      // chats/LINE; harmless to drop once none remain.
+      {
+        source: '/my-trip',
+        destination: '/my-trips',
+        permanent: true,
+      },
     ]
   },
 }

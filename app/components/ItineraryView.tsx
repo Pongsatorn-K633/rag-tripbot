@@ -395,7 +395,7 @@ function DayCard({ day, isOpen, onToggle, t, variant, onMakeDayFree, makeDayFree
               variant === 'dark' ? 'bg-white/5 text-briefing-cream/60' : 'bg-emerald-50 text-emerald-900'
             }`}>
               <CalendarCheck size={16} className="text-emerald-600 flex-shrink-0" strokeWidth={2.5} />
-              <span>วันอิสระ — ยังไม่มีแผน เพิ่มกิจกรรมเองได้ที่ My Trip</span>
+              <span>วันอิสระ — ยังไม่มีแผน เพิ่มกิจกรรมเองได้ที่ My Trips</span>
             </div>
           )}
           {timeline.length > 0 && (

@@ -54,7 +54,7 @@ export default function EditTripPage() {
         const e = await res.json().catch(() => ({}))
         throw new Error(e.error ?? 'บันทึกไม่สำเร็จ')
       }
-      router.push('/my-trip')
+      router.push('/my-trips')
     } catch (e) {
       alert(e instanceof Error ? e.message : 'บันทึกไม่สำเร็จ')
       setSaving(false)
@@ -63,8 +63,8 @@ export default function EditTripPage() {
 
   return (
     <main className="pt-28 pb-24 px-6 max-w-2xl mx-auto">
-      <Link href="/my-trip" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zen-black/50 hover:text-basel-brick transition-colors mb-6">
-        <ArrowLeft size={14} strokeWidth={3} /> กลับไปหน้าทริป · Back to My Trip
+      <Link href="/my-trips" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zen-black/50 hover:text-basel-brick transition-colors mb-6">
+        <ArrowLeft size={14} strokeWidth={3} /> กลับไปหน้าทริป · Back to My Trips
       </Link>
 
       {loading ? (

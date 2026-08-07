@@ -14,7 +14,7 @@ import { isGraphiteRoute } from '@/lib/theme-routes'
 const TABS = [
   { id: 'home', label: 'Home', href: '/' },
   { id: 'discover', label: 'Discover', href: '/discover' },
-  { id: 'my-trip', label: 'My Trip', href: '/my-trip' },
+  { id: 'my-trips', label: 'My Trips', href: '/my-trips' },
   // Create = the hub that fans out to AI Chat + AI Scanner (see /create)
   { id: 'create', label: 'Create', href: '/create' },
 ]
@@ -127,7 +127,7 @@ export default function Navbar() {
 
   // Three bar treatments:
   //  • home     — transparent over the photo hero (white text, Cloud oval on scroll)
-  //  • graphite — /discover, /my-trip, /create: dark bar, light text
+  //  • graphite — /discover, /my-trips, /create: dark bar, light text
   //  • other    — light pages keep the solid Cloud bar + dark text
   const isHome = pathname === '/'
   const isGraphite = isGraphiteRoute(pathname)

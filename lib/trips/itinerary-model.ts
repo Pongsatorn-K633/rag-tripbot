@@ -420,9 +420,9 @@ function applyFlight(days: Day[], flight?: TripFlight | null): Day[] {
     const firstTime = out[0].activities.find((a) => a.time)?.time
     const day0: Day = { ...out[0], activities: [flightActivity('arrival', arr), ...out[0].activities] }
     // Can't reach the first activity in time (incl. airport-transfer buffer) →
-    // flag it prominently (non-destructive; the traveler shifts Day 1 in My Trip).
+    // flag it prominently (non-destructive; the traveler shifts Day 1 in My Trips).
     if (arrivalTooLate(arr.time, firstTime)) {
-      day0.notice = `✈️ เครื่องถึง ${arr.time} น. + เผื่อเวลาเดินทางจากสนามบิน ~2 ชม. อาจไม่ทันแผนวันแรกที่เริ่ม ${firstTime} น. — ปรับได้ที่ My Trip`
+      day0.notice = `✈️ เครื่องถึง ${arr.time} น. + เผื่อเวลาเดินทางจากสนามบิน ~2 ชม. อาจไม่ทันแผนวันแรกที่เริ่ม ${firstTime} น. — ปรับได้ที่ My Trips`
     }
     out[0] = day0
   }
@@ -435,8 +435,8 @@ function applyFlight(days: Day[], flight?: TripFlight | null): Day[] {
     // Can't make the flight after the activity ends + travel + check-in?
     if (departureTooTight(lastEnd, dep.time, dep.nextDay)) {
       const tight = departureIsAfter(lastEnd, dep.time, dep.nextDay)
-        ? `🛫 กิจกรรมสุดท้ายจบ ~${lastEnd} น. หลังเวลาบิน ${dep.time} น. — มีบางที่ไปไม่ได้แล้วครับ ลองปรับเวลา แก้ไข/ลบ/สลับกิจกรรม ที่ My Trip ดูนะครับ`
-        : `🛫 กิจกรรมสุดท้ายจบ ~${lastEnd} น. — เผื่อเดินทางไปสนามบิน (~2 ชม.) + เช็คอิน (3 ชม. / 4 ชม. ถ้าขอคืนภาษี) อาจไม่ทันบิน ${dep.time} น. ลองปรับเวลา แก้ไข/ลบ/สลับกิจกรรม ที่ My Trip ดูนะครับ`
+        ? `🛫 กิจกรรมสุดท้ายจบ ~${lastEnd} น. หลังเวลาบิน ${dep.time} น. — มีบางที่ไปไม่ได้แล้วครับ ลองปรับเวลา แก้ไข/ลบ/สลับกิจกรรม ที่ My Trips ดูนะครับ`
+        : `🛫 กิจกรรมสุดท้ายจบ ~${lastEnd} น. — เผื่อเดินทางไปสนามบิน (~2 ชม.) + เช็คอิน (3 ชม. / 4 ชม. ถ้าขอคืนภาษี) อาจไม่ทันบิน ${dep.time} น. ลองปรับเวลา แก้ไข/ลบ/สลับกิจกรรม ที่ My Trips ดูนะครับ`
       lastDay.notice = [lastDay.notice, tight].filter(Boolean).join(' · ')
     }
     out[li] = lastDay
