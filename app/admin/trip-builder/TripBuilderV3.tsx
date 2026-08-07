@@ -5,8 +5,9 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Plus, Trash2, Save, X, ChevronLeft, ChevronRight, ChevronDown, Check, Circle, Sparkles } from 'lucide-react'
 import type {
-  ItineraryV3, DayV3, ActivityV3, PlanOverview, PlanPeriod, PlanPriority, Bilingual, PlanCarRental,
+  ItineraryV3, DayV3, ActivityV3, PlanOverview, PlanPeriod, Bilingual, PlanCarRental,
 } from '@/lib/itinerary-types'
+import ActivityFields, { nextActivitySlot } from '@/app/components/ActivityFields'
 import { PLAN_MEAL_SLOTS } from '@/lib/itinerary-types'
 import { AIRPORTS } from '@/lib/trips/itinerary-model'
 import { deriveAvailability } from '@/lib/trips/import-plan'
@@ -18,16 +19,8 @@ function emptyV3(): ItineraryV3 {
   return { version: 3, title: '', totalDays: 1, overview: { title: '' }, days: [{ day: 1, name: { en: '', th: '' }, activities: [] }] }
 }
 
-// MVP slot list (columns.md). Meals are the only choosable slots (is_default applies).
-const SLOTS = [
-  'Logistics', 'Living', 'Admin & Services',
-  'Breakfast', 'Brunch', 'Lunch', 'AfternoonMeal', 'Dinner', 'LatenightMeal',
-  'Activity 1', 'Activity 2', 'Activity 3', 'Activity 4', 'Activity 5', 'Activity 6', 'Activity 7', 'Activity 8',
-]
-const PRIORITIES: PlanPriority[] = ['Must', 'Recommend', 'Normal']
-const QUEUE_TIMES = ['Low', 'Mid', 'High', 'Reserve']
-const BOOKING_POLICIES = ['Walk-in Only', 'Same-Day Ticket', 'Optional', 'Recommended', 'Mandatory']
-const CATEGORY_TAGS = ['', 'food', 'cafe', 'shopping', 'nature', 'temple', 'landmark', 'experience', 'nightlife', 'transport', 'stay']
+// Slot list, priorities, queue/booking/category vocabularies now live with the
+// shared field set (ActivityFields) — the ONE place they can be edited.
 const LEVELS = ['😍', '⭐', '👌']
 const MEALS = new Set<string>(PLAN_MEAL_SLOTS)
 const inp = 'px-3 py-2 text-sm border border-zen-black/20 rounded-lg focus:outline-none focus:border-basel-brick bg-white w-full'
@@ -71,7 +64,7 @@ export default function TripBuilderV3({ initial }: { initial?: V3Initial }) {
     update((p) => ({ ...p, days: p.days.map((d, i) => (i === di ? { ...d, activities: d.activities.map((a, j) => (j === ai ? { ...a, ...patch } : a)) } : d)) }))
   const addAct = (di: number) => {
     const newIdx = itin.days[di].activities.length
-    update((p) => ({ ...p, days: p.days.map((d, i) => (i === di ? { ...d, activities: [...d.activities, { slot: 'Activity 1', name: { en: '', th: '' } }] } : d)) }))
+    update((p) => ({ ...p, days: p.days.map((d, i) => (i === di ? { ...d, activities: [...d.activities, { slot: nextActivitySlot(d.activities), name: { en: '', th: '' } }] } : d)) }))
     setExpanded((s) => new Set(s).add(`${di}-${newIdx}`)) // auto-open the new row
   }
   const removeAct = (di: number, ai: number) =>
@@ -430,7 +423,7 @@ export default function TripBuilderV3({ initial }: { initial?: V3Initial }) {
               <div className="p-4 space-y-2">
                 {day.activities.length === 0 && <p className="text-xs text-zen-black/30 py-2">ยังไม่มีกิจกรรม</p>}
                 {day.activities.map((a, ai) => (
-                  <ActivityCard key={ai} a={a} di={di} ai={ai} open={expanded.has(`${di}-${ai}`)} onToggle={() => toggleRow(`${di}-${ai}`)} patch={patchAct} remove={removeAct} />
+                  <ActivityCard key={ai} a={a} di={di} ai={ai} siblings={day.activities} open={expanded.has(`${di}-${ai}`)} onToggle={() => toggleRow(`${di}-${ai}`)} patch={patchAct} remove={removeAct} />
                 ))}
                 <button onClick={() => addAct(di)} className="w-full py-2 border border-dashed border-zen-black/20 rounded-lg text-zen-black/50 text-xs font-bold hover:border-basel-brick hover:text-basel-brick transition-all flex items-center justify-center gap-1.5"><Plus size={13} /> เพิ่มกิจกรรม</button>
               </div>
@@ -475,8 +468,8 @@ export default function TripBuilderV3({ initial }: { initial?: V3Initial }) {
 }
 
 // ── Activity card (collapsible) ──────────────────────────────────────────────
-function ActivityCard({ a, di, ai, open, onToggle, patch, remove }: {
-  a: ActivityV3; di: number; ai: number; open: boolean; onToggle: () => void
+function ActivityCard({ a, di, ai, siblings, open, onToggle, patch, remove }: {
+  a: ActivityV3; di: number; ai: number; siblings: ActivityV3[]; open: boolean; onToggle: () => void
   patch: (di: number, ai: number, p: Partial<ActivityV3>) => void
   remove: (di: number, ai: number) => void
 }) {
@@ -546,123 +539,72 @@ function ActivityCard({ a, di, ai, open, onToggle, patch, remove }: {
         <button onClick={() => remove(di, ai)} className="text-zen-black/30 hover:text-red-600 flex-shrink-0"><X size={15} /></button>
       </div>
 
-      {/* Expanded form */}
+      {/* Expanded form — the SHARED field set (app/components/ActivityFields.tsx),
+          rendered in `admin` mode so ⭐ is_default, ★ rating and the Maps pull
+          stay here and out of the traveller's editor. `fieldClass={inp}` keeps
+          this form pixel-identical to the rest of the builder. */}
       {open && (
-        <div className="px-3 pb-3 pt-1 space-y-2 border-t border-zen-black/10">
-          <div className="flex items-center gap-2 flex-wrap">
-            <select value={a.slot} onChange={(e) => patch(di, ai, { slot: e.target.value })} className={`${inp} py-1 w-auto!`}>
-              {SLOTS.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <input value={a.time ?? ''} onChange={(e) => patch(di, ai, { time: e.target.value || null })} placeholder="--:--" className={`${inp} py-1 w-[72px]!`} />
-            <input value={a.duration_min ?? ''} onChange={(e) => patch(di, ai, { duration_min: e.target.value ? parseInt(e.target.value, 10) || null : null })} placeholder="นาที" type="number" className={`${inp} py-1 w-[72px]!`} />
-            <select value={a.priority ?? ''} onChange={(e) => patch(di, ai, { priority: (e.target.value || null) as ActivityV3['priority'] })} className={`${inp} py-1 w-auto!`}>
-              <option value="">— priority —</option>
-              {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
-            </select>
-            {MEALS.has(a.slot) && (
-              <label className="flex items-center gap-1 text-[11px] text-zen-black/60"><input type="checkbox" checked={!!a.is_default} onChange={(e) => patch(di, ai, { is_default: e.target.checked })} className="accent-amber-400" /> ⭐ แนะนำ</label>
-            )}
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <input value={name.en} onChange={(e) => setName({ ...name, en: e.target.value })} placeholder="ชื่อ (EN)" className={`${inp} py-1.5`} />
-            <input value={name.th} onChange={(e) => setName({ ...name, th: e.target.value })} placeholder="ชื่อ (TH)" className={`${inp} py-1.5`} />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <textarea value={desc.en} onChange={(e) => setDesc({ ...desc, en: e.target.value })} rows={2} placeholder="คำอธิบาย (EN)" className={`${inp} py-1.5 resize-y`} />
-            <textarea value={desc.th} onChange={(e) => setDesc({ ...desc, th: e.target.value })} rows={2} placeholder="คำอธิบาย (TH)" className={`${inp} py-1.5 resize-y`} />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <input value={a.cost ?? ''} onChange={(e) => patch(di, ai, { cost: e.target.value || null })} placeholder="ราคา · Cost" className={`${inp} py-1.5`} />
-            <input value={a.location ?? ''} onChange={(e) => patch(di, ai, { location: e.target.value || null })} placeholder="พื้นที่ · Location (City, District)" className={`${inp} py-1.5`} />
-          </div>
-
-          <button type="button" onClick={() => setMore(!more)} className="text-[11px] font-bold text-basel-brick hover:underline flex items-center gap-1">
-            <ChevronDown size={12} className={`transition-transform ${more ? 'rotate-180' : ''}`} /> {more ? 'ซ่อนข้อมูลเพิ่มเติม' : 'ข้อมูลเพิ่มเติม · More (เรตติ้ง/คิว/ลิงก์/โน้ต)'}
-          </button>
-          {more && (
-            <div className="space-y-2 pt-1 border-t border-zen-black/10">
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={fetchMaps} disabled={mapsLoading || !!mapsResult} className="text-[11px] font-bold text-blue-600 hover:underline flex items-center gap-1 disabled:opacity-40">
-                  📍 {mapsLoading ? 'กำลังดึง…' : 'ดึงจาก Google Maps'}
-                </button>
-                {a.placeId && <span className="text-[9px] font-bold text-emerald-600">✓ linked</span>}
-              </div>
-              {mapsResult && (() => {
-                // Only offer rows where Google actually returned a value to compare against.
-                const rows = ([
-                  { key: 'rating' as MapsField, label: '★ Rating', cur: a.rating != null ? String(a.rating) : '', goog: typeof mapsResult.rating === 'number' ? String(mapsResult.rating) : '' },
-                  { key: 'hours' as MapsField, label: 'Hours', cur: a.operating_hours ?? '', goog: mapsResult.openingHours ?? '' },
-                  { key: 'map' as MapsField, label: 'Map URL', cur: a.links?.map ?? '', goog: mapsResult.googleMapsUri ?? '' },
-                  { key: 'website' as MapsField, label: 'Website', cur: a.links?.website ?? '', goog: mapsResult.websiteUri ?? '' },
-                ]).filter((r) => r.goog)
-                return (
-                  <div className="rounded-lg border border-blue-300 bg-blue-50/60 p-2.5 space-y-2">
-                    <p className="text-[11px] font-bold text-blue-800">
-                      📍 ผลจาก Google Maps — เลือกข้อมูลที่จะใช้ทีละช่อง
-                    </p>
-                    {rows.length === 0 ? (
-                      <p className="text-[11px] text-zen-black/50">ไม่มีข้อมูลใหม่จาก Google Maps สำหรับช่องเหล่านี้ (จะลิงก์ placeId ให้)</p>
-                    ) : rows.map((r) => {
-                      const useGoogle = mapsPick[r.key]
-                      const pick = (g: boolean) => setMapsPick((m) => ({ ...m, [r.key]: g }))
-                      const cell = 'flex-1 flex items-start gap-1.5 p-1.5 rounded border cursor-pointer text-[11px] min-w-0'
-                      return (
-                        <div key={r.key} className="space-y-1">
-                          <span className="text-[10px] font-bold text-zen-black/60">{r.label}</span>
-                          <div className="flex gap-2">
-                            <label className={`${cell} ${!useGoogle ? 'border-basel-brick bg-white' : 'border-zen-black/15 bg-white/40'}`}>
-                              <input type="radio" name={`maps-${di}-${ai}-${r.key}`} checked={!useGoogle} onChange={() => pick(false)} className="mt-0.5 accent-basel-brick flex-shrink-0" />
-                              <span className="min-w-0 break-words"><span className="text-zen-black/40">ของเดิม · </span>{r.cur || <span className="italic text-zen-black/35">(ว่าง)</span>}</span>
-                            </label>
-                            <label className={`${cell} ${useGoogle ? 'border-blue-500 bg-white' : 'border-zen-black/15 bg-white/40'}`}>
-                              <input type="radio" name={`maps-${di}-${ai}-${r.key}`} checked={useGoogle} onChange={() => pick(true)} className="mt-0.5 accent-blue-600 flex-shrink-0" />
-                              <span className="min-w-0 break-words"><span className="text-blue-600/70">Google · </span>{r.goog}</span>
-                            </label>
+        <div className="px-3 pb-3 pt-1 border-t border-zen-black/10">
+          <ActivityFields
+            a={a}
+            mode="admin"
+            fieldClass={inp}
+            siblings={siblings}
+            selfIndex={ai}
+            onPatch={(patchIn) => patch(di, ai, patchIn)}
+            mapsSlot={
+              <>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={fetchMaps} disabled={mapsLoading || !!mapsResult} className="text-[11px] font-bold text-blue-600 hover:underline flex items-center gap-1 disabled:opacity-40">
+                    📍 {mapsLoading ? 'กำลังดึง…' : 'ดึงจาก Google Maps'}
+                  </button>
+                  {a.placeId && <span className="text-[9px] font-bold text-emerald-600">✓ linked</span>}
+                </div>
+                {mapsResult && (() => {
+                  // Only offer rows where Google actually returned a value to compare against.
+                  const rows = ([
+                    { key: 'rating' as MapsField, label: '★ Rating', cur: a.rating != null ? String(a.rating) : '', goog: typeof mapsResult.rating === 'number' ? String(mapsResult.rating) : '' },
+                    { key: 'hours' as MapsField, label: 'Hours', cur: a.operating_hours ?? '', goog: mapsResult.openingHours ?? '' },
+                    { key: 'map' as MapsField, label: 'Map URL', cur: a.links?.map ?? '', goog: mapsResult.googleMapsUri ?? '' },
+                    { key: 'website' as MapsField, label: 'Website', cur: a.links?.website ?? '', goog: mapsResult.websiteUri ?? '' },
+                  ]).filter((r) => r.goog)
+                  return (
+                    <div className="rounded-lg border border-blue-300 bg-blue-50/60 p-2.5 space-y-2">
+                      <p className="text-[11px] font-bold text-blue-800">
+                        📍 ผลจาก Google Maps — เลือกข้อมูลที่จะใช้ทีละช่อง
+                      </p>
+                      {rows.length === 0 ? (
+                        <p className="text-[11px] text-zen-black/50">ไม่มีข้อมูลใหม่จาก Google Maps สำหรับช่องเหล่านี้ (จะลิงก์ placeId ให้)</p>
+                      ) : rows.map((r) => {
+                        const useGoogle = mapsPick[r.key]
+                        const pick = (g: boolean) => setMapsPick((m) => ({ ...m, [r.key]: g }))
+                        const cell = 'flex-1 flex items-start gap-1.5 p-1.5 rounded border cursor-pointer text-[11px] min-w-0'
+                        return (
+                          <div key={r.key} className="space-y-1">
+                            <span className="text-[10px] font-bold text-zen-black/60">{r.label}</span>
+                            <div className="flex gap-2">
+                              <label className={`${cell} ${!useGoogle ? 'border-basel-brick bg-white' : 'border-zen-black/15 bg-white/40'}`}>
+                                <input type="radio" name={`maps-${di}-${ai}-${r.key}`} checked={!useGoogle} onChange={() => pick(false)} className="mt-0.5 accent-basel-brick flex-shrink-0" />
+                                <span className="min-w-0 break-words"><span className="text-zen-black/40">ของเดิม · </span>{r.cur || <span className="italic text-zen-black/35">(ว่าง)</span>}</span>
+                              </label>
+                              <label className={`${cell} ${useGoogle ? 'border-blue-500 bg-white' : 'border-zen-black/15 bg-white/40'}`}>
+                                <input type="radio" name={`maps-${di}-${ai}-${r.key}`} checked={useGoogle} onChange={() => pick(true)} className="mt-0.5 accent-blue-600 flex-shrink-0" />
+                                <span className="min-w-0 break-words"><span className="text-blue-600/70">Google · </span>{r.goog}</span>
+                              </label>
+                            </div>
                           </div>
-                        </div>
-                      )
-                    })}
-                    <div className="flex items-center gap-2 pt-0.5">
-                      <button type="button" onClick={applyMaps} className="text-[11px] font-bold text-white bg-basel-brick rounded px-3 py-1 hover:opacity-90">ใช้ที่เลือก · Apply</button>
-                      <button type="button" onClick={() => setMapsResult(null)} className="text-[11px] font-bold text-zen-black/50 hover:underline">ยกเลิก · Cancel</button>
+                        )
+                      })}
+                      <div className="flex items-center gap-2 pt-0.5">
+                        <button type="button" onClick={applyMaps} className="text-[11px] font-bold text-white bg-basel-brick rounded px-3 py-1 hover:opacity-90">ใช้ที่เลือก · Apply</button>
+                        <button type="button" onClick={() => setMapsResult(null)} className="text-[11px] font-bold text-zen-black/50 hover:underline">ยกเลิก · Cancel</button>
+                      </div>
                     </div>
-                  </div>
-                )
-              })()}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <input type="number" step="0.1" value={a.rating ?? ''} onChange={(e) => patch(di, ai, { rating: e.target.value ? parseFloat(e.target.value) : null })} placeholder="★ rating" className={`${inp} py-1.5`} />
-                <select value={a.queue_time ?? ''} onChange={(e) => patch(di, ai, { queue_time: (e.target.value || null) as ActivityV3['queue_time'] })} className={`${inp} py-1.5`}>
-                  <option value="">— queue —</option>{QUEUE_TIMES.map((q) => <option key={q} value={q}>{q}</option>)}
-                </select>
-                <select value={a.booking_policy ?? ''} onChange={(e) => patch(di, ai, { booking_policy: (e.target.value || null) as ActivityV3['booking_policy'] })} className={`${inp} py-1.5`}>
-                  <option value="">— booking —</option>{BOOKING_POLICIES.map((b) => <option key={b} value={b}>{b}</option>)}
-                </select>
-                <select value={a.category ?? ''} onChange={(e) => patch(di, ai, { category: e.target.value || null })} className={`${inp} py-1.5`}>
-                  {CATEGORY_TAGS.map((c) => <option key={c} value={c}>{c || '— category —'}</option>)}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <input value={a.operating_hours ?? ''} onChange={(e) => patch(di, ai, { operating_hours: e.target.value || null })} placeholder="เวลาเปิด · Hours" className={`${inp} py-1.5`} />
-                <input value={a.how_to_book ?? ''} onChange={(e) => patch(di, ai, { how_to_book: e.target.value || null })} placeholder="วิธีจอง · How to book" className={`${inp} py-1.5`} />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <input value={notes.en} onChange={(e) => patch(di, ai, { notes: { ...notes, en: e.target.value } })} placeholder="โน้ต (EN)" className={`${inp} py-1.5`} />
-                <input value={notes.th} onChange={(e) => patch(di, ai, { notes: { ...notes, th: e.target.value } })} placeholder="โน้ต (TH)" className={`${inp} py-1.5`} />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <input value={remark.en} onChange={(e) => patch(di, ai, { remark: { ...remark, en: e.target.value } })} placeholder="ข้อควรรู้ (EN)" className={`${inp} py-1.5`} />
-                <input value={remark.th} onChange={(e) => patch(di, ai, { remark: { ...remark, th: e.target.value } })} placeholder="ข้อควรรู้ (TH)" className={`${inp} py-1.5`} />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <input value={links.map ?? ''} onChange={(e) => setLink('map', e.target.value)} placeholder="Map URL" className={`${inp} py-1.5`} />
-                <input value={links.walking_route ?? ''} onChange={(e) => setLink('walking_route', e.target.value)} placeholder="Walking route URL" className={`${inp} py-1.5`} />
-                <input value={links.website ?? ''} onChange={(e) => setLink('website', e.target.value)} placeholder="Website" className={`${inp} py-1.5`} />
-                <input value={links.ig ?? ''} onChange={(e) => setLink('ig', e.target.value)} placeholder="Instagram" className={`${inp} py-1.5`} />
-                <input value={links.fb ?? ''} onChange={(e) => setLink('fb', e.target.value)} placeholder="Facebook" className={`${inp} py-1.5`} />
-                <input value={links.tt ?? ''} onChange={(e) => setLink('tt', e.target.value)} placeholder="TikTok" className={`${inp} py-1.5`} />
-              </div>
-            </div>
-          )}
+                  )
+                })()}
+              </>
+            }
+          />
         </div>
       )}
     </div>

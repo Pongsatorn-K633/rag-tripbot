@@ -994,7 +994,6 @@ export function MyTripCardCompact({
   copied = false,
   editHref,
   onView,
-  onDelete,
   onCopyCode,
   onGenerateCode,
 }: {
@@ -1022,7 +1021,6 @@ export function MyTripCardCompact({
   copied?: boolean
   editHref?: string
   onView: () => void
-  onDelete?: () => void
   onCopyCode?: (e: React.MouseEvent) => void
   onGenerateCode?: (e: React.MouseEvent) => void
 }) {
@@ -1054,8 +1052,13 @@ export function MyTripCardCompact({
                 <span className="font-headline text-[8px] font-black uppercase tracking-widest">Published</span>
               </span>
             ) : (
-              // Hover-only, like the old grid card: they must not compete with
+              // Hover-only, like the old grid card: it must not compete with
               // VIEW for attention while browsing.
+              //
+              // EDIT only. Delete was removed from the card: a destructive
+              // action one stray hover-click away from a trip you were only
+              // browsing is the wrong place for it. It lives at the end of the
+              // trip's own Overview, behind a confirm dialog.
               <span className="absolute right-2.5 top-4 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                 {editHref && (
                   <Link
@@ -1066,19 +1069,6 @@ export function MyTripCardCompact({
                   >
                     <Pencil size={12} />
                   </Link>
-                )}
-                {onDelete && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onDelete()
-                    }}
-                    aria-label="ลบแผน"
-                    className="grid size-6 place-items-center rounded-full bg-white/85 text-zen-black/50 shadow-sm transition-colors hover:bg-basel-brick hover:text-white"
-                  >
-                    <Trash2 size={12} />
-                  </button>
                 )}
               </span>
             )}

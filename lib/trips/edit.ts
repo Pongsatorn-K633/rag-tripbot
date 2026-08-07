@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
+import { safeHref } from '@/lib/url'
 import type { Itinerary } from '@/lib/itinerary-types'
 
 /**
@@ -17,6 +18,50 @@ export class TripEditError extends Error {
     super(message)
     this.name = 'TripEditError'
   }
+}
+
+/**
+ * Every key in the itinerary whose value is rendered as an `href`, across all
+ * three schema versions: V3 `links` (map/walking_route/ig/fb/tt/website) and the
+ * v1/v2 flat pair. Keep in sync with the render sinks in ItineraryView /
+ * TripPreviewPanels.
+ */
+const URL_KEYS = new Set([
+  'map',
+  'walking_route',
+  'ig',
+  'fb',
+  'tt',
+  'website',
+  'mapUrl',
+  'walkingUrl',
+])
+
+/**
+ * Neutralize dangerous URL schemes anywhere in the itinerary, in place of the
+ * value (`javascript:`/`data:`/`vbscript:` → null).
+ *
+ * Deliberately a SCRUB, not a normalization: a user's trip is their own
+ * document — a copy that no longer answers to the template it came from — so
+ * this must not reshape, drop or re-key anything else. It walks the whole tree
+ * rather than the known V3 path, because that's the only version-agnostic way to
+ * catch a link the shape check doesn't know about.
+ *
+ * `safeHref` at the render boundary stays as defence in depth; this closes the
+ * hole one layer earlier, so a bad link is never stored in the first place.
+ */
+export function scrubItineraryUrls<T>(node: T): T {
+  if (Array.isArray(node)) return node.map((n) => scrubItineraryUrls(n)) as unknown as T
+  if (!node || typeof node !== 'object') return node
+  const out: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+    if (URL_KEYS.has(key) && typeof value === 'string') {
+      out[key] = safeHref(value) ?? null
+    } else {
+      out[key] = scrubItineraryUrls(value)
+    }
+  }
+  return out as T
 }
 
 /** Structural validation — keeps the itinerary contract intact on write. */
@@ -66,7 +111,10 @@ export async function updateTripItinerary(
 
   const data: Prisma.TripUpdateInput = {}
   if (input.itinerary !== undefined) {
-    data.itinerary = validateItinerary(input.itinerary) as unknown as Prisma.InputJsonValue
+    // Shape first (rejects nonsense), then scrub hrefs (accepts the document as
+    // the user shaped it, minus unsafe URL schemes).
+    const validated = validateItinerary(input.itinerary)
+    data.itinerary = scrubItineraryUrls(validated) as unknown as Prisma.InputJsonValue
   }
   if (input.startDate !== undefined) {
     data.startDate = input.startDate ? new Date(input.startDate) : null

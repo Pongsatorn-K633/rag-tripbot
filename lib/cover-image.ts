@@ -94,8 +94,34 @@ export function resolveCoverImage(
  */
 export function resolveHeroCoverImage(
   stored: string | null | undefined,
-  fallbackSeed: string
+  fallbackSeed: string,
+  /**
+   * `wide` = the full-bleed desktop banner.
+   *
+   * The default asks Cloudinary for a 4:5 PORTRAIT at w_1600 and lets the frame
+   * crop it — fine for a phone-width square, but a 16:9 band throws away ~65% of
+   * those pixels vertically and then has to stretch what's left across a 1900px
+   * screen. That stretch IS the pixelation.
+   *
+   * So the wide variant asks for the crop it actually renders — `ar_3:1`, the
+   * shape of the rendered band — at w_2400.
+   *
+   * The ASPECT is the whole game. `object-cover` zooms whatever it's given until
+   * both axes are covered, so feeding a 16:9 image to a ~3:1 band zooms it ~1.9×
+   * and you see a magnified slice: the "pixelated zoom". Matching the aspect
+   * means cover has nothing left to zoom.
+   *
+   * The w_2400 step is CHAINED as `c_limit` (a second transform), not folded
+   * into the crop: c_fill happily upscales a small original to the width you
+   * asked for, which manufactures blur. c_limit only ever downscales, so a
+   * modest original renders at its own size instead of being inflated.
+   *
+   * Pre-transformed URLs (admin-cropped) keep their framing and get the same
+   * c_limit step.
+   */
+  opts?: { wide?: boolean }
 ): string {
+  const W = opts?.wide ? 2400 : 1600
   // Resolve keys/fallbacks to a URL WITHOUT the 4:5 card transform.
   let url: string
   if (!stored) {
@@ -117,12 +143,21 @@ export function resolveHeroCoverImage(
     // Same 4:5 framing as the cards (one photo identity everywhere) — the hero
     // FRAME crops it to square, centered (object-center trims top+bottom
     // equally), no zooming.
-    return `${prefix}${CLOUDINARY_UPLOAD}c_fill,g_auto,ar_4:5,w_1600,f_auto,q_auto/${rest}`
+    if (opts?.wide) {
+      // Crop to the band's shape at native size, THEN cap the width.
+      return `${prefix}${CLOUDINARY_UPLOAD}c_fill,g_auto,ar_3:1/w_${W},c_limit,f_auto,q_auto/${rest}`
+    }
+    return `${prefix}${CLOUDINARY_UPLOAD}c_fill,g_auto,ar_4:5,w_${W},f_auto,q_auto/${rest}`
   }
-  // Existing transform chain — append the hero scale/encode step before the
-  // version segment (crop coordinates must keep applying to the original).
+  // Existing transform chain — append the hero step before the version segment
+  // (crop coordinates must keep applying to the original). In WIDE mode that
+  // step re-crops to the band's shape: without it a curated 4:5 crop reaches a
+  // ~3:1 band and object-cover zooms it ~1.9×, which is the pixelation.
   const vIdx = segs.findIndex((s) => /^v\d+$/.test(s))
-  segs.splice(vIdx >= 0 ? vIdx : segs.length - 1, 0, 'w_1600,c_limit,f_auto,q_auto')
+  const step = opts?.wide
+    ? `c_fill,g_auto,ar_3:1/w_${W},c_limit,f_auto,q_auto`
+    : `w_${W},c_limit,f_auto,q_auto`
+  segs.splice(vIdx >= 0 ? vIdx : segs.length - 1, 0, step)
   return `${prefix}${CLOUDINARY_UPLOAD}${segs.join('/')}`
 }
 

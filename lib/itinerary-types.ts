@@ -92,6 +92,10 @@ export interface Choice {
 export interface Day {
   day: number
   location: string
+  /** The day's one-line highlight, already resolved: the authored
+   *  `DayV3.highlight` if set, else derived from the day's Must/Recommend
+   *  activities. Same string the Overview's "Day Highlights" list shows. */
+  highlight?: string
   /** Appended "free day" — trip window is longer than the plan; user fills it in. */
   free?: boolean
   activities: Activity[]

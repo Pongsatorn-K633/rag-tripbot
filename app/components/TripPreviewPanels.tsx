@@ -1,13 +1,14 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { motion, useReducedMotion } from 'motion/react'
 import useEmblaCarousel from 'embla-carousel-react'
-import { CalendarDays, CalendarCheck, Car, MapPin, ChevronRight, Plane, RefreshCw, Footprints, Trash2 } from 'lucide-react'
+import { CalendarDays, CalendarCheck, Car, MapPin, ChevronRight, Pencil, Plane, RefreshCw, Footprints, Trash2 } from 'lucide-react'
 import { safeHref } from '@/lib/url'
 import JapanIcon from '@/app/components/JapanIcon'
 import type { AnyItinerary, Choice, TripFlight } from '@/lib/itinerary-types'
-import { AIRPORTS, getRenderDays, isV3, CATEGORY_EMOJI } from '@/lib/trips/itinerary-model'
+import { AIRPORTS, getRenderDays, isV3, v3DayHighlight } from '@/lib/trips/itinerary-model'
 import { parsePeriod } from '@/lib/trips/import-plan'
 
 /**
@@ -268,16 +269,52 @@ export function DayChips({ count, sel, onSel }: { count: number; sel: DaySel; on
 /** One horizontal fact row in the Trip-summary card: Ocean glyph, then a
  *  "Label — value" line. Every row shares this shell so the icon column and
  *  the indent line up down the whole stack. */
-function SummaryRow({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+/**
+ * One pill in the trip summary. Pass `onEdit` to make it editable: the whole
+ * pill becomes the tap target and a pencil appears at its right end, so the
+ * affordance is visible without a second control competing with the content.
+ */
+function SummaryRow({
+  icon,
+  children,
+  onEdit,
+  editLabel,
+}: {
+  icon: React.ReactNode
+  children: React.ReactNode
+  onEdit?: () => void
+  editLabel?: string
+}) {
+  // items-CENTER, not items-start: the glyph is 20px and a text-xs line box
+  // is 16px, so top-aligning them left every label sitting ~2px high against
+  // its icon. Centring also reads right for the two-line flights row — the
+  // plane centres against the pair.
+  const base = 'flex w-full items-center gap-3.5 rounded-2xl bg-briefing-cream py-2.5 pl-5 pr-3'
+  if (!onEdit) {
+    return (
+      <div className={base}>
+        {icon}
+        <div className="min-w-0">{children}</div>
+      </div>
+    )
+  }
   return (
-    // items-CENTER, not items-start: the glyph is 20px and a text-xs line box
-    // is 16px, so top-aligning them left every label sitting ~2px high against
-    // its icon. Centring also reads right for the two-line flights row — the
-    // plane centres against the pair.
-    <div className="flex items-center gap-3.5 rounded-2xl bg-briefing-cream py-2.5 pl-5 pr-3">
+    <button
+      type="button"
+      onClick={onEdit}
+      aria-label={editLabel}
+      className={`${base} group text-left transition-colors hover:bg-basel-brick/10`}
+    >
       {icon}
-      <div className="min-w-0">{children}</div>
-    </div>
+      {/* min-w-0 + the ml-auto pencil: the content keeps its left alignment and
+          truncates against the pencil rather than pushing it off the pill. */}
+      <div className="min-w-0 flex-1">{children}</div>
+      <Pencil
+        className="ml-auto size-3.5 shrink-0 text-graphite/40 transition-colors group-hover:text-basel-brick"
+        strokeWidth={2.5}
+        aria-hidden
+      />
+    </button>
   )
 }
 
@@ -291,6 +328,10 @@ export function OverviewPanel({
   onDeleteTrip,
   reviewTitle = 'Admin Review',
   savedTrip = false,
+  onEditTravel,
+  onEditCar,
+  onEditNote,
+  editItineraryHref,
 }: {
   itinerary: AnyItinerary
   tripDays: number
@@ -311,6 +352,17 @@ export function OverviewPanel({
   /** /my-trips layout: the three stat tiles collapse into the same row stack
    *  as the dates/flights/car, and the day count moves into the dates row. */
   savedTrip?: boolean
+  /** SAVED trips only. Given, the dates and flights pills become editable
+   *  (pencil + tap → the caller's date/flight picker). Dates and flights share
+   *  ONE handler because they share one editor — the picker sets both. */
+  onEditTravel?: () => void
+  /** SAVED trips only: edit the car-rental duration. */
+  onEditCar?: () => void
+  /** SAVED trips only: edit the note on the card's back face ("Notes:"). */
+  onEditNote?: () => void
+  /** SAVED trips only: where the ✏️ beside "Day Highlights" goes — the full
+   *  itinerary editor (/trips/[id]/edit). */
+  editItineraryHref?: string
 }) {
   const days = getRenderDays(itinerary)
   const v3 = isV3(itinerary) ? itinerary : null
@@ -336,20 +388,9 @@ export function OverviewPanel({
   // Day-by-day highlights, DERIVED (no schema change): each day's Must-priority
   // attractions, falling back to Recommends, then the first attraction. Admins
   // already steer this via the existing priority dropdown. Max 2 per day.
+  // Shared with the Itinerary tab's day headers — see v3DayHighlight.
   const dayHighlights = v3
-    ? v3.days.map((d) => {
-        const acts = (d.activities ?? []).filter((a) => a.slot?.startsWith('Activity'))
-        const must = acts.filter((a) => a.priority === 'Must')
-        const rec = acts.filter((a) => a.priority === 'Recommend')
-        const picks = (must.length ? must : rec.length ? rec : acts).slice(0, 2)
-        // Authored day.highlight wins; otherwise derive from priorities.
-        const authored = d.highlight?.th || d.highlight?.en
-        return {
-          day: d.day,
-          names: authored ? [authored] : picks.map((a) => a.name?.th || a.name?.en || '').filter(Boolean),
-          emoji: (picks[0]?.category && CATEGORY_EMOJI[picks[0].category]) || null,
-        }
-      })
+    ? v3.days.map((d) => ({ day: d.day, ...v3DayHighlight(d) }))
     : days.map((d) => ({ day: d.day, names: d.activities.slice(0, 1).map((a) => a.name), emoji: null }))
   // Tagline (short cover hook) under the heading; the FULL description stays
   // in the Admin Review card — the schema separates the two on purpose.
@@ -440,7 +481,11 @@ export function OverviewPanel({
             recommended/available periods instead, further down the panel).
             The day count lives here rather than in a tile of its own. */}
         {travelDateLabel && (
-          <SummaryRow icon={<CalendarDays className="size-5 shrink-0 text-basel-brick" strokeWidth={2} aria-hidden />}>
+          <SummaryRow
+            icon={<CalendarDays className="size-5 shrink-0 text-basel-brick" strokeWidth={2} aria-hidden />}
+            onEdit={onEditTravel}
+            editLabel="แก้ไขวันเดินทาง · Edit travel dates"
+          >
             {/* "เดินทาง 9 วัน — 16 ต.ค. - 24 ต.ค. 2569": the length is part of
                 the LABEL now, so the trailing "· 9 วัน" that used to close the
                 row is gone (it said the same thing twice). A catalogue trip
@@ -454,26 +499,14 @@ export function OverviewPanel({
             </p>
           </SummaryRow>
         )}
-        {savedTrip && (
-          <>
-            <SummaryRow icon={<MapPin className="size-5 shrink-0 text-basel-brick" strokeWidth={2} aria-hidden />}>
-              <p className="text-xs font-semibold text-zen-black">
-                Attractions
-                <span className="text-graphite/70"><span className="mx-1.5">—</span>{attractionCount}</span>
-              </p>
-            </SummaryRow>
-            <SummaryRow icon={<JapanIcon className="size-5 shrink-0 text-basel-brick" />}>
-              <p className="text-xs font-semibold text-zen-black">
-                Prefectures
-                <span className="text-graphite/70"><span className="mx-1.5">—</span>{cityCount || 'XX'}</span>
-              </p>
-            </SummaryRow>
-          </>
-        )}
         {/* Flights the traveller entered when duplicating. The plane carries
             no mt-0.5 nudge any more — the row centres its icon itself. */}
         {flightLegs.length > 0 && (
-          <SummaryRow icon={<Plane className="size-5 shrink-0 text-basel-brick" strokeWidth={2} aria-hidden />}>
+          <SummaryRow
+            icon={<Plane className="size-5 shrink-0 text-basel-brick" strokeWidth={2} aria-hidden />}
+            onEdit={onEditTravel}
+            editLabel="แก้ไขเที่ยวบิน · Edit flights"
+          >
             <div className="space-y-0.5">
               {flightLegs.map(({ leg, info }) => (
                 <p key={leg} className="text-xs font-semibold text-zen-black">
@@ -493,11 +526,15 @@ export function OverviewPanel({
           </SummaryRow>
         )}
         {carRental && (
-          <SummaryRow icon={<Car className="size-5 shrink-0 text-basel-brick" strokeWidth={2} aria-hidden />}>
+          <SummaryRow
+            icon={<Car className="size-5 shrink-0 text-basel-brick" strokeWidth={2} aria-hidden />}
+            onEdit={onEditCar}
+            editLabel="แก้ไขจำนวนวันเช่ารถ · Edit car rental days"
+          >
             {/* text-xs = the stat tiles' LABEL size. Midnight for the
                 statement, graphite for the duration. */}
             <p className="text-xs font-semibold text-zen-black">
-              Car Rental Recommend
+              Car Rental
               {carDuration && (
                 <span className="text-graphite/70">
                   {/* Margin on the dash, not literal spaces: JSX collapses any
@@ -510,6 +547,22 @@ export function OverviewPanel({
             </p>
           </SummaryRow>
         )}
+        {savedTrip && (
+          <>
+            <SummaryRow icon={<MapPin className="size-5 shrink-0 text-basel-brick" strokeWidth={2} aria-hidden />}>
+              <p className="text-xs font-semibold text-zen-black">
+                Attractions
+                <span className="text-graphite/70"><span className="mx-1.5">—</span>{attractionCount}</span>
+              </p>
+            </SummaryRow>
+            <SummaryRow icon={<JapanIcon className="size-5 shrink-0 text-basel-brick" />}>
+              <p className="text-xs font-semibold text-zen-black">
+                Prefectures
+                <span className="text-graphite/70"><span className="mx-1.5">—</span>{cityCount || 'XX'}</span>
+              </p>
+            </SummaryRow>
+          </>
+        )}
       </div>
     </>
   )
@@ -517,7 +570,22 @@ export function OverviewPanel({
     <>
       <div className="flex items-start justify-between gap-3">
         <p className="text-lg font-extrabold tracking-tight text-briefing-cream/90">{reviewTitle}</p>
-        <FlipHint label="Summary" dark onClick={toggleFlip} />
+        <div className="flex shrink-0 items-center gap-2">
+          {/* Notes are the traveller's own text on a saved trip, so they get a
+              pencil right here — no round trip to the editor for one paragraph.
+              Absent on /discover, where this face is the admin's pitch. */}
+          {onEditNote && (
+            <button
+              type="button"
+              onClick={onEditNote}
+              aria-label="แก้ไขโน้ต · Edit notes"
+              className="grid size-7 place-items-center rounded-full bg-briefing-cream/15 text-briefing-cream/70 transition-colors hover:bg-basel-brick hover:text-white"
+            >
+              <Pencil className="size-3" strokeWidth={2.5} />
+            </button>
+          )}
+          <FlipHint label="Summary" dark onClick={toggleFlip} />
+        </div>
       </div>
       {/* Near-full opacity: this is the pitch, not fine print — and opacity
           dims color EMOJI along with the text, which reads as washed out. */}
@@ -528,14 +596,28 @@ export function OverviewPanel({
   )
 
   return (
-    <div className="space-y-4 font-detail">
+    // Card wall: one flow on phones, TWO EXPLICIT COLUMNS from lg —
+    //   left  = Trip summary + Travel Periods
+    //   right = Day Highlights (the long one)
+    //
+    // Explicit wrappers, not auto-placement: a grid aligns items into ROWS, so
+    // the short summary beside the tall highlights left a dead gap the height
+    // of the difference; CSS columns pack tight but decide placement by
+    // balancing, which can't be told WHICH card goes right. Two wrappers each
+    // own their stack.
+    //
+    // max-lg:contents dissolves the wrappers on phones so every card rejoins
+    // one flow, and max-lg:order-* keeps the mobile reading order
+    // (summary → highlights → periods) the desktop split would otherwise flip.
+    <div className="flex flex-col gap-4 font-detail lg:grid lg:grid-cols-2 lg:items-start lg:gap-4">
       {/* Trip summary ⇄ Admin Review — ONE card, two faces. The FLIP CONTROL
           is the Review/Summary pill in the header, NOT the card (user call):
           the faces hold their own controls (the delete action, links), and a
           card-wide tap target swallowed those or turned the card over
           mid-read. Both faces stay grid-stacked in every mode, so the card's
           height is always the taller face and nothing jumps. */}
-      <motion.div className="select-none">
+      <div className="max-lg:contents lg:space-y-4">
+      <motion.div className="select-none max-lg:order-1">
         {flipping || teasing ? (
           <div style={{ perspective: 1200 }}>
             <motion.div
@@ -572,82 +654,102 @@ export function OverviewPanel({
           </div>
         )}
       </motion.div>
-
-      {/* Highlights card — day by day (derived from activity priorities) */}
-      {dayHighlights.length > 0 && (
-        <section className="rounded-3xl border border-zen-black/10 bg-white p-5 shadow-sm">
-          <h3 className="text-lg font-extrabold tracking-tight text-zen-black">Day Highlights</h3>
-          {/* Cream ticket rows — Ocean day badge + category emoji + names.
-              Tappable: jumps to that day in the Itinerary tab. */}
-          <ul className="mt-3 space-y-2">
-            {dayHighlights.map((h) => (
-              <li key={h.day}>
-                <button
-                  type="button"
-                  onClick={() => onDayTap?.(h.day)}
-                  className="flex w-full items-center gap-3 rounded-2xl bg-briefing-cream px-3 py-2.5 text-left transition-colors hover:bg-basel-brick/10"
-                >
-                  <span className="grid size-6 shrink-0 place-items-center rounded-full bg-zen-black text-xs font-bold text-white">
-                    {h.day}
-                  </span>
-                  <span className="min-w-0 flex-1 text-sm font-medium leading-snug text-zen-black">
-                    {h.emoji && <span className="mr-1.5">{h.emoji}</span>}
-                    {h.names.join(' · ') || '—'}
-                  </span>
-                  <ChevronRight className="size-4 shrink-0 text-graphite/40" aria-hidden />
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
       {/* Travel periods — authored V3 overview data (recommended + available),
-          in the panel's card language: cream sub-blocks inside a white card. */}
-      {(recPeriods.length > 0 || availPeriod) && (
-        <section className="rounded-3xl border border-zen-black/10 bg-white p-5 shadow-sm">
-          <h3 className="text-lg font-extrabold tracking-tight text-zen-black">Travel Periods</h3>
-          <div className="mt-3 space-y-3">
-            {recPeriods.length > 0 && (
-              <div>
-                <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-basel-brick">
-                  <CalendarCheck className="size-3.5" strokeWidth={2.25} />
-                  Recommended · ช่วงแนะนำ
-                </p>
-                {/* Each window = a collapsible cream row (dates up front,
-                    area details behind a tap) */}
-                <div className="mt-1.5 space-y-2">
-                  {recPeriods.map((p, i) => (
-                    <PeriodBlock key={i} primary={p.primary} details={p.details} popular={p.popular} />
-                  ))}
+            in the panel's card language: cream sub-blocks inside a white card. */}
+          {(recPeriods.length > 0 || availPeriod) && (
+          <section className="rounded-3xl border border-zen-black/10 bg-white p-5 shadow-sm max-lg:order-3">
+            <h3 className="text-lg font-extrabold tracking-tight text-zen-black">Travel Periods</h3>
+            <div className="mt-3 space-y-3">
+              {recPeriods.length > 0 && (
+                <div>
+                  <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-basel-brick">
+                    <CalendarCheck className="size-3.5" strokeWidth={2.25} />
+                    Recommended · ช่วงแนะนำ
+                  </p>
+                  {/* Each window = a collapsible cream row (dates up front,
+                      area details behind a tap) */}
+                  <div className="mt-1.5 space-y-2">
+                    {recPeriods.map((p, i) => (
+                      <PeriodBlock key={i} primary={p.primary} details={p.details} popular={p.popular} />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-            {availPeriod && (
-              <div>
-                <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-graphite/80">
-                  <CalendarDays className="size-3.5" strokeWidth={2.25} />
-                  Available · เปิดให้เที่ยว
-                </p>
-                <div className="mt-1.5 rounded-2xl bg-briefing-cream p-3">
-                  <p className="text-sm font-semibold text-zen-black">{availPeriod.primary}</p>
-                  {availPeriod.details?.trim() && <DetailLines text={availPeriod.details} />}
+              )}
+              {availPeriod && (
+                <div>
+                  <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-graphite/80">
+                    <CalendarDays className="size-3.5" strokeWidth={2.25} />
+                    Available · เปิดให้เที่ยว
+                  </p>
+                  <div className="mt-1.5 rounded-2xl bg-briefing-cream p-3">
+                    <p className="text-sm font-semibold text-zen-black">{availPeriod.primary}</p>
+                    {availPeriod.details?.trim() && <DetailLines text={availPeriod.details} />}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
+              )}
+            </div>
+          </section>
+        )}
+      </div>
+      <div className="max-lg:contents lg:space-y-4">
+        {/* Highlights card — day by day (derived from activity priorities) */}
+          {dayHighlights.length > 0 && (
+          <section className="rounded-3xl border border-zen-black/10 bg-white p-5 shadow-sm max-lg:order-2">
+            {/* The pencil opens the full itinerary editor — the summary pills edit
+                one fact each, this edits the plan itself. Present only when the
+                caller supplied a destination (saved trips), so /discover and the
+                admin preview show a bare heading. */}
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-lg font-extrabold tracking-tight text-zen-black">Day Highlights</h3>
+              {editItineraryHref && (
+                <Link
+                  href={editItineraryHref}
+                  aria-label="แก้ไขแผนการเดินทาง · Edit itinerary"
+                  className="group grid size-8 shrink-0 place-items-center rounded-full bg-briefing-cream text-graphite/50 transition-colors hover:bg-basel-brick hover:text-white"
+                >
+                  <Pencil className="size-3.5" strokeWidth={2.5} />
+                </Link>
+              )}
+            </div>
+            {/* Cream ticket rows — Ocean day badge + category emoji + names.
+                Tappable: jumps to that day in the Itinerary tab. */}
+            <ul className="mt-3 space-y-2">
+                {dayHighlights.map((h) => (
+                <li key={h.day}>
+                  <button
+                    type="button"
+                    onClick={() => onDayTap?.(h.day)}
+                    className="flex w-full items-center gap-3 rounded-2xl bg-briefing-cream px-3 py-2.5 text-left transition-colors hover:bg-basel-brick/10"
+                  >
+                    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-zen-black text-xs font-bold text-white">
+                      {h.day}
+                    </span>
+                    <span className="min-w-0 flex-1 text-sm font-medium leading-snug text-zen-black">
+                      {h.emoji && <span className="mr-1.5">{h.emoji}</span>}
+                      {h.names.join(' · ') || '—'}
+                    </span>
+                    <ChevronRight className="size-4 shrink-0 text-graphite/40" aria-hidden />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
       {/* Destructive action LAST — below every fact about the trip, so it can
-          never be hit on the way to something else. Red is the codebase's
+          never be hit on the way to something else.
+
+          max-lg:order-4 is load-bearing: its siblings carry explicit order-1/2/3
+          for the mobile flow, and an unordered flex child defaults to 0 — which
+          silently floated Delete to the TOP of the page, directly under the
+          tabs. lg:col-span-2 keeps it spanning both columns on desktop. Red is the codebase's
           established destructive vocabulary (ConfirmDialog's danger tone), not
           a UI accent; the caller shows the confirm. */}
       {onDeleteTrip && (
         <button
           type="button"
           onClick={onDeleteTrip}
-          className="flex w-full items-center justify-center gap-2 rounded-3xl border border-red-200 bg-white py-3.5 text-sm font-semibold text-red-600 shadow-sm transition-colors hover:bg-red-50"
+          className="flex w-full items-center justify-center gap-2 rounded-3xl border border-red-200 bg-white py-3.5 text-sm font-semibold text-red-600 shadow-sm transition-colors hover:bg-red-50 max-lg:order-4 lg:col-span-2"
         >
           <Trash2 className="size-4" strokeWidth={2.25} aria-hidden />
           ลบทริปนี้ · Delete this trip
@@ -849,8 +951,17 @@ export function ItineraryPanel({ itinerary, sel }: { itinerary: AnyItinerary; se
               {day.day}
             </span>
             <div className="min-w-0 flex-1">
-              <h2 className="text-base font-extrabold tracking-tight text-zen-black">Day {day.day}</h2>
-              {/* The day's authored NAME (V3 day.name) — the reason to open it */}
+              {/* The HIGHLIGHT trails "Day N" on the same line (ต่อท้าย) — the
+                  same text the Overview's Day Highlights list shows, so the two
+                  tabs agree on what a day is about. Suppressed when it would
+                  merely repeat the day's name below. */}
+              <h2 className="text-base font-extrabold tracking-tight text-zen-black">
+                Day {day.day}
+                {day.highlight && day.highlight !== day.location && (
+                  <span className="ml-2 text-sm font-semibold text-basel-brick">{day.highlight}</span>
+                )}
+              </h2>
+              {/* The day's authored NAME (V3 day.name) */}
               {day.location && <p className="truncate text-sm text-graphite/70">{day.location}</p>}
             </div>
           </>

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { useSession, signIn } from 'next-auth/react'
 import { DayPicker, type DateRange } from 'react-day-picker'
 import useEmblaCarousel from 'embla-carousel-react'
-import { ArrowLeft, CalendarDays, CalendarCheck, AlertTriangle, Plane, ChevronDown, ChevronLeft, Share2, Check, Copy } from 'lucide-react'
+import { ArrowLeft, CalendarDays, CalendarCheck, AlertTriangle, Car, Plane, ChevronDown, ChevronLeft, Share2, Check, Copy } from 'lucide-react'
 import 'react-day-picker/style.css'
 import Image from 'next/image'
 import { OverviewPanel, ItineraryPanel, DayChips, type DaySel } from '@/app/components/TripPreviewPanels'
@@ -60,6 +60,11 @@ export default function PlanPreviewModal({
   onDeleteTrip,
   reviewTitle,
   savedTrip = false,
+  startDate,
+  onSaveTravel,
+  onSaveCarDays,
+  onSaveNote,
+  editItineraryHref,
   onClose,
 }: {
   template: PlanTemplate | null
@@ -80,18 +85,46 @@ export default function PlanPreviewModal({
   reviewTitle?: string
   /** Saved-trip layout for the summary card (rows instead of stat tiles). */
   savedTrip?: boolean
+  /** The saved trip's current start date (ISO) — seeds the date editor. */
+  startDate?: string | null
+  /** SAVED trips only. Given, the dates + flights pills become editable: they
+   *  reopen the SAME date/flight step the duplicate flow uses, pre-filled, and
+   *  hand the result back here to persist. */
+  onSaveTravel?: (patch: { startDate: string; flight: TripFlight }) => Promise<void>
+  /** SAVED trips only: persist a new car-rental duration ('' clears it). */
+  onSaveCarDays?: (duration: string) => Promise<void>
+  /** SAVED trips only: persist the note shown on the summary card's back face. */
+  onSaveNote?: (note: string) => Promise<void>
+  /** SAVED trips only: destination of the ✏️ beside "Day Highlights". */
+  editItineraryHref?: string
   onClose: () => void
 }) {
   const { data: session } = useSession()
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [range, setRange] = useState<DateRange | undefined>()
   const [flight, setFlight] = useState<TripFlight>({})
+  // Editing an EXISTING trip's dates/flights reuses the date step; this flag is
+  // what tells its confirm button to PATCH instead of duplicating.
+  const [editingTravel, setEditingTravel] = useState(false)
+  // Car-rental duration editor — a small overlay, not a whole step. Holds just
+  // the NUMBER: the stored value is "4 days", but the unit is fixed furniture,
+  // so only the count is typeable and the string is reassembled on save.
+  const [carDraft, setCarDraft] = useState<string | null>(null)
+  // Notes editor — same overlay pattern as the car field, but multi-line.
+  const [noteDraft, setNoteDraft] = useState<string | null>(null)
+  const [savingEdit, setSavingEdit] = useState(false)
   // Fullscreen preview chrome: Overview | Itinerary tab + share-code copy tick.
   const [tab, setTab] = useState<'overview' | 'itinerary'>('overview')
   const [selDay, setSelDay] = useState<DaySel>('all')
   const [copied, setCopied] = useState(false)
   // Hero cover carousel (embla) — swipe through Template.coverImages.
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true })
+  // Embla is DEACTIVATED from lg (`active: false`): desktop shows every cover
+  // at once as an equal-width row, so there is nothing to swipe. The slide
+  // container degrades to a plain flex row, which is exactly the layout we want.
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    loop: true,
+    breakpoints: { '(min-width: 1024px)': { active: false } },
+  })
   const [coverIdx, setCoverIdx] = useState(0)
   useEffect(() => {
     if (!emblaApi) return
@@ -187,6 +220,63 @@ export default function PlanPreviewModal({
     setSaveState('dates')
   }
 
+  /** Dates/flights pill → the date step, pre-filled from the trip itself. */
+  function handleEditTravel() {
+    if (!onSaveTravel) return
+    if (startDate) {
+      const start = new Date(startDate)
+      setRange({ from: start, to: addDays(start, tripDays - 1) })
+    }
+    setFlight((itinerary as { flight?: TripFlight } | undefined)?.flight ?? {})
+    setEditingTravel(true)
+    setSaveState('dates')
+  }
+
+  /** Confirm in EDIT mode: persist through the caller, then back to the
+   *  preview — no duplicate, no activation code, no success step. */
+  async function handleConfirmEdit() {
+    if (!onSaveTravel || !from || !valid) return
+    setSavingEdit(true)
+    try {
+      await onSaveTravel({ startDate: toISODate(from), flight })
+      setEditingTravel(false)
+      setSaveState('idle')
+    } catch {
+      alert('บันทึกไม่สำเร็จ กรุณาลองใหม่ · Could not save, please try again')
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
+  async function handleConfirmNote() {
+    if (!onSaveNote || noteDraft === null) return
+    setSavingEdit(true)
+    try {
+      await onSaveNote(noteDraft.trim())
+      setNoteDraft(null)
+    } catch {
+      alert('บันทึกไม่สำเร็จ กรุณาลองใหม่ · Could not save, please try again')
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
+  async function handleConfirmCar() {
+    if (!onSaveCarDays || carDraft === null) return
+    setSavingEdit(true)
+    try {
+      // Reassemble the stored string. Empty clears the duration; the unit
+      // agrees with the count so "1 days" can't happen.
+      const n = parseInt(carDraft, 10)
+      await onSaveCarDays(Number.isFinite(n) && n > 0 ? `${n} ${n === 1 ? 'day' : 'days'}` : '')
+      setCarDraft(null)
+    } catch {
+      alert('บันทึกไม่สำเร็จ กรุณาลองใหม่ · Could not save, please try again')
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
   // Step 2 → save: requires a valid range (start + end, ≥ plan length) AND the
   // lazily-fetched itinerary (arrives well before a human can pick dates; the
   // guard covers a failed fetch, where saving a trip without content is worse).
@@ -268,28 +358,79 @@ export default function PlanPreviewModal({
           className="fixed inset-0 z-[70] overflow-y-auto overscroll-contain bg-briefing-cream"
         >
           {/* ── Hero header — cover photo, back/share chips, period + title ──
-              STATIC frame, not full-bleed: a centered column (same max-w-2xl as
-              the content) at 4:3. The image keeps the card's 4:5 framing and
-              the frame crops the BOTTOM (object-top) — the full-bleed version
-              had to zoom the cover to fill wide desktops, which pixelated it. */}
-          <div className="relative mx-auto aspect-square w-full max-w-2xl overflow-hidden sm:rounded-b-3xl">
+              STATIC frame, not full-bleed: a centered column at 1:1 on phones,
+              widening to a 16:9 banner at lg where a square would run past the
+              fold before a word of content appeared. Still capped (max-w-5xl,
+              not the viewport) — a truly full-bleed hero has to zoom the cover
+              to fill a wide desktop, which pixelates it. */}
+          {/* lg: FULL-BLEED — no max-width, no radius, and a capped HEIGHT
+              instead of an aspect ratio. An aspect-driven banner grows with the
+              viewport (16:9 of 1900px = 1069px tall, the whole screen); a
+              clamped height fills the width and stops at a sane band.
+
+              34vw, not vh: the height then tracks the WIDTH, so the band holds a
+              constant ~2.94:1 shape at every desktop size — which is the aspect
+              the wide resolver crops to (ar_3:1). Matching them leaves
+              object-cover nothing to zoom, and the zoom was the pixelation. */}
+          <div className="relative mx-auto aspect-square w-full max-w-2xl overflow-hidden sm:rounded-b-3xl lg:aspect-auto lg:h-[clamp(320px,34vw,620px)] lg:max-w-none lg:rounded-none">
             {/* Swipeable cover gallery (Template.coverImages, max 5).
                 unoptimized: Cloudinary already crops/sizes/encodes (w_1600,
                 f_auto, q_auto) — the Next optimizer's second re-encode was
                 half the pixelation. */}
             <div className="absolute inset-0 overflow-hidden" ref={emblaRef}>
               <div className="flex h-full">
-                {(template.coverImages?.length ? template.coverImages : [template.coverImage]).map((c, i) => (
-                  <div key={i} className="relative h-full flex-[0_0_100%]">
-                    <Image
-                      src={resolveHeroCoverImage(c, template.id)}
-                      alt={`${template.title} ${i + 1}`}
-                      fill
-                      priority={i === 0}
-                      unoptimized
-                      className="object-cover object-center"
-                      sizes="(max-width: 672px) 100vw, 672px"
-                    />
+                {(template.coverImages?.length ? template.coverImages : [template.coverImage]).map((c, i, arr) => (
+                  <div
+                    key={i}
+                    // flex-1 basis-0 at lg → N tiles split the band evenly
+                    // whatever N is. A hairline divider keeps two similar photos
+                    // from reading as one.
+                    className="relative h-full flex-[0_0_100%] lg:flex-[1_1_0%] lg:border-l lg:border-briefing-cream/25 lg:first:border-l-0"
+                  >
+                    {/* ART DIRECTION, not one image stretched two ways.
+                        The phone frame is SQUARE and the desktop band is ~3:1 —
+                        a single source can only suit one of them, and feeding
+                        the wide 3:1 crop to a square frame zooms it ~3× (which
+                        is exactly what it did). <picture> lets the browser pick
+                        by viewport and fetch ONLY the match; a hidden <Image>
+                        would still be downloaded.
+                        Plain <img>: Cloudinary already sized and encoded these,
+                        which is why the hero was `unoptimized` in the first
+                        place — next/image was adding nothing here. */}
+                    <picture>
+                      {/* The wide 3:1 crop is only right when ONE cover fills
+                          the whole band. With 2+ tiles each slot is portrait-ish
+                          again (a quarter of a ~3:1 band is ~3:4), so the tiles
+                          want the same 4:5 crop the phone uses — which is what
+                          the <img> below already carries. */}
+                      {arr.length === 1 && (
+                        <source
+                          media="(min-width: 1024px)"
+                          srcSet={resolveHeroCoverImage(c, template.id, { wide: true })}
+                        />
+                      )}
+                      <img
+                        src={resolveHeroCoverImage(c, template.id)}
+                        alt={`${template.title} ${i + 1}`}
+                        loading={i === 0 ? 'eager' : 'lazy'}
+                        fetchPriority={i === 0 ? 'high' : 'auto'}
+                        className="absolute inset-0 h-full w-full object-cover object-center"
+                      />
+                    </picture>
+                    {/* Each tile names its own place at lg — the single chip
+                        below tracks the SWIPE index, which means nothing when
+                        every cover is on screen at once. Sits at the FOOT of its
+                        tile, centred in it. At the TOP: the bottom of the band
+                        is the gradient's cream zone plus the centred title, so
+                        anything down there is either washed out or crowded.
+                        top-10 sits just under the back/share buttons' row —
+                        close enough to read as one band across the top, but
+                        clear of them if a place name runs long on an edge tile. */}
+                    {coverPlaces[i] && (
+                      <span className="pointer-events-none absolute top-7 left-1/2 hidden max-w-[92%] -translate-x-1/2 truncate rounded-full bg-zen-black/55 px-2.5 py-1 font-headline text-[10px] font-bold tracking-wide text-briefing-cream backdrop-blur-sm lg:inline-block">
+                        {coverPlaces[i]}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -313,7 +454,7 @@ export default function PlanPreviewModal({
             {/* Cover dots + current photo's place (no per-image place data in
                 the admin schema yet — XX until that exists) */}
             {(template.coverImages?.length ?? 0) > 1 && (
-              <div className="pointer-events-none absolute left-1/2 top-5 z-10 flex -translate-x-1/2 items-center gap-1.5">
+              <div className="pointer-events-none absolute left-1/2 top-5 z-10 flex -translate-x-1/2 items-center gap-1.5 lg:hidden">
                 {template.coverImages!.map((_, i) => (
                   <span
                     key={i}
@@ -326,6 +467,9 @@ export default function PlanPreviewModal({
             )}
 
             {/* Top controls: back (closes; steps back from the date step) + share */}
+            {/* Edge-hugging on desktop (inset-x-6), not tucked into the content
+                container: they belong to the full-bleed photo, not to the text
+                column beneath it. */}
             <div className="absolute inset-x-4 top-4 flex items-center justify-between sm:inset-x-6">
               <button
                 onClick={() => (saveState === 'dates' ? setSaveState('idle') : handleClose())}
@@ -364,13 +508,17 @@ export default function PlanPreviewModal({
 
             {/* Period chip + title — bottom-left, clear of the tab-card overlap.
                 pointer-events-none: overlay text must not block cover swipes. */}
-            <div className="pointer-events-none absolute inset-x-4 bottom-12 sm:inset-x-0 sm:mx-auto sm:max-w-2xl sm:px-4">
+            {/* text-center at EVERY size now (was lg-only): the place chip is
+                inline-block, so the same rule centres it and the title together.
+                bottom-10 on phones sits the pair a little lower, nearer the tab
+                pill, matching the desktop height. */}
+            <div className="pointer-events-none absolute inset-x-4 bottom-10 text-center sm:inset-x-0 sm:mx-auto sm:max-w-2xl sm:px-4 lg:bottom-10 lg:max-w-none lg:px-8">
               {/* Current cover photo's PLACE — overview.cover_places keyed to
                   the swipe index; XX for covers without an authored place. */}
-              <span className="inline-block rounded-full bg-zen-black/55 px-3 py-1.5 font-headline text-[11px] font-bold tracking-wide text-briefing-cream backdrop-blur-sm">
+              <span className="inline-block rounded-full bg-zen-black/55 px-3 py-1.5 font-headline text-[11px] font-bold tracking-wide text-briefing-cream backdrop-blur-sm lg:hidden">
                 {coverPlaces[coverIdx] || 'XX'}
               </span>
-              <h1 className="mt-2 font-headline text-3xl font-extrabold leading-tight tracking-tight text-zen-black sm:text-4xl">
+              <h1 className="mt-2 font-headline text-3xl font-extrabold leading-tight tracking-tight text-zen-black sm:text-4xl lg:text-5xl">
                 {template.title}
               </h1>
             </div>
@@ -424,7 +572,15 @@ export default function PlanPreviewModal({
               {/* Tab content — Kimi-style summary/highlights + day timelines.
                   The itinerary arrives from the lazy fetch (usually <1s); a
                   pulse placeholder holds the space until it does. */}
-              <div className={`mx-auto max-w-2xl px-4 pt-6 ${viewOnly ? 'pb-16' : 'pb-32'}`}>
+              {/* Width follows the TAB. Overview is a card wall — it pairs up
+                  into two columns at lg. The Itinerary is a timeline, which
+                  stays near reading width however wide the screen gets; a
+                  1024px-wide day row is a worse read, not a better one. */}
+              <div
+                className={`mx-auto px-4 pt-6 ${viewOnly ? 'pb-16' : 'pb-32'} ${
+                  tab === 'overview' ? 'max-w-2xl lg:max-w-[1400px]' : 'max-w-2xl lg:max-w-3xl'
+                }`}
+              >
                 {!itinerary ? (
                   <div className="space-y-3 py-4" aria-busy>
                     {Array.from({ length: 4 }).map((_, i) => (
@@ -439,6 +595,32 @@ export default function PlanPreviewModal({
                     onDeleteTrip={onDeleteTrip}
                     reviewTitle={reviewTitle}
                     savedTrip={savedTrip}
+                    // Editable pills — only when the caller supplied a way to
+                    // persist (i.e. a saved trip on /my-trips). /discover and
+                    // the admin preview pass neither, so no pencils appear.
+                    editItineraryHref={editItineraryHref}
+                    onEditTravel={onSaveTravel ? handleEditTravel : undefined}
+                    onEditNote={
+                      onSaveNote
+                        ? () =>
+                            setNoteDraft(
+                              (itinerary as { overview?: { description?: string } } | undefined)?.overview
+                                ?.description ?? '',
+                            )
+                        : undefined
+                    }
+                    onEditCar={
+                      onSaveCarDays
+                        ? () =>
+                            setCarDraft(
+                              (
+                                itinerary as
+                                  | { overview?: { car_rental?: { details?: { rentalDuration?: string } } } }
+                                  | undefined
+                              )?.overview?.car_rental?.details?.rentalDuration?.match(/\d+/)?.[0] ?? '',
+                            )
+                        : undefined
+                    }
                     // Tap a highlight row → that day, in the Itinerary tab.
                     // (No scroll reset — layoutScroll on the shell keeps the
                     // pill's slide correct regardless of scroll position.)
@@ -521,14 +703,137 @@ export default function PlanPreviewModal({
                     airports={itinerary?.airports?.length ? itinerary.airports : Object.keys(AIRPORTS)}
                     dayOneFirstTime={dayOneFirstTime}
                     lastDayLastTime={lastDayLastTime}
-                    onBack={() => setSaveState('idle')}
-                    onConfirm={handleConfirm}
-                    saving={saveState === 'saving'}
+                    onBack={() => {
+                      setEditingTravel(false)
+                      setSaveState('idle')
+                    }}
+                    onConfirm={editingTravel ? handleConfirmEdit : handleConfirm}
+                    saving={saveState === 'saving' || savingEdit}
+                    editing={editingTravel}
                   />
                 )}
               </div>
             </div>
           )}
+        </motion.div>
+      )}
+      {/* Notes editor — the traveller's own text on the card's back face. */}
+      {noteDraft !== null && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[80] flex items-center justify-center px-4"
+          style={{ backgroundColor: 'rgba(18,44,79,0.55)' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !savingEdit) setNoteDraft(null)
+          }}
+        >
+          <motion.div
+            initial={{ y: 24, opacity: 0, scale: 0.98 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 24, opacity: 0, scale: 0.98 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+            className="w-full max-w-md overflow-hidden rounded-3xl border border-zen-black/10 bg-white p-6 font-detail shadow-2xl"
+          >
+            <h3 className="text-lg font-extrabold tracking-tight text-zen-black">Notes</h3>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-graphite/80">
+              โน้ตของคุณสำหรับทริปนี้ — ขึ้นบรรทัดใหม่ได้ตามต้องการ
+            </p>
+            <textarea
+              value={noteDraft}
+              onChange={(e) => setNoteDraft(e.target.value)}
+              rows={7}
+              placeholder="เช่น ของที่ต้องเตรียม, ร้านที่อยากลอง, เบอร์ติดต่อ"
+              disabled={savingEdit}
+              autoFocus
+              className="mt-4 w-full resize-y rounded-xl border border-zen-black/15 bg-white px-4 py-2.5 text-sm leading-relaxed text-zen-black transition-colors placeholder:text-graphite/40 focus:border-basel-brick focus:outline-none disabled:opacity-40"
+            />
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => setNoteDraft(null)}
+                disabled={savingEdit}
+                className="flex-1 rounded-full border border-zen-black/15 bg-white py-3 text-sm font-semibold text-zen-black transition-colors hover:border-basel-brick/50 hover:text-basel-brick disabled:opacity-40"
+              >
+                ยกเลิก
+              </button>
+              <button
+                onClick={handleConfirmNote}
+                disabled={savingEdit}
+                className="flex-1 rounded-full bg-zen-black py-3 text-sm font-semibold text-white shadow-md shadow-zen-black/25 transition-colors hover:bg-basel-brick disabled:opacity-60"
+              >
+                {savingEdit ? 'กำลังบันทึก...' : 'บันทึก'}
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+      {/* Car-rental duration editor. One field, so an overlay rather than a
+          whole step — the ConfirmDialog card language (rounded-3xl white,
+          font-detail, pill pair) at z-[80] so it clears the modal itself. */}
+      {carDraft !== null && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[80] flex items-center justify-center px-4"
+          style={{ backgroundColor: 'rgba(18,44,79,0.55)' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !savingEdit) setCarDraft(null)
+          }}
+        >
+          <motion.div
+            initial={{ y: 24, opacity: 0, scale: 0.98 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 24, opacity: 0, scale: 0.98 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+            className="w-full max-w-sm overflow-hidden rounded-3xl border border-zen-black/10 bg-white p-6 font-detail shadow-2xl"
+          >
+            <div className="mb-4 grid size-12 place-items-center rounded-full bg-basel-brick/10">
+              <Car className="size-6 text-basel-brick" strokeWidth={2.5} />
+            </div>
+            <h3 className="text-lg font-extrabold tracking-tight text-zen-black">Car Rental</h3>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-graphite/80">
+              เช่ารถกี่วัน? เว้นว่างไว้ได้ถ้ายังไม่แน่ใจ
+            </p>
+            <label className="mb-1.5 mt-4 block text-[11px] font-bold uppercase tracking-wider text-basel-brick">
+              จำนวนวัน · Duration
+            </label>
+            {/* The unit is STATIC furniture inside the field, not part of the
+                typed value — focus-within moves the ring to the whole shell so
+                it still reads as one control. */}
+            <div className="flex items-center gap-2 rounded-xl border border-zen-black/15 bg-white pr-4 transition-colors focus-within:border-basel-brick">
+              <input
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={99}
+                value={carDraft}
+                onChange={(e) => setCarDraft(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                placeholder="4"
+                disabled={savingEdit}
+                autoFocus
+                className="w-full rounded-xl bg-transparent px-4 py-2.5 text-sm font-medium text-zen-black placeholder:text-graphite/40 focus:outline-none disabled:opacity-40 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+              <span className="shrink-0 text-sm font-semibold text-graphite/60">วัน · days</span>
+            </div>
+            <div className="mt-5 flex gap-2">
+              <button
+                onClick={() => setCarDraft(null)}
+                disabled={savingEdit}
+                className="flex-1 rounded-full border border-zen-black/15 bg-white py-3 text-sm font-semibold text-zen-black transition-colors hover:border-basel-brick/50 hover:text-basel-brick disabled:opacity-40"
+              >
+                ยกเลิก
+              </button>
+              <button
+                onClick={handleConfirmCar}
+                disabled={savingEdit}
+                className="flex-1 rounded-full bg-zen-black py-3 text-sm font-semibold text-white shadow-md shadow-zen-black/25 transition-colors hover:bg-basel-brick disabled:opacity-60"
+              >
+                {savingEdit ? 'กำลังบันทึก...' : 'บันทึก'}
+              </button>
+            </div>
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
@@ -638,6 +943,7 @@ function DateStep({
   onBack,
   onConfirm,
   saving,
+  editing = false,
 }: {
   /** The plan's own length (minimum the range must span). */
   tripDays: number
@@ -662,6 +968,9 @@ function DateStep({
   onBack: () => void
   onConfirm: () => void
   saving: boolean
+  /** Re-editing an EXISTING trip rather than duplicating a template: same
+   *  fields, but the verbs say "save", not "copy to My Trips". */
+  editing?: boolean
 }) {
   const from = range?.from
   const to = range?.to
@@ -682,7 +991,9 @@ function DateStep({
           <ArrowLeft size={18} strokeWidth={2.5} />
         </button>
         {/* The overview cards' heading scale (was font-headline black xl). */}
-        <h3 className="text-lg font-extrabold tracking-tight text-zen-black">เลือกช่วงวันเดินทางของคุณ </h3>
+        <h3 className="text-lg font-extrabold tracking-tight text-zen-black">
+          {editing ? 'แก้ไขวันเดินทางและเที่ยวบิน' : 'เลือกช่วงวันเดินทางของคุณ'}
+        </h3>
       </div>
       <p className="text-[13px] leading-relaxed text-graphite">
         <span className="mr-2">แพลนทริปนี้มี {tripDays} วัน</span>
@@ -871,7 +1182,13 @@ function DateStep({
         disabled={!valid || saving}
         className="w-full rounded-full bg-zen-black py-3.5 text-sm font-semibold text-white shadow-md shadow-zen-black/25 transition-all hover:bg-basel-brick disabled:opacity-50 disabled:hover:bg-zen-black"
       >
-        {saving ? 'กำลังคัดลอก...' : 'ยืนยันและคัดลอกไปยัง My Trips'}
+        {saving
+          ? editing
+            ? 'กำลังบันทึก...'
+            : 'กำลังคัดลอก...'
+          : editing
+            ? 'บันทึกการแก้ไข · Save changes'
+            : 'ยืนยันและคัดลอกไปยัง My Trips'}
       </button>
       {!valid && !tooShort && (
         <p className="-mt-1 text-center text-[12px] text-graphite/70">

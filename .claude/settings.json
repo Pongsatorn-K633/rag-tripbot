@@ -36,7 +36,11 @@
       "Bash(node -e ' *)",
       "Bash(curl -sf -o /dev/null -w \"discover=%{http_code}\\\\n\" http://localhost:3000/discover)",
       "Bash(timeout 150 bash -c 'until curl -sf -o /dev/null http://localhost:3000/discover; do sleep 4; done')",
-      "Bash(python -)"
+      "Bash(python -)",
+      "Bash(cd \"/c/Users/WindowS 10/Documents/VSCode/rag-tripbot\" && sed -n '/export async function PATCH/,/^}/p' app/api/trips/\\\\[id\\\\]/route.ts | head -60 && echo \"=== edit core ===\" && grep -n \"export \" lib/trips/edit.ts | head)",
+      "Bash(grep -n \"SummaryRow$\\\\|<SummaryRow\" app/components/TripPreviewPanels.tsx)",
+      "Bash(grep -n \"Car Rental$\\\\|Attractions$\\\\|Prefectures$\\\\|ขาเข้า\\\\|เดินทาง \\\\${tripDays}\" app/components/TripPreviewPanels.tsx)",
+      "Bash(awk 'NR>=223 && NR<=330 && /^  return \\\\{/,0' lib/trips/itinerary-model.ts)"
     ],
     "additionalDirectories": [
       "C:\\Users\\WindowS 10\\Documents\\VSCode\\rag-tripbot"

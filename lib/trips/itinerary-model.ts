@@ -220,6 +220,30 @@ function v3ToActivity(a: ActivityV3, lang: RenderLang): Activity {
   }
 }
 
+/**
+ * A day's highlight — the authored `day.highlight` when present, otherwise
+ * derived from its Must-priority activities (falling back to Recommend, then to
+ * whatever is there), max 2.
+ *
+ * Lives here, not in a panel, because BOTH the Overview's "Day Highlights" list
+ * and the Itinerary tab's day headers show it — two derivations would drift.
+ */
+export function v3DayHighlight(day: DayV3, lang: RenderLang = 'th'): { names: string[]; emoji: string | null } {
+  const acts = (day.activities ?? []).filter((a) => a.slot?.startsWith('Activity'))
+  const must = acts.filter((a) => a.priority === 'Must')
+  const rec = acts.filter((a) => a.priority === 'Recommend')
+  const picks = (must.length ? must : rec.length ? rec : acts).slice(0, 2)
+  const authored = lang === 'en'
+    ? day.highlight?.en || day.highlight?.th
+    : day.highlight?.th || day.highlight?.en
+  return {
+    names: authored
+      ? [authored]
+      : picks.map((a) => pickLang(a.name, lang)).filter(Boolean),
+    emoji: (picks[0]?.category && CATEGORY_EMOJI[picks[0].category]) || null,
+  }
+}
+
 function v3DayToRenderDay(day: DayV3, lang: RenderLang): Day {
   const acts = day.activities ?? []
   const mealSet = new Set<string>(PLAN_MEAL_SLOTS)
@@ -270,7 +294,8 @@ function v3DayToRenderDay(day: DayV3, lang: RenderLang): Day {
 
   activities.sort(byTime)
   const location = acts[0]?.location || pickLang(day.name, lang)
-  return { day: day.day, location, activities, choices, accommodation, accommodationChoices, transport: '' }
+  const highlight = v3DayHighlight(day, lang).names.join(' · ')
+  return { day: day.day, location, highlight: highlight || undefined, activities, choices, accommodation, accommodationChoices, transport: '' }
 }
 
 /** v1 days as-is; v2/v3 days converted to the v1 render shape. Empty array if no days.

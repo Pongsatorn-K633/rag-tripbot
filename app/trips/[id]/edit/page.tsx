@@ -42,13 +42,13 @@ export default function EditTripPage() {
       .catch((e) => { setError(e.message); setLoading(false) })
   }, [id])
 
-  async function handleSave({ itinerary, startDate }: { itinerary: Itinerary | ItineraryV3; startDate: string }) {
+  async function handleSave({ itinerary, startDate, title }: { itinerary: Itinerary | ItineraryV3; startDate: string; title?: string }) {
     setSaving(true)
     try {
       const res = await fetch(`/api/trips/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ itinerary, startDate: startDate || null }),
+        body: JSON.stringify({ itinerary, startDate: startDate || null, title }),
       })
       if (!res.ok) {
         const e = await res.json().catch(() => ({}))
@@ -63,23 +63,28 @@ export default function EditTripPage() {
 
   return (
     <main className="pt-28 pb-24 px-6 max-w-2xl mx-auto">
-      <Link href="/my-trips" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zen-black/50 hover:text-basel-brick transition-colors mb-6">
-        <ArrowLeft size={14} strokeWidth={3} /> กลับไปหน้าทริป · Back to My Trips
+      <Link
+        href="/my-trips"
+        className="group mb-6 inline-flex items-center gap-1.5 font-headline text-xs font-bold tracking-wide text-graphite/70 transition-colors hover:text-basel-brick"
+      >
+        <ArrowLeft className="size-3.5 transition-transform group-hover:-translate-x-1" strokeWidth={2.5} />
+        Back to My Trips
       </Link>
 
       {loading ? (
-        <p className="text-zen-black/40 font-sans">กำลังโหลด...</p>
+        <p className="font-detail text-[13px] text-graphite/60">กำลังโหลด...</p>
       ) : error || !trip ? (
-        <div className="border-2 border-dashed border-zen-black/10 rounded-xl p-12 text-center">
-          <p className="text-zen-black/60 font-sans">{error ?? 'ไม่พบทริป'}</p>
+        <div className="rounded-2xl border-2 border-dashed border-zen-black/10 p-12 text-center">
+          <p className="font-detail text-sm text-graphite/70">{error ?? 'ไม่พบทริป'}</p>
         </div>
       ) : (
         <>
           <header className="mb-8">
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-basel-brick mb-2">แก้ไขแผนการเดินทาง · Edit trip</p>
-            <h1 className="text-3xl md:text-4xl font-headline font-extrabold tracking-tighter text-zen-black">{trip.title}</h1>
-            <p className="text-zen-black/50 text-sm mt-2 font-sans">
-              เลือกตัวเลือก จัดลำดับ ลบกิจกรรม และเพิ่มโน้ตได้ตามต้องการ
+            <h1 className="font-headline text-3xl font-bold tracking-tight text-zen-black md:text-4xl">
+              Edit Trip
+            </h1>
+            <p className="mt-2.5 font-sans text-graphite/70">
+              {trip.title} — แก้ไขได้ทุกอย่าง: วัน กิจกรรม เวลา ลิงก์ และตัวเลือกร้านอาหาร
             </p>
           </header>
 
@@ -87,7 +92,7 @@ export default function EditTripPage() {
             <ItineraryEditorV3
               initialItinerary={trip.itinerary as unknown as ItineraryV3}
               initialStartDate={toDateInput(trip.startDate)}
-              variant="light"
+              initialTitle={trip.title}
               saving={saving}
               onSave={handleSave}
             />

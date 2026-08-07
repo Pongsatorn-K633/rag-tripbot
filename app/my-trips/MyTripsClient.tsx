@@ -125,6 +125,40 @@ export default function MyTripsClient({
     window.history.replaceState(null, '', '/my-trips')
   }
 
+  /**
+   * Persist a summary-pill edit and mirror it locally.
+   *
+   * Throws on failure so the modal can keep the editor open and say so — a
+   * silent catch here would show the user their edit "saved" against a server
+   * that never took it (the bug the heart toggle had).
+   */
+  async function patchTrip(
+    id: string,
+    patch: { startDate?: string; itinerary?: unknown; title?: string },
+  ) {
+    const res = await fetch(`/api/trips/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      throw new Error(body.error ?? `HTTP ${res.status}`)
+    }
+    const { trip: updated } = await res.json()
+    setTrips((prev) =>
+      prev.map((t) =>
+        t.id === id
+          ? {
+              ...t,
+              startDate: updated?.startDate ?? patch.startDate ?? t.startDate,
+              itinerary: (updated?.itinerary ?? patch.itinerary ?? t.itinerary) as SavedTrip['itinerary'],
+            }
+          : t,
+      ),
+    )
+  }
+
   async function handleDelete(id: string) {
     setDeleting(true)
     try {
@@ -279,7 +313,6 @@ export default function MyTripsClient({
                         copied={copiedCode === trip.shareCode}
                         editHref={trip.locked ? undefined : `/trips/${trip.id}/edit`}
                         onView={() => openTrip(trip.id)}
-                        onDelete={trip.locked ? undefined : () => setDeleteConfirm(trip.id)}
                         onCopyCode={(e: React.MouseEvent) => copyCode(trip.shareCode!, e)}
                         onGenerateCode={(e: React.MouseEvent) => handleGenerateCode(trip.id, e)}
                       />
@@ -315,7 +348,11 @@ export default function MyTripsClient({
                     description: ov?.cover_tagline ?? ov?.description ?? null,
                     itinerary: itin ?? undefined,
                     coverImage: trip.coverImage ?? null,
-                    coverImages: (ov?.cover_images ?? []).map((c) => resolveCoverImage(c, trip.templateId ?? trip.id)),
+                    // RAW keys/URLs — the modal's hero resolves them itself and
+                    // needs the ORIGINAL. Pre-resolving here handed it a 4:5
+                    // card crop, which its wide band then had to zoom (the
+                    // "pixelated hero" on /my-trips only).
+                    coverImages: ov?.cover_images ?? [],
                     coverPlaces: ov?.cover_places ?? [],
                     totalDays: days,
                     season: itin?.season ?? null,
@@ -334,6 +371,62 @@ export default function MyTripsClient({
             // admin's pitch — /discover keeps the default "Admin Review".
             reviewTitle="Notes:"
             savedTrip
+            startDate={trip?.startDate ?? null}
+            // A published trip is locked from editing, same rule the card's
+            // ✏️ follows — no pencil on Day Highlights for those.
+            editItineraryHref={trip && !trip.locked ? `/trips/${trip.id}/edit` : undefined}
+            // Editable summary pills. Both handlers PATCH and then update the
+            // local copy, so the reopened modal and the card behind it show the
+            // new values without a refetch.
+            onSaveTravel={
+              trip
+                ? async ({ startDate, flight }) => {
+                    const hasFlight = !!(
+                      flight.arrival?.airport ||
+                      flight.arrival?.time ||
+                      flight.departure?.airport ||
+                      flight.departure?.time
+                    )
+                    // The flight rides INSIDE the itinerary (same place the
+                    // duplicate step writes it), so the itinerary goes along.
+                    const nextItin = { ...(trip.itinerary as object), ...(hasFlight ? { flight } : {}) }
+                    if (!hasFlight) delete (nextItin as { flight?: unknown }).flight
+                    await patchTrip(trip.id, { startDate, itinerary: nextItin })
+                  }
+                : undefined
+            }
+            onSaveNote={
+              trip
+                ? async (note) => {
+                    // The note IS overview.description — the same field the
+                    // admin authors and the edit page exposes, so both routes
+                    // write one place.
+                    const itin = trip.itinerary as { overview?: Record<string, unknown> }
+                    await patchTrip(trip.id, {
+                      itinerary: { ...itin, overview: { ...itin.overview, description: note } },
+                    })
+                  }
+                : undefined
+            }
+            onSaveCarDays={
+              trip
+                ? async (duration) => {
+                    const itin = trip.itinerary as {
+                      overview?: { car_rental?: { primary?: string; details?: Record<string, unknown> } }
+                    }
+                    const car = itin.overview?.car_rental
+                    if (!car) return
+                    const nextItin = {
+                      ...itin,
+                      overview: {
+                        ...itin.overview,
+                        car_rental: { ...car, details: { ...(car.details ?? {}), rentalDuration: duration } },
+                      },
+                    }
+                    await patchTrip(trip.id, { itinerary: nextItin })
+                  }
+                : undefined
+            }
             callbackUrl="/my-trips"
             onClose={closeTrip}
           />
