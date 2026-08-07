@@ -109,6 +109,18 @@ export default function GoPage() {
     window.history.replaceState(null, '', '/my-trips')
   }
 
+  // Placeholders only once the wait is actually noticeable. /api/trips answers
+  // fast — especially for a NEW user, whose answer is an empty list — so
+  // painting three fake trip cards immediately promised content that never
+  // arrived, then swapped to the empty state. 250ms means a quick response
+  // shows no skeleton at all; a slow one still gets feedback.
+  const [slowLoad, setSlowLoad] = useState(false)
+  useEffect(() => {
+    if (!loading || !isSignedIn) return
+    const id = window.setTimeout(() => setSlowLoad(true), 250)
+    return () => window.clearTimeout(id)
+  }, [loading, isSignedIn])
+
   useEffect(() => {
     if (status === 'loading') return
     if (!isSignedIn) { setLoading(false); return }
@@ -211,8 +223,11 @@ export default function GoPage() {
           (centred max-w-md column, square cover on the right, title rule pair,
           bottom band, barcode stub). It used to be the pre-redesign 4-up grid
           of tall tiles, so the page visibly re-laid itself out the moment the
-          trips arrived. Same wrapper classes as the real list. */}
-      {loading && (
+          trips arrived. Same wrapper classes as the real list.
+          GATED on isSignedIn: `loading` starts true and the fetch effect bails
+          out early while NextAuth resolves, so a signed-OUT visitor was shown
+          three fake trip cards before the sign-in CTA. */}
+      {isSignedIn && loading && slowLoad && (
         <div className="flex flex-col items-center gap-5">
           {[1, 2, 3].map((i) => (
             <div
