@@ -698,9 +698,12 @@ export default function TripSearchSection({
                 <Link
                   href={myTripsHref}
                   // ml-auto pins it to the right edge of the title block.
+                  // translate-y: nudged down off the subtitle's optical centre,
+                  // the same trick /my-trips' "Discover →" uses (whole pixels
+                  // only — a fractional offset resamples the glyphs).
                   // Sentence case (no `uppercase`), so tracking-wide instead of
                   // -widest — wide tracking on mixed case reads as spaced-out.
-                  className="group ml-auto flex items-center gap-1.5 font-headline text-xs font-bold tracking-wide text-briefing-cream/80 transition-colors hover:text-basel-brick"
+                  className="group ml-auto flex translate-y-1 items-center gap-1.5 font-headline text-xs font-bold tracking-wide text-briefing-cream/80 transition-colors hover:text-basel-brick"
                 >
                   My Trips
                   <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1" />

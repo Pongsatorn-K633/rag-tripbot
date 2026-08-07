@@ -23,9 +23,17 @@ export async function POST(
     return NextResponse.json({ error: 'Template not found' }, { status: 404 })
   }
 
-  // Dedupe — if the user already has a Trip for this template, return it.
+  // Dedupe — if the user already HEARTED this template, return that Trip.
+  //
+  // `source: 'template'` is load-bearing, not decoration. A user who duplicated
+  // this template into their own editable copy has a Trip with the same
+  // templateId but source='plan'. Without this filter that copy matched here,
+  // the route returned alreadySaved:true, and NO heart row was ever created —
+  // so the heart reverted on the next load (the "did not save" bug). The read
+  // side (useSavedTemplates) has always keyed on source==='template'; this is
+  // the write side finally agreeing with it.
   const existing = await prisma.trip.findFirst({
-    where: { userId: session.user.id, templateId },
+    where: { userId: session.user.id, templateId, source: 'template' },
   })
   if (existing) {
     return NextResponse.json({ trip: existing, alreadySaved: true })
@@ -46,8 +54,8 @@ export async function POST(
 
 /**
  * DELETE /api/templates/:id/save
- * "Un-heart" a template — deletes any Trip rows the user has for this
- * template. Cascade deletes any linked LineContexts.
+ * "Un-heart" a template — deletes the user's HEARTED Trip rows for it
+ * (source='template'). Cascade deletes any linked LineContexts.
  */
 export async function DELETE(
   _req: NextRequest,
@@ -60,8 +68,12 @@ export async function DELETE(
 
   const { id: templateId } = await params
 
+  // source: 'template' scopes this to HEARTS only. Without it, un-hearting a
+  // template also deleted the user's DUPLICATED copy of it (same templateId,
+  // source='plan') — their own edits, dates and share code, gone from one tap
+  // on a heart they may not even have set themselves.
   const result = await prisma.trip.deleteMany({
-    where: { userId: session.user.id, templateId },
+    where: { userId: session.user.id, templateId, source: 'template' },
   })
 
   return NextResponse.json({ ok: true, deleted: result.count })

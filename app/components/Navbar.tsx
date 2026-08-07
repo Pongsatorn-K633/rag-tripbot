@@ -19,6 +19,18 @@ const TABS = [
   { id: 'create', label: 'Create', href: '/create' },
 ]
 
+/**
+ * Routes that belong to a tab but don't live under its path — the tab stays lit
+ * while the user is inside that flow.
+ *
+ * Without this, /ai-scanner (reached from the Create hub) lights NO tab at all,
+ * because the match is a `startsWith` on the tab's own href. A page with no
+ * active tab reads as having left the site's structure.
+ */
+const TAB_CHILDREN: Record<string, string[]> = {
+  '/create': ['/ai-scanner', '/chat'],
+}
+
 /** The desktop nav links. `light` = white scheme (over the dark hero); otherwise
  *  the dark scheme (on the Cloud pill / Cloud bar). Rendered in two spots that
  *  share a Motion layoutId, so the group animates between them. */
@@ -173,7 +185,9 @@ export default function Navbar() {
 
   function isActive(href: string) {
     if (href === '/') return pathname === '/'
-    return pathname.startsWith(href)
+    if (pathname.startsWith(href)) return true
+    // …and the tab's adopted children (Create ← /ai-scanner, /chat).
+    return (TAB_CHILDREN[href] ?? []).some((child) => pathname.startsWith(child))
   }
 
   // Already home? Glide back to the hero instead of letting Next handle the
@@ -658,6 +672,10 @@ function MobileUserMenu({ onClose }: { onClose: () => void }) {
 
 // Pages beyond the nav tabs still need a left-slot title on mobile.
 const EXTRA_TITLES = [
+  // "Create", not "AI Scanner": the left slot names the SECTION the user came
+  // from (they tapped Create to get here), matching the lit Create tab on
+  // desktop. The page's own h1 already says AI Scanner.
+  { href: '/ai-scanner', label: 'Create' },
   { href: '/saved', label: 'Saved' },
   { href: '/settings', label: 'Settings' },
   { href: '/admin', label: 'Admin' },

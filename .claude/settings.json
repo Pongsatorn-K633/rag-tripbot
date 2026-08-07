@@ -35,7 +35,8 @@
       "Bash(curl -s \"http://localhost:3000/api/templates\")",
       "Bash(node -e ' *)",
       "Bash(curl -sf -o /dev/null -w \"discover=%{http_code}\\\\n\" http://localhost:3000/discover)",
-      "Bash(timeout 150 bash -c 'until curl -sf -o /dev/null http://localhost:3000/discover; do sleep 4; done')"
+      "Bash(timeout 150 bash -c 'until curl -sf -o /dev/null http://localhost:3000/discover; do sleep 4; done')",
+      "Bash(python -)"
     ],
     "additionalDirectories": [
       "C:\\Users\\WindowS 10\\Documents\\VSCode\\rag-tripbot"

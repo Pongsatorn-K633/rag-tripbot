@@ -441,12 +441,15 @@ export function OverviewPanel({
             The day count lives here rather than in a tile of its own. */}
         {travelDateLabel && (
           <SummaryRow icon={<CalendarDays className="size-5 shrink-0 text-basel-brick" strokeWidth={2} aria-hidden />}>
+            {/* "เดินทาง 9 วัน — 16 ต.ค. - 24 ต.ค. 2569": the length is part of
+                the LABEL now, so the trailing "· 9 วัน" that used to close the
+                row is gone (it said the same thing twice). A catalogue trip
+                keeps the bare "เดินทาง" — its day count is in the tiles above. */}
             <p className="text-xs font-semibold text-zen-black">
-              วันเดินทาง
+              {savedTrip ? `เดินทาง ${tripDays} วัน` : 'เดินทาง'}
               <span className="text-graphite/70">
                 <span className="mx-1.5">—</span>
                 {travelDateLabel}
-                {savedTrip && ` · ${tripDays} วัน`}
               </span>
             </p>
           </SummaryRow>

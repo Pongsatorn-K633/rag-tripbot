@@ -97,47 +97,49 @@ export default function ProfilePictureUpload({
       )}
 
       {/* Error */}
-      {error && <p className="text-[10px] text-red-700 font-medium">⚠ {error}</p>}
+      {error && <p className="text-[11px] font-medium text-red-600">⚠ {error}</p>}
 
-      {/* Action buttons */}
-      <div className="flex items-center gap-2">
+      {/* Actions — pills, the app's chip vocabulary, replacing three
+          differently-cased 10px labels strung on "·" separators. Wide tracking
+          on mixed-case Thai+English was what forced "เปลี่ยนรูป · Change" to
+          wrap onto two lines, so tracking is normal and each pill is nowrap.
+          One casing for all three: sentence case (REMOVE was the odd one). */}
+      <div className="flex flex-wrap items-center justify-center gap-2">
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={disabled || uploading}
-          className="text-[10px] font-bold tracking-widest text-basel-brick hover:text-zen-black transition-colors disabled:opacity-40"
+          className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-basel-brick/30 bg-white px-3.5 py-1.5 font-detail text-[11px] font-semibold text-basel-brick transition-colors hover:border-basel-brick hover:bg-basel-brick hover:text-white disabled:opacity-40"
         >
-          {value ? 'เปลี่ยนรูป · Change' : 'อัปโหลดรูป · Upload (Optional)'}
+          {value ? 'เปลี่ยนรูป · Change' : 'อัปโหลดรูป · Upload'}
         </button>
         {value && isCloudinaryUrl(value) && (
-          <>
-            <span className="text-zen-black/20">·</span>
-            <button
-              type="button"
-              onClick={() => setCropSrc(stripCloudinaryTransform(value))}
-              disabled={disabled || uploading}
-              className="text-[10px] font-bold tracking-widest text-basel-brick hover:text-zen-black transition-colors disabled:opacity-40 flex items-center gap-1"
-            >
-              <Crop size={11} strokeWidth={2.5} /> ปรับ · Adjust
-            </button>
-          </>
+          <button
+            type="button"
+            onClick={() => setCropSrc(stripCloudinaryTransform(value))}
+            disabled={disabled || uploading}
+            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-zen-black/15 bg-white px-3.5 py-1.5 font-detail text-[11px] font-semibold text-graphite transition-colors hover:border-basel-brick/50 hover:text-basel-brick disabled:opacity-40"
+          >
+            <Crop size={12} strokeWidth={2.5} /> ปรับ · Adjust
+          </button>
         )}
         {value && (
-          <>
-            <span className="text-zen-black/20">·</span>
-            <button
-              type="button"
-              onClick={() => onChange(null)}
-              disabled={disabled || uploading}
-              className="text-[10px] font-bold uppercase tracking-widest text-zen-black/40 hover:text-basel-brick transition-colors disabled:opacity-40"
-            >
-              ลบรูป · Remove
-            </button>
-          </>
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            disabled={disabled || uploading}
+            // Ghost, not a bordered pill: destructive actions shouldn't carry
+            // the same visual weight as the two constructive ones.
+            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 font-detail text-[11px] font-semibold text-graphite/60 transition-colors hover:text-red-600 disabled:opacity-40"
+          >
+            ลบรูป · Remove
+          </button>
         )}
       </div>
 
-      <p className="text-[9px] text-zen-black/40 text-center -mt-2">JPG / PNG / WebP · max 5 MB</p>
+      <p className="text-center font-detail text-[10px] text-graphite/50">
+        JPG / PNG / WebP · max 5 MB
+      </p>
 
       {/* Hidden file input */}
       <input
